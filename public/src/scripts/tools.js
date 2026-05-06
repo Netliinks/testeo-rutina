@@ -1781,3 +1781,6 @@ export const generateFileSimpleXls = (ar, title, extension) => {
         alert("Su navegador no permite esta acción");
     }
 };
+
+// Función para pausar
+export const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
