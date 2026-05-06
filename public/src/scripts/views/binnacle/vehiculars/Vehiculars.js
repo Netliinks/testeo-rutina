@@ -5,7 +5,7 @@
 //
 import { Config } from "../../../Configs.js";
 import { getEntityData, getFilterEntityData, getFilterEntityCount, getFile } from "../../../endpoints.js";
-import { CloseDialog, drawTagsIntoTables, renderRightSidebar, filterDataByHeaderType, inputObserver, pageNumbers, fillBtnPagination } from "../../../tools.js";
+import { CloseDialog, drawTagsIntoTables, renderRightSidebar, filterDataByHeaderType, inputObserver, pageNumbers, fillBtnPagination, sleep } from "../../../tools.js";
 import { UIContentLayout, UIRightSidebar } from "./Layout.js";
 import { UITableSkeletonTemplate } from "./Template.js";
 import { exportVehicularCsv, exportVehicularPdf, exportVehicularXls } from "../../../exportFiles/vehiculars.js";
@@ -611,6 +611,7 @@ export class Vehiculars {
                                     }
                                     message1.value = `${vehiculars.length} / ${totalRegisters}`;
                                     offset = Config.limitExport + (offset);
+                                    await sleep(Config.timeOutExport);
                                 }
                             }
                         

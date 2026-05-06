@@ -5,7 +5,7 @@
 //
 import { Config } from "../../../Configs.js";
 import { getEntityData, getFilterEntityData, getFile, getFilterEntityCount } from "../../../endpoints.js";
-import { CloseDialog, drawTagsIntoTables, renderRightSidebar, filterDataByHeaderType, verifyUserType, inputObserver, pageNumbers, fillBtnPagination } from "../../../tools.js";
+import { CloseDialog, drawTagsIntoTables, renderRightSidebar, filterDataByHeaderType, verifyUserType, inputObserver, pageNumbers, fillBtnPagination, sleep } from "../../../tools.js";
 import { UIContentLayout, UIRightSidebar } from "./Layout.js";
 import { UITableSkeletonTemplate } from "./Template.js";
 import { exportVisitCsv, exportVisitPdf, exportVisitXls } from "../../../exportFiles/visits.js";
@@ -802,6 +802,7 @@ export class Visits {
                                     }
                                     message1.value = `${visits.length} / ${totalRegisters}`;
                                     offset = Config.limitExport + (offset);
+                                    await sleep(Config.timeOutExport);
                                 }
                             }
              

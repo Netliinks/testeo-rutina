@@ -1,7 +1,7 @@
 // @filename: EvetnsView.ts
 import { Config } from "../../../Configs.js";
 import { getEntityData, getFilterEntityData, getFilterEntityCount } from "../../../endpoints.js";
-import { CloseDialog, renderRightSidebar, filterDataByHeaderType, inputObserver, pageNumbers, fillBtnPagination, calculateLine } from "../../../tools.js";
+import { CloseDialog, renderRightSidebar, filterDataByHeaderType, inputObserver, pageNumbers, fillBtnPagination, calculateLine, sleep } from "../../../tools.js";
 import { UIContentLayout, UIRightSidebar } from "./Layout.js";
 import { UITableSkeletonTemplate } from "./Template.js";
 import { exportBinnacleCsv, exportBinnaclePdf, exportBinnacleXls } from "../../../exportFiles/binnacle.js";
@@ -507,6 +507,7 @@ export class Binnacle {
                                     }
                                     message1.value = `${events.length} / ${totalRegisters}`;
                                     offset = Config.limitExport + (offset);
+                                    await sleep(Config.timeOutExport);
                                 }
                             }
                             

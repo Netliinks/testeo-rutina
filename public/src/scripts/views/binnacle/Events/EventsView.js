@@ -1,7 +1,7 @@
 // @filename: EvetnsView.ts
 import { Config } from "../../../Configs.js";
 import { getEntityData, getFilterEntityData, getFile, getFilterEntityCount, getUserInfo } from "../../../endpoints.js";
-import { CloseDialog, renderRightSidebar, filterDataByHeaderType, inputObserver, pageNumbers, fillBtnPagination, calculateLine } from "../../../tools.js";
+import { CloseDialog, renderRightSidebar, filterDataByHeaderType, inputObserver, pageNumbers, fillBtnPagination, calculateLine, sleep } from "../../../tools.js";
 import { UIContentLayout, UIRightSidebar } from "./Layout.js";
 import { UITableSkeletonTemplate } from "./Template.js";
 import { exportEventCsv, exportEventPdf, exportEventXls } from "../../../exportFiles/events.js";
@@ -575,6 +575,7 @@ export class Events {
                                     }
                                     message1.value = `${events.length} / ${totalRegisters}`;
                                     offset = Config.limitExport + (offset);
+                                    await sleep(Config.timeOutExport);
                                 }
                             }
                         

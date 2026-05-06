@@ -17,7 +17,7 @@ export const Config = {
     timeRoutineTopBar: null,
     currentUser: null,
     limitExport: 1500,
-    timeOutExport: 300,
+    timeOutExport: 200,
     idEsmeraldas: "5f13b0bc-95e7-721e-62de-90b58ce56002",
     idFloralVC: "5263e907-4553-8b4d-b9ea-c012063c1386",
     currentScreen: null,

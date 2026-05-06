@@ -1,6 +1,6 @@
 // @filename: Sporadic.ts
 import { deleteEntity, getEntitiesData,getFilterEntityCount, registerEntity, updateEntity, getEntityData,setFile,getUserInfo,getFile,postNotificationPush,getFilterEntityData } from "../../../../endpoints.js";
-import { inputObserver, inputSelect, CloseDialog, filterDataByHeaderType,fillBtnPagination, searchUniversalSingle, currentDateTime  } from "../../../../tools.js";
+import { inputObserver, inputSelect, CloseDialog, filterDataByHeaderType,fillBtnPagination, searchUniversalSingle, currentDateTime, sleep  } from "../../../../tools.js";
 import { Config } from "../../../../Configs.js";
 import { tableLayout } from "./Layout.js";
 import { tableLayoutTemplate } from "./Template.js";
@@ -1009,6 +1009,7 @@ export class Sporadic {
                                 }
                                 message1.value = `${tasks.length} / ${totalRegisters}`;
                                 offset = Config.limitExport + (offset);
+                                await sleep(Config.timeOutExport);
                             }
                         }
                     

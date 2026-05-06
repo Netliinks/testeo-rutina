@@ -5,7 +5,7 @@
 //
 import { Config } from "../../../Configs.js";
 import { getEntityData, getFile, getFilterEntityData, getFilterEntityCount } from "../../../endpoints.js";
-import { CloseDialog, renderRightSidebar, filterDataByHeaderType, inputObserver, pageNumbers, fillBtnPagination, calculateLine } from "../../../tools.js";
+import { CloseDialog, renderRightSidebar, filterDataByHeaderType, inputObserver, pageNumbers, fillBtnPagination, calculateLine, sleep } from "../../../tools.js";
 import { UIContentLayout, UIRightSidebar } from "./Layout.js";
 import { UITableSkeletonTemplate } from "./Template.js";
 import { exportReportCsv, exportReportPdf, exportReportXls } from "../../../exportFiles/reports.js";
@@ -448,6 +448,7 @@ export class Notes {
                                         }
                                         message1.value = `${notes.length} / ${totalRegisters}`;
                                         offset = Config.limitExport + (offset);
+                                        await sleep(Config.timeOutExport);
                                     }
                                 }
                                 for (let i = 0; i < _values.exportOption.length; i++) {

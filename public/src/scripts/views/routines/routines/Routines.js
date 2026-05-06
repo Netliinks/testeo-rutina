@@ -1,6 +1,6 @@
 // @filename: Routines.ts
 import { registerEntity, getUserInfo, getEntityData, updateEntity, getFilterEntityData, getFilterEntityCount, deleteEntity, getFile } from "../../../endpoints.js";
-import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, getDetails, generateFileSimpleXls } from "../../../tools.js";
+import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, getDetails, generateFileSimpleXls, sleep } from "../../../tools.js";
 import { Config } from "../../../Configs.js";
 import { tableLayout } from "./Layout.js";
 import { tableLayoutTemplate } from "./Template.js";
@@ -731,6 +731,7 @@ export class Routines {
                               }
                               message1.value = `${registers.length} / ${totalRegisters}`;
                               offset = Config.limitExport + (offset);
+                              await sleep(Config.timeOutExport);
                           }
                       }
                       message2.innerText = `Generando archivo pdf,\nesto puede tomar un momento.`;
@@ -979,6 +980,7 @@ export class Routines {
                                 }
                                 message1.value = `${registers.length} / ${totalRegisters}`;
                                 offset = Config.limitExport + (offset);
+                                await sleep(Config.timeOutExport);
                             }
                         }
                         message2.innerText = `Generando archivo pdf,\nesto puede tomar un momento.`;
@@ -1168,6 +1170,7 @@ export class Routines {
                             }
                             message1.value = `${dataToExport.length} / ${totalRegisters}`;
                             offset = Config.limitExport + (offset);
+                            await sleep(Config.timeOutExport);
                         }
                     }
                 
