@@ -1,10 +1,6 @@
 ## Accesos
 
 ### Plataforma web Clientes _(firebase)_
-**Enlace:** https://netlinks-sa-clientes.firebaseapp.com/
-**Usuario:** davalejoalba@hotmail.com
-**Contraseña:** Sistema123
-
 # Códigos HTTPS
 
 ## 100
