@@ -59,7 +59,8 @@ export class SignIn {
                             "value": `Enabled`
                           },
                         ]
-                    }
+                    },
+                    limit:1
                 });
                 let user = await getFilterEntityData("User", raw);
                 const reqOptions = {
