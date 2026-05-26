@@ -244,6 +244,7 @@ export class SuperUsers {
         this.import();
         this.export();
         this.edit(this.entityDialogContainer, data);
+        this.plataformUser();
         this.remove();
         this.convertToSuper();
         this.changeUserPassword();
