@@ -229,6 +229,8 @@ export class SuperUsers {
               <i class="fa-solid fa-pen"></i>
             </button>
 
+            <button class="button" id="plataform-entity" data-entityId="${client.id}" data-entityName="${client.username}"><i class="fa-solid fa-laptop"></i></button>
+
             <button class="button" id="remove-entity" data-entityId="${client.id}">
               <i class="fa-solid fa-trash"></i>
             </button>
@@ -1016,6 +1018,154 @@ export class SuperUsers {
                 };
         });
     };
+    plataformUser() {
+        const plataform = document.querySelectorAll('#plataform-entity');
+        plataform.forEach((element) => {
+            const entityId = element.dataset.entityid;
+            const entityName = element.dataset.entityname;
+            element.addEventListener('click', () => {
+                modalTable(0, entityId, entityName);
+            });
+        });
+        async function modalTable(offset, id, username) {
+            const dialogContainer = document.getElementById('app-dialogs');
+            //const guards = await getDetails('routine.id', routine.id, 'RoutineUser');
+            let raw = JSON.stringify({
+                "filter": {
+                    "conditions": [
+                        {
+                            "property": "user.id",
+                            "operator": "=",
+                            "value": `${id}`
+                        }
+                    ],
+                },
+                sort: "-createdDate",
+                limit: Config.modalRows,
+                offset: offset
+            });
+            let dataModal = await getFilterEntityData("PlataformAccess", raw);
+            dialogContainer.style.display = 'block';
+            dialogContainer.innerHTML = `
+                  <div class="dialog_content" id="dialog-content">
+                      <div class="dialog">
+                          <div class="dialog_container padding_8">
+                              <div class="dialog_header">
+                                  <h2>Sesiones en Plataforma de Monitoreo:\n${username}</h2>
+                              </div>
+    
+                              <div class="dialog_message padding_8">
+                                  <div class="dashboard_datatable">
+                                      <table class="datatable_content margin_t_16">
+                                      <thead>
+                                          <tr>
+                                            <th>Nombre Producto</th>
+                                            <th>Producto ID</th>
+                                            <th>Dispositivo ID</th>
+                                            <th>Nombre PC</th>
+                                            <th>Usuario</th>
+                                            <th>Fecha</th>
+                                          </tr>
+                                      </thead>
+                                      <tbody id="datatable-modal-body">
+                                      </tbody>
+                                      </table>
+                                  </div>
+                                  <br>
+                              </div>
+    
+                              <div class="dialog_footer">
+                                  <button class="btn btn_primary" id="prevModal"><i class="fa-solid fa-arrow-left"></i></button>
+                                  <button class="btn btn_primary" id="nextModal"><i class="fa-solid fa-arrow-right"></i></button>
+                                  <button class="btn btn_primary" id="plataform-cancel">Cancelar</button>
+                                  <button class="btn btn_danger" id="plataform-reset">Permitir dispositivo nuevo</button>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              `;
+            inputObserver();
+            const datetableBody = document.getElementById('datatable-modal-body');
+            const subtractTimeFromDate = (objDate, intHours) => {
+                var servidorDate = new Date(objDate);
+                var numberOfMlSeconds = servidorDate.getTime();
+                var addMlSeconds = (intHours * 60) * 60000;
+                var newDateObj = new Date(numberOfMlSeconds - addMlSeconds);
+                const addCero = (value) => {
+                    if (value < 10) {
+                        return '0' + value;
+                    }
+                    else {
+                        return value;
+                    }
+                };
+                return `${addCero(newDateObj.getDate())}/${addCero(newDateObj.getMonth() + 1)}/${newDateObj.getFullYear()} ${addCero(newDateObj.getHours())}:${addCero(newDateObj.getMinutes())}:${addCero(newDateObj.getSeconds())}`;
+            };
+            if (dataModal.length === 0) {
+                let row = document.createElement('tr');
+                row.innerHTML = `
+                      <td>No hay datos</td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                  `;
+                datetableBody.appendChild(row);
+            }
+            else {
+                for (let i = 0; i < dataModal.length; i++) {
+                    let register = dataModal[i];
+                    let row = document.createElement('tr');
+                    row.innerHTML += `
+                        <td>${register?.productName ?? ''}</td> 
+                        <td>${register?.productId ?? ''}</td> 
+                        <td>${register?.deviceId ?? ''}</td>
+                        <td>${register?.computerName ?? ''}</td>
+                        <td>${register?.userName ?? ''}</td>
+                        <td>${register.createdDate}</td>
+
+                    `;
+                    //<td>${subtractTimeFromDate(register.createdDate, 5)}</td>
+                    datetableBody.appendChild(row);
+                }
+            }
+            const _closeButton = document.getElementById('plataform-cancel');
+            const _resetButton = document.getElementById('plataform-reset');
+            const _dialog = document.getElementById('dialog-content');
+            const prevModalButton = document.getElementById('prevModal');
+            const nextModalButton = document.getElementById('nextModal');
+            _closeButton.onclick = () => {
+                new CloseDialog().x(_dialog);
+            };
+            _resetButton.onclick = () => {
+                const raw = JSON.stringify({
+                    "business": {
+                        "id": `${businessId}`
+                    },
+                    "user": {
+                        "id": `${id}`
+                    },
+                    "productName": '#NEWPLATAFORMADD'
+                });
+                registerEntity(raw, 'PlataformAccess').then((res) => {
+                    setTimeout(async () => {
+                        modalTable(0, id, username);
+                    }, 1000);
+                });
+            };
+            nextModalButton.onclick = () => {
+                offset = Config.modalRows + (offset);
+                modalTable(offset, id, username);
+            };
+            prevModalButton.onclick = () => {
+                if (offset > 0) {
+                    offset = offset - Config.modalRows;
+                    modalTable(offset, id, username);
+                }
+            };
+        }
+    }
     pagination(items, limitRows, currentPage) {
       const tableBody = document.getElementById('datatable-body');
       const paginationWrapper = document.getElementById('pagination-container');
