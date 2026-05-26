@@ -1142,7 +1142,7 @@ export class SuperUsers {
             _resetButton.onclick = () => {
                 const raw = JSON.stringify({
                     "business": {
-                        "id": `${businessId}`
+                        "id": `${Config.currentUser.business.id}`
                     },
                     "user": {
                         "id": `${id}`
