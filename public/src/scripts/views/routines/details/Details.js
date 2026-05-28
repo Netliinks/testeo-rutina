@@ -35,7 +35,7 @@ const currentBusiness = async () => {
     const business = await getEntityData('User', `${currentUser.attributes.id}`);
     return business;
 };
-const GetRoutinesDetails = async () => {
+const GetRoutinesDetails = async (forceReloadPage1 = false) => {
     //const notesRaw = await getEntitiesData('RoutineRegister');
     //const notes = notesRaw.filter((data) => data.customer?.id === `${customerId}`);
     infoPage.counter = 10;
@@ -160,10 +160,32 @@ const GetRoutinesDetails = async () => {
         };
     }
 
-    if(dataPage.length == 0){
+    if(dataPage.length == 0 || infoPage.offset != 0 || forceReloadPage1){
         infoPage.count = await getFilterEntityCount("RoutineRegister", JSON.stringify(raw));
         dataPage = await getFilterEntityData("RoutineRegister", JSON.stringify(raw));
-    }else if(infoPage.lastCreatedDate){
+        if (infoPage.offset == 0 && dataPage.length > 0) {
+            let latestTs = infoPage.lastCreatedDate ? new Date(infoPage.lastCreatedDate).getTime() : 0;
+            let latestDate = infoPage.lastCreatedDate;
+            dataPage.forEach((record) => {
+                if (record?.createdDate) {
+                    const createdTs = new Date(record.createdDate).getTime();
+                    if (createdTs > latestTs) {
+                        latestTs = createdTs;
+                        latestDate = record.createdDate;
+                    }
+                }
+                if (record?.lastModifiedDate) {
+                    const modifiedTs = new Date(record.lastModifiedDate).getTime();
+                    if (modifiedTs > latestTs) {
+                        latestTs = modifiedTs;
+                        latestDate = record.lastModifiedDate;
+                    }
+                }
+            });
+            infoPage.lastCreatedDate = latestDate;
+        }
+    }
+    else if (infoPage.offset == 0 && infoPage.lastCreatedDate) {
         const query = {
             ...raw,
             filter: {
@@ -171,24 +193,88 @@ const GetRoutinesDetails = async () => {
                 conditions: [
                     ...raw.filter.conditions,
                     {
-                        "property": "createdDate",
-                        "operator": ">",
-                        "value": `${infoPage.lastCreatedDate}`
+                        "group": "OR",
+                        "conditions": [
+                            {
+                                "property": "createdDate",
+                                "operator": ">",
+                                "value": `${infoPage.lastCreatedDate}`
+                            },
+                            {
+                                "property": "lastModifiedDate",
+                                "operator": ">",
+                                "value": `${infoPage.lastCreatedDate}`
+                            }
+                        ]
                     }
                 ]
             }
         };
         infoPage.newData = await getFilterEntityData("RoutineRegister", JSON.stringify(query));
     }
-
-    // Check if there are new records to add
-    if(infoPage.newData.length > 0){
-        dataPage = [...infoPage.newData,...dataPage];
-        infoPage.countNewRegister += infoPage.newData.length;
+    // Check if there are new records to add or existing records to update
+    if (infoPage.offset == 0 && infoPage.newData.length > 0) {
+        let addedCount = 0;
+        let newestCreatedDate = infoPage.lastCreatedDate;
+        let newestModifiedDate = infoPage.lastCreatedDate;
+        let hasUpdates = false;
+        infoPage.newData.forEach((newRecord) => {
+            const existingIndex = dataPage.findIndex((item) => item?.id === newRecord?.id);
+            const recordExists = existingIndex >= 0;
+            if (recordExists) {
+                hasUpdates = true;
+                dataPage[existingIndex] = newRecord;
+                if (newRecord?.lastModifiedDate) {
+                    const modifiedTs = new Date(newRecord.lastModifiedDate).getTime();
+                    const currentTs = newestModifiedDate ? new Date(newestModifiedDate).getTime() : 0;
+                    if (modifiedTs > currentTs) {
+                        newestModifiedDate = newRecord.lastModifiedDate;
+                    }
+                }
+                return;
+            }
+            const currentTs = infoPage.lastCreatedDate ? new Date(infoPage.lastCreatedDate).getTime() : 0;
+            const createdTs = newRecord?.createdDate ? new Date(newRecord.createdDate).getTime() : 0;
+            const isReallyNew = newRecord?.createdDate && createdTs > currentTs;
+            if (!isReallyNew) {
+                // Si no existe en dataPage y no es un registro nuevo, no lo agregamos.
+                if (newRecord?.lastModifiedDate) {
+                    const modifiedTs = new Date(newRecord.lastModifiedDate).getTime();
+                    const currentModifiedTs = newestModifiedDate ? new Date(newestModifiedDate).getTime() : 0;
+                    if (modifiedTs > currentModifiedTs) {
+                        newestModifiedDate = newRecord.lastModifiedDate;
+                    }
+                }
+                return;
+            }
+            dataPage.unshift(newRecord);
+            addedCount += 1;
+            if (createdTs > (newestCreatedDate ? new Date(newestCreatedDate).getTime() : 0)) {
+                newestCreatedDate = newRecord.createdDate;
+            }
+        });
+        infoPage.countNewRegister += addedCount;
+        if (infoPage.offset == 0) {
+            // Limit dataPage size to tableRows when on page 1
+            if (dataPage.length > tableRows) {
+                dataPage.splice(tableRows);
+            }
+            let latestTs = infoPage.lastCreatedDate ? new Date(infoPage.lastCreatedDate).getTime() : 0;
+            let latestDate = infoPage.lastCreatedDate;
+            if (newestCreatedDate && new Date(newestCreatedDate).getTime() > latestTs) {
+                latestTs = new Date(newestCreatedDate).getTime();
+                latestDate = newestCreatedDate;
+            }
+            if (newestModifiedDate && new Date(newestModifiedDate).getTime() > latestTs) {
+                latestTs = new Date(newestModifiedDate).getTime();
+                latestDate = newestModifiedDate;
+            }
+            if (latestDate) {
+                infoPage.lastCreatedDate = latestDate;
+            }
+        }
         //console.log("Adding new records:", dataPage)
     }
-
-    infoPage.lastCreatedDate = infoPage.offset == 0 ? dataPage[0]?.createdDate : infoPage.lastCreatedDate;
     return dataPage;
 };
 export class RoutineRegisters {
@@ -197,6 +283,13 @@ export class RoutineRegisters {
         this.siebarDialogContainer = document.getElementById('entity-editor-container');
         this.appContainer = document.getElementById('datatable-container');
         this.render = async (offset, actualPage, search, check, statusSearch) => {
+            const previousSearch = infoPage.search;
+            const previousStatus = infoPage.statusSearch;
+            const previousCheck = infoPage.check;
+            const returningToPage1 = actualPage === 1 && infoPage.currentPage !== 1;
+            const searchChanged = search !== previousSearch;
+            const statusChanged = statusSearch !== previousStatus;
+            const checkChanged = check !== previousCheck;
             infoPage.offset = offset;
             infoPage.currentPage = actualPage;
             infoPage.search = search;
@@ -211,7 +304,7 @@ export class RoutineRegisters {
             // Changing interface element content
             viewTitle.innerText = pageName;
             tableBody.innerHTML = '.Cargando... Esto puede tomar unos momentos';
-            let notesArray = await GetRoutinesDetails();
+            let notesArray = await GetRoutinesDetails(returningToPage1 || searchChanged || statusChanged || checkChanged);
             if(infoPage.currentPage == 1){
                 const change = async () => {
                     clearTimeout(Config.timeOut);
@@ -352,6 +445,11 @@ export class RoutineRegisters {
                 // Rendering icons*/
             });
             btnSearch.addEventListener('click', async () => {
+                infoPage.offset = Config.offset;
+                infoPage.currentPage = Config.currentPage;
+                infoPage.lastCreatedDate = undefined;
+                infoPage.countNewRegister = 0;
+                dataPage = [];
                 new RoutineRegisters().render(Config.offset, Config.currentPage, search.value.toLowerCase().trim(), check.checked, statusSearch.value);
             });
         };
