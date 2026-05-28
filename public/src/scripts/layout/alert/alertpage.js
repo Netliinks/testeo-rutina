@@ -25,7 +25,7 @@ let infoPage = {
     newRegister: false,
     countNewRegister1: 0,
     countNewRegister2: 0,
-    lastCreatedDate: null,
+    lastCreatedDate: undefined,
 };
 let dataPage = [];
 let raw1; //RoutineRegister
@@ -221,9 +221,8 @@ export class AlertsRegisters {
                             console.log("no updates")
                             Config.timeOut = setTimeout(change, infoPage.counter);
                         }*/
-                       console.log("verificando actualizaciones...");
+                       console.log(`verificando actualizaciones...`);
                         new AlertsRegisters().render();
-                        Config.timeOut = setTimeout(change, infoPage.counter);
                         
                     }else if(infoPage.counter == 10){
                         infoPage.counter = Config.timeReolad;

@@ -24,9 +24,11 @@ let infoPage = {
     table: "RoutineRegister",
     newRegister: false,
     countNewRegister: 0,
-    statusSearch: "Todos"
+    statusSearch: "Todos",
+    newData: [],
+    lastCreatedDate: undefined,
 };
-let dataPage;
+let dataPage = [];
 let raw;
 const currentBusiness = async () => {
     const currentUser = await getUserInfo();
@@ -38,6 +40,8 @@ const GetRoutinesDetails = async () => {
     //const notes = notesRaw.filter((data) => data.customer?.id === `${customerId}`);
     infoPage.counter = 10;
     clearTimeout(Config.timeOut);
+    infoPage.newData = [];
+    infoPage.countNewRegister = 0;
     let status = false;
     let condition = '<>';
     if(infoPage.statusSearch == 'Marcadas'){
@@ -48,9 +52,44 @@ const GetRoutinesDetails = async () => {
     }
     if(infoPage.check == true){
         const businessData = await currentBusiness();
-        raw = JSON.stringify({
+        raw = {
             "filter": {
                 "conditions": [
+                    {
+                        "group": "OR",
+                        "conditions": [
+                            {
+                                "property": "user.username",
+                                "operator": "contains",
+                                "value": `${infoPage.search.toLowerCase()}`
+                            },
+                            {
+                                "property": "user.firstName",
+                                "operator": "contains",
+                                "value": `${infoPage.search.toLowerCase()}`
+                            },
+                            {
+                                "property": "user.lastName",
+                                "operator": "contains",
+                                "value": `${infoPage.search.toLowerCase()}`
+                            },
+                            {
+                                "property": "routine.name",
+                                "operator": "contains",
+                                "value": `${infoPage.search.toLowerCase()}`
+                            },
+                            {
+                                "property": "routineSchedule.name",
+                                "operator": "contains",
+                                "value": `${infoPage.search.toLowerCase()}`
+                            },
+                            {
+                                "property": "customer.name",
+                                "operator": "contains",
+                                "value": `${infoPage.search.toLowerCase()}`
+                            }
+                        ]
+                    },
                     {
                         "property": "business.id",
                         "operator": "=",
@@ -67,68 +106,41 @@ const GetRoutinesDetails = async () => {
             limit: Config.tableRows,
             offset: infoPage.offset,
             fetchPlan: 'full',
-        });
-        if (infoPage.search != "") {
-            raw = JSON.stringify({
-                "filter": {
-                    "conditions": [
-                        {
-                            "group": "OR",
-                            "conditions": [
-                                {
-                                    "property": "user.username",
-                                    "operator": "contains",
-                                    "value": `${infoPage.search.toLowerCase()}`
-                                },
-                                {
-                                    "property": "user.firstName",
-                                    "operator": "contains",
-                                    "value": `${infoPage.search.toLowerCase()}`
-                                },
-                                {
-                                    "property": "user.lastName",
-                                    "operator": "contains",
-                                    "value": `${infoPage.search.toLowerCase()}`
-                                },
-                                {
-                                    "property": "routine.name",
-                                    "operator": "contains",
-                                    "value": `${infoPage.search.toLowerCase()}`
-                                },
-                                {
-                                    "property": "routineSchedule.name",
-                                    "operator": "contains",
-                                    "value": `${infoPage.search.toLowerCase()}`
-                                },
-                                {
-                                    "property": "customer.name",
-                                    "operator": "contains",
-                                    "value": `${infoPage.search.toLowerCase()}`
-                                }
-                            ]
-                        },
-                        {
-                            "property": "business.id",
-                            "operator": "=",
-                            "value": `${businessData.business.id}`
-                        },
-                        {
-                            "property": "routineState.name",
-                            "operator": `${condition}`,
-                            "value": `${status ? 'No cumplido' : ""}`
-                        }
-                    ]
-                },
-                sort: "-createdDate",
-                limit: Config.tableRows,
-                offset: infoPage.offset,
-                fetchPlan: 'full',
-            });
-        }
+        };
     }else{
-        raw = JSON.stringify({
+        raw = {
             "filter": {
                 "conditions": [
+                    {
+                        "group": "OR",
+                        "conditions": [
+                            {
+                                "property": "user.username",
+                                "operator": "contains",
+                                "value": `${infoPage.search.toLowerCase()}`
+                            },
+                            {
+                                "property": "user.firstName",
+                                "operator": "contains",
+                                "value": `${infoPage.search.toLowerCase()}`
+                            },
+                            {
+                                "property": "user.lastName",
+                                "operator": "contains",
+                                "value": `${infoPage.search.toLowerCase()}`
+                            },
+                            {
+                                "property": "routine.name",
+                                "operator": "contains",
+                                "value": `${infoPage.search.toLowerCase()}`
+                            },
+                            {
+                                "property": "routineSchedule.name",
+                                "operator": "contains",
+                                "value": `${infoPage.search.toLowerCase()}`
+                            }
+                        ]
+                    },
                     {
                         "property": "customer.id",
                         "operator": "=",
@@ -145,63 +157,38 @@ const GetRoutinesDetails = async () => {
             limit: Config.tableRows,
             offset: infoPage.offset,
             fetchPlan: 'full',
-        });
-        if (infoPage.search != "") {
-            raw = JSON.stringify({
-                "filter": {
-                    "conditions": [
-                        {
-                            "group": "OR",
-                            "conditions": [
-                                {
-                                    "property": "user.username",
-                                    "operator": "contains",
-                                    "value": `${infoPage.search.toLowerCase()}`
-                                },
-                                {
-                                    "property": "user.firstName",
-                                    "operator": "contains",
-                                    "value": `${infoPage.search.toLowerCase()}`
-                                },
-                                {
-                                    "property": "user.lastName",
-                                    "operator": "contains",
-                                    "value": `${infoPage.search.toLowerCase()}`
-                                },
-                                {
-                                    "property": "routine.name",
-                                    "operator": "contains",
-                                    "value": `${infoPage.search.toLowerCase()}`
-                                },
-                                {
-                                    "property": "routineSchedule.name",
-                                    "operator": "contains",
-                                    "value": `${infoPage.search.toLowerCase()}`
-                                }
-                            ]
-                        },
-                        {
-                            "property": "customer.id",
-                            "operator": "=",
-                            "value": `${customerId}`
-                        },
-                        {
-                            "property": "routineState.name",
-                            "operator": `${condition}`,
-                            "value": `${status ? 'No cumplido' : ""}`
-                        }
-                    ]
-                },
-                sort: "-createdDate",
-                limit: Config.tableRows,
-                offset: infoPage.offset,
-                fetchPlan: 'full',
-            });
-        }
+        };
     }
 
-    infoPage.count = await getFilterEntityCount("RoutineRegister", raw);
-    dataPage = await getFilterEntityData("RoutineRegister", raw);
+    if(dataPage.length == 0){
+        infoPage.count = await getFilterEntityCount("RoutineRegister", JSON.stringify(raw));
+        dataPage = await getFilterEntityData("RoutineRegister", JSON.stringify(raw));
+    }else if(infoPage.lastCreatedDate){
+        const query = {
+            ...raw,
+            filter: {
+                ...raw.filter,
+                conditions: [
+                    ...raw.filter.conditions,
+                    {
+                        "property": "createdDate",
+                        "operator": ">",
+                        "value": `${infoPage.lastCreatedDate}`
+                    }
+                ]
+            }
+        };
+        infoPage.newData = await getFilterEntityData("RoutineRegister", JSON.stringify(query));
+    }
+
+    // Check if there are new records to add
+    if(infoPage.newData.length > 0){
+        dataPage = [...infoPage.newData,...dataPage];
+        infoPage.countNewRegister += infoPage.newData.length;
+        //console.log("Adding new records:", dataPage)
+    }
+
+    infoPage.lastCreatedDate = infoPage.offset == 0 ? dataPage[0]?.createdDate : infoPage.lastCreatedDate;
     return dataPage;
 };
 export class RoutineRegisters {
@@ -209,12 +196,12 @@ export class RoutineRegisters {
         this.dialogContainer = document.getElementById('app-dialogs');
         this.siebarDialogContainer = document.getElementById('entity-editor-container');
         this.appContainer = document.getElementById('datatable-container');
-        this.render = async (offset, actualPage, search, check, countNewRegister, statusSearch) => {
+        this.render = async (offset, actualPage, search, check, statusSearch) => {
             infoPage.offset = offset;
             infoPage.currentPage = actualPage;
             infoPage.search = search;
             infoPage.check = check;
-            infoPage.countNewRegister = countNewRegister;
+            //infoPage.countNewRegister = countNewRegister;
             infoPage.statusSearch = statusSearch;
             this.appContainer.innerHTML = '';
             this.appContainer.innerHTML = UIContentLayout;
@@ -229,10 +216,10 @@ export class RoutineRegisters {
                 const change = async () => {
                     clearTimeout(Config.timeOut);
                     if(infoPage.counter == Config.timeReolad){
-                        const newRegisters = await getFilterEntityCount(infoPage.table, raw);
+                        //const newRegisters = await getFilterEntityCount(infoPage.table, raw);
                         //console.log(infoPage.count);
                         //console.log(newRegisters);
-                        if(newRegisters > infoPage.count){
+                        /*if(newRegisters > infoPage.count){
                             console.log("updates detected")
                             infoPage.newRegister = true;
                             infoPage.countNewRegister = newRegisters - infoPage.count;
@@ -240,8 +227,9 @@ export class RoutineRegisters {
                         }else{
                             console.log("no updates")
                             Config.timeOut = setTimeout(change, infoPage.counter);
-                        }
-                        
+                        }*/
+                       console.log(`verificando actualizaciones...`);
+                        new RoutineRegisters().render(infoPage.offset, infoPage.currentPage, infoPage.search, infoPage.check, infoPage.statusSearch);
                     }else if(infoPage.counter == 10){
                         infoPage.counter = Config.timeReolad;
                         Config.timeOut = setTimeout(change, infoPage.counter);
@@ -364,7 +352,7 @@ export class RoutineRegisters {
                 // Rendering icons*/
             });
             btnSearch.addEventListener('click', async () => {
-                new RoutineRegisters().render(Config.offset, Config.currentPage, search.value.toLowerCase().trim(), check.checked, 0, statusSearch.value);
+                new RoutineRegisters().render(Config.offset, Config.currentPage, search.value.toLowerCase().trim(), check.checked, statusSearch.value);
             });
         };
         /*this.obtainDelay = async (register) =>{
@@ -462,7 +450,7 @@ export class RoutineRegisters {
                                 let container = document.getElementById('entity-editor-container');
                                 //let data = await getUsers();
                                 new CloseDialog().x(container);
-                                new RoutineRegisters().render(infoPage.offset, infoPage.currentPage, infoPage.search, infoPage.check, infoPage.countNewRegister, infoPage.statusSearch);
+                                new RoutineRegisters().render(infoPage.offset, infoPage.currentPage, infoPage.search, infoPage.check, infoPage.statusSearch);
                             }, 100)
                         })
                 }
@@ -839,7 +827,7 @@ export class RoutineRegisters {
             button.addEventListener('click', () => {
                 infoPage.offset = Config.tableRows * (page - 1);
                 currentPage = page;
-                new RoutineRegisters().render(infoPage.offset, currentPage, infoPage.search, infoPage.check, 0, infoPage.statusSearch); //new RoutineRegisters().load(tableBody, page, items)
+                new RoutineRegisters().render(infoPage.offset, currentPage, infoPage.search, infoPage.check, infoPage.statusSearch); //new RoutineRegisters().load(tableBody, page, items)
             });
             return button;
         }
@@ -865,11 +853,11 @@ export class RoutineRegisters {
         }
         function setupButtonsEvents(prevButton, nextButton) {
             prevButton.addEventListener('click', () => {
-                new RoutineRegisters().render(Config.offset, Config.currentPage, infoPage.search, infoPage.check, 0, infoPage.statusSearch);
+                new RoutineRegisters().render(Config.offset, Config.currentPage, infoPage.search, infoPage.check, infoPage.statusSearch);
             });
             nextButton.addEventListener('click', () => {
                 infoPage.offset = Config.tableRows * (pageCount - 1);
-                new RoutineRegisters().render(infoPage.offset, pageCount, infoPage.search, infoPage.check, 0, infoPage.statusSearch);
+                new RoutineRegisters().render(infoPage.offset, pageCount, infoPage.search, infoPage.check, infoPage.statusSearch);
             });
         }
     };

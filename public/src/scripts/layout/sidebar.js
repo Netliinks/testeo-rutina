@@ -394,7 +394,7 @@ renders() {
     document.getElementById('render-routineDetails')?.addEventListener('click', () => {
       clearTimeout(Config.timeOut);
       Config.currentScreen = null;
-      new RoutineRegisters().render(Config.offset, Config.currentPage, "", false, 0, "Todos");
+      new RoutineRegisters().render(Config.offset, Config.currentPage, "", false, "Todos");
     });
 
     document.getElementById('render-credentials')?.addEventListener('click', () => {
