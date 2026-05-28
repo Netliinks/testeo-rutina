@@ -18,13 +18,16 @@ let infoPage = {
     count2: 0,//Notification
     data1: [],//RoutineRegister
     data2: [],//Notification
+    data1_1: [],//RoutineRegister
+    data2_2: [],//Notification
     counter: 10,
     table: ["RoutineRegister", "Notification"],
     newRegister: false,
     countNewRegister1: 0,
     countNewRegister2: 0,
+    lastCreatedDate: null,
 };
-let dataPage;
+let dataPage = [];
 let raw1; //RoutineRegister
 let raw2; //Notification
 const GetAlerts = async () => {
@@ -32,7 +35,11 @@ const GetAlerts = async () => {
     //const notes = notesRaw.filter((data) => data.customer?.id === `${customerId}`);
     infoPage.counter = 10;
     clearTimeout(Config.timeOut);
-    raw1 = JSON.stringify({
+    infoPage.data1_1 = []; // Reset data1_1
+    infoPage.data2_2 = []; // Reset data2_2
+    infoPage.countNewRegister1 = 0; // Reset new register count for RoutineRegister
+    infoPage.countNewRegister2 = 0; // Reset new register count for Notification
+    raw1 = {
         "filter": {
             "conditions": [
                 {
@@ -51,9 +58,9 @@ const GetAlerts = async () => {
         limit: Config.tableRows,
         //offset: infoPage.offset,
         fetchPlan: 'full',
-    });
+    };
 
-    raw2 = JSON.stringify({
+    raw2 = {
         "filter": {
             "conditions": [
                 {
@@ -92,27 +99,91 @@ const GetAlerts = async () => {
         limit: Config.tableRows,
         //offset: infoPage.offset,
         fetchPlan: 'full',
-    });
+    };
 
     for(let i = 0; i < infoPage.table.length; i++){
         if(infoPage.table[i] == "RoutineRegister"){
-            if(infoPage.count1 == 0 || infoPage.countNewRegister1 > 0){
-                infoPage.count1 = await getFilterEntityCount("RoutineRegister", raw1);
-                infoPage.data1 = await getFilterEntityData("RoutineRegister", raw1);
+            /*if(infoPage.count1 == 0 || infoPage.countNewRegister1 > 0){
+                //infoPage.count1 = await getFilterEntityCount("RoutineRegister", raw1);
+  
+            }*/
+           if(infoPage.data1.length == 0){
+                infoPage.data1 = await getFilterEntityData("RoutineRegister", JSON.stringify(raw1));
+            }else if(infoPage.lastCreatedDate){
+                const query1 = {
+                    ...raw1,
+                    filter: {
+                        ...raw1.filter,
+                        conditions: [
+                            ...raw1.filter.conditions,
+                            {
+                                "property": "createdDate",
+                                "operator": ">",
+                                "value": `${infoPage.lastCreatedDate}`
+                            }
+                        ]
+                    }
+                };
+                infoPage.data1_1 = await getFilterEntityData("RoutineRegister", JSON.stringify(query1));
             }
         }else if(infoPage.table[i] == "Notification"){
-            if(infoPage.count2 == 0 || infoPage.countNewRegister2 > 0){
-                infoPage.count2 = await getFilterEntityCount("Notification", raw2);
-                infoPage.data2 = await getFilterEntityData("Notification", raw2);
+            /*if(infoPage.count2 == 0 || infoPage.countNewRegister2 > 0){
+                //infoPage.count2 = await getFilterEntityCount("Notification", raw2);
+                infoPage.data2 = await getFilterEntityData("Notification", JSON.stringify(raw2));
+            }*/
+           if(infoPage.data2.length == 0){
+                infoPage.data2 = await getFilterEntityData("Notification", JSON.stringify(raw2));
+            }else if(infoPage.lastCreatedDate){
+                const query2 = {
+                    ...raw2,
+                    filter: {
+                        ...raw2.filter,
+                        conditions: [
+                            ...raw2.filter.conditions,
+                            {
+                                "property": "createdDate",
+                                "operator": ">",
+                                "value": `${infoPage.lastCreatedDate}`
+                            }
+                        ]
+                    }
+                };
+                infoPage.data2_2 = await getFilterEntityData("Notification", JSON.stringify(query2));
             }
         }
     }
-    dataPage = [...infoPage.data1, ...infoPage.data2];
+
+    // Check if there are new records to add
+    if(infoPage.data1_1.length > 0 || infoPage.data2_2.length > 0){
+        dataPage = [...infoPage.data1, ...infoPage.data2,...infoPage.data1_1, ...infoPage.data2_2];
+        // Persist new records for next iteration
+        if(infoPage.data1_1.length > 0){
+            infoPage.countNewRegister1 += infoPage.data1_1.length;
+            infoPage.data1 = [...infoPage.data1, ...infoPage.data1_1];
+        }
+        if(infoPage.data2_2.length > 0){
+            infoPage.countNewRegister2 += infoPage.data2_2.length;
+            infoPage.data2 = [...infoPage.data2, ...infoPage.data2_2];
+        }
+        //console.log("Adding new records:", dataPage)
+    }else{
+        dataPage = [...infoPage.data1, ...infoPage.data2];
+        //console.log("Initial load:", dataPage)
+    }
+    
     dataPage.sort((a,b) => {
         let dateA = new Date(`${a.createdDate}`);
         let dateB = new Date(`${b.createdDate}`);
         return dateB - dateA;
     });
+    
+    if (dataPage.length > tableRows) {
+        dataPage.splice(tableRows);
+    }
+    //console.log("Final dataPage:", dataPage)
+    
+    infoPage.lastCreatedDate = dataPage[0]?.createdDate;
+    //console.log(dataPage.length)
     return dataPage;
 };
 export class AlertsRegisters {
@@ -120,14 +191,8 @@ export class AlertsRegisters {
         this.dialogContainer = document.getElementById('app-dialogs');
         this.siebarDialogContainer = document.getElementById('entity-editor-container');
         this.appContainer = document.getElementById('datatable-container');
-        this.render = async (data1, data2, count1, count2, countNewRegister1, countNewRegister2) => {
+        this.render = async () => {
             Config.currentScreen = "AlertsRegisters";
-            infoPage.data1 = data1;
-            infoPage.data2 = data2;
-            infoPage.count1 = count1;
-            infoPage.count2 = count2;
-            infoPage.countNewRegister1 = countNewRegister1;
-            infoPage.countNewRegister2 = countNewRegister2;
             this.appContainer.innerHTML = '';
             this.appContainer.innerHTML = UIContentLayout;
             // Getting interface elements
@@ -142,20 +207,23 @@ export class AlertsRegisters {
                 const change = async () => {
                     clearTimeout(Config.timeOut);
                     if(infoPage.counter == Config.timeReolad){
-                        const newRegisters1 = await getFilterEntityCount(infoPage.table[0], raw1);
-                        const newRegisters2 = await getFilterEntityCount(infoPage.table[1], raw2);
+                        //const newRegisters1 = await getFilterEntityCount(infoPage.table[0], raw1);
+                        //const newRegisters2 = await getFilterEntityCount(infoPage.table[1], raw2);
                         //console.log(infoPage.count);
                         //console.log(newRegisters);
-                        if(newRegisters1 > infoPage.count1 || newRegisters2 > infoPage.count2){
+                        /*if(newRegisters1 > infoPage.count1 || newRegisters2 > infoPage.count2){
                             console.log("updates detected")
                             infoPage.newRegister = true;
                             infoPage.countNewRegister1 = newRegisters1 - infoPage.count1;
                             infoPage.countNewRegister2 = newRegisters2 - infoPage.count2;
-                            new AlertsRegisters().render(infoPage.data1, infoPage.data2, infoPage.count1, infoPage.count2, infoPage.countNewRegister1, infoPage.countNewRegister2);
+                            new AlertsRegisters().render();
                         }else{
                             console.log("no updates")
                             Config.timeOut = setTimeout(change, infoPage.counter);
-                        }
+                        }*/
+                       console.log("verificando actualizaciones...");
+                        new AlertsRegisters().render();
+                        Config.timeOut = setTimeout(change, infoPage.counter);
                         
                     }else if(infoPage.counter == 10){
                         infoPage.counter = Config.timeReolad;
@@ -174,10 +242,10 @@ export class AlertsRegisters {
         this.load = async (tableBody, currentPage, notes) => {
             tableBody.innerHTML = ''; // clean table
             // configuring max table row size
-            currentPage--;
-            let start = tableRows * currentPage;
-            let end = start + tableRows;
-            let paginatedItems = notes.slice(start, end);
+            //currentPage--;
+            //let start = tableRows * currentPage;
+            //let end = start + tableRows;
+            //let paginatedItems = notes.slice(start, end);
             // Show message if page is empty
             if (notes.length === 0) {
                 let mensaje = 'No existen datos';
@@ -191,8 +259,8 @@ export class AlertsRegisters {
                 tableBody.appendChild(row);
             }
             else {
-                for (let i = 0; i < paginatedItems.length; i++) {
-                    let register = paginatedItems[i]; // getting note items
+                for (let i = 0; i < notes.length; i++) {
+                    let register = notes[i]; // getting note items
                     //let obsMessage = await this.obtainDelay(register);
                     let row = document.createElement('TR');
                     if(register._entityName == "RoutineRegister"){

@@ -276,7 +276,7 @@ renders() {
     document.getElementById('render-alertspages')?.addEventListener('click', () => {
       clearTimeout(Config.timeOut);
       Config.currentScreen = "AlertsRegisters";
-      new AlertsRegisters().render([], [], 0, 0, 0, 0);
+      new AlertsRegisters().render();
     });
     document.getElementById('render-customers')?.addEventListener('click', () => {
       clearTimeout(Config.timeOut);
