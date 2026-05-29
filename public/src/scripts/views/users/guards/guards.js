@@ -823,7 +823,9 @@ export class Guards {
                         if(existUserRoutine == undefined){
                             alert(`Ocurrió un error buscando rutina`);
                         }else if(existUserRoutine.length > 0){
-                            await deleteEntity('RoutineUser', existUserRoutine[0].id);
+                            for(let i=0; i<existUserRoutine.length; i++){
+                                await deleteEntity('RoutineUser', existUserRoutine[i].id);
+                            }
                             //alert(`No se puede cambiar la empresa, el guardia tiene rutina asignada en ${data?.customer?.name}`);
                             const raw2 = JSON.stringify({
                                 "user": {
@@ -1919,7 +1921,9 @@ export class Guards {
                                     if(existUserRoutine == undefined){
                                         alert(`Ocurrió un error buscando rutina`);
                                     }else if(existUserRoutine.length > 0){
-                                        await deleteEntity('RoutineUser', existUserRoutine[0].id);
+                                        for(let i=0; i<existUserRoutine.length; i++){
+                                            await deleteEntity('RoutineUser', existUserRoutine[i].id);
+                                        }
                                         const raw = JSON.stringify({
                                             "user": {
                                                 "id": `${entityId}`
