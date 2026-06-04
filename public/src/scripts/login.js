@@ -95,7 +95,7 @@ export class SignIn {
                     this.signOut();
                 });
             }else{
-                if(customerId == null){
+                if(customerId == null || customerId == undefined){
                     let user = await getEntityData('User', currentUser.id);
                     if(user.customer?.id != null || user.customer?.id != undefined){
                         await registryPlataform(user.id);
