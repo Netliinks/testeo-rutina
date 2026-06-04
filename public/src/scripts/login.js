@@ -98,7 +98,7 @@ export class SignIn {
                 if(customerId == null){
                     let user = await getEntityData('User', currentUser.id);
                     if(user.customer?.id != null || user.customer?.id != undefined){
-                        await registryPlataform(user[0].id);
+                        await registryPlataform(user.id);
                         localStorage.setItem('customer_id', user.customer?.id);
                         window.location.reload();
                     }else{
