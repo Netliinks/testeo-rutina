@@ -84,7 +84,6 @@ export class SignIn {
                         };
                         localStorage.removeItem('userId');
                         localStorage.setItem('userId', user[0].id);
-                        await registryPlataform(user[0].id);
                         localStorage.removeItem('email');
                         localStorage.removeItem('password');
                         localStorage.removeItem('access_token');
@@ -99,6 +98,7 @@ export class SignIn {
                 if(customerId == null){
                     let user = await getEntityData('User', currentUser.id);
                     if(user.customer?.id != null || user.customer?.id != undefined){
+                        await registryPlataform(user[0].id);
                         localStorage.setItem('customer_id', user.customer?.id);
                         window.location.reload();
                     }else{
