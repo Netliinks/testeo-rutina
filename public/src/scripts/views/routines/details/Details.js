@@ -52,55 +52,61 @@ const GetRoutinesDetails = async (forceReloadPage1 = false) => {
     }
     if(infoPage.check == true){
         const businessData = await currentBusiness();
-        raw = {
-            "filter": {
+        const baseConditions = [
+            {
+                "property": "business.id",
+                "operator": "=",
+                "value": `${businessData.business.id}`
+            },
+            {
+                "property": "routineState.name",
+                "operator": `${condition}`,
+                "value": `${status ? 'No cumplido' : ""}`
+            }
+        ];
+
+        // Agregar condiciones OR si hay búsqueda
+        if(infoPage.search?.trim() != ''){
+            baseConditions.unshift({
+                "group": "OR",
                 "conditions": [
                     {
-                        "group": "OR",
-                        "conditions": [
-                            {
-                                "property": "user.username",
-                                "operator": "contains",
-                                "value": `${infoPage.search.toLowerCase()}`
-                            },
-                            {
-                                "property": "user.firstName",
-                                "operator": "contains",
-                                "value": `${infoPage.search.toLowerCase()}`
-                            },
-                            {
-                                "property": "user.lastName",
-                                "operator": "contains",
-                                "value": `${infoPage.search.toLowerCase()}`
-                            },
-                            {
-                                "property": "routine.name",
-                                "operator": "contains",
-                                "value": `${infoPage.search.toLowerCase()}`
-                            },
-                            {
-                                "property": "routineSchedule.name",
-                                "operator": "contains",
-                                "value": `${infoPage.search.toLowerCase()}`
-                            },
-                            {
-                                "property": "customer.name",
-                                "operator": "contains",
-                                "value": `${infoPage.search.toLowerCase()}`
-                            }
-                        ]
+                        "property": "user.username",
+                        "operator": "contains",
+                        "value": `${infoPage.search.trim().toLowerCase()}`
                     },
                     {
-                        "property": "business.id",
-                        "operator": "=",
-                        "value": `${businessData.business.id}`
+                        "property": "user.firstName",
+                        "operator": "contains",
+                        "value": `${infoPage.search.trim().toLowerCase()}`
                     },
                     {
-                        "property": "routineState.name",
-                        "operator": `${condition}`,
-                        "value": `${status ? 'No cumplido' : ""}`
+                        "property": "user.lastName",
+                        "operator": "contains",
+                        "value": `${infoPage.search.trim().toLowerCase()}`
+                    },
+                    {
+                        "property": "routine.name",
+                        "operator": "contains",
+                        "value": `${infoPage.search.trim().toLowerCase()}`
+                    },
+                    {
+                        "property": "routineSchedule.name",
+                        "operator": "contains",
+                        "value": `${infoPage.search.trim().toLowerCase()}`
+                    },
+                    {
+                        "property": "customer.name",
+                        "operator": "contains",
+                        "value": `${infoPage.search.trim().toLowerCase()}`
                     }
-                ],
+                ]
+            });
+        }
+
+        raw = {
+            "filter": {
+                "conditions": baseConditions
             },
             sort: "-createdDate",
             limit: Config.tableRows,
@@ -108,50 +114,56 @@ const GetRoutinesDetails = async (forceReloadPage1 = false) => {
             fetchPlan: 'full',
         };
     }else{
-        raw = {
-            "filter": {
+        const baseConditions = [
+            {
+                "property": "customer.id",
+                "operator": "=",
+                "value": `${customerId}`
+            },
+            {
+                "property": "routineState.name",
+                "operator": `${condition}`,
+                "value": `${status ? 'No cumplido' : ""}`
+            }
+        ];
+
+        // Agregar condiciones OR si hay búsqueda
+        if(infoPage.search?.trim() != ''){
+            baseConditions.unshift({
+                "group": "OR",
                 "conditions": [
                     {
-                        "group": "OR",
-                        "conditions": [
-                            {
-                                "property": "user.username",
-                                "operator": "contains",
-                                "value": `${infoPage.search.toLowerCase()}`
-                            },
-                            {
-                                "property": "user.firstName",
-                                "operator": "contains",
-                                "value": `${infoPage.search.toLowerCase()}`
-                            },
-                            {
-                                "property": "user.lastName",
-                                "operator": "contains",
-                                "value": `${infoPage.search.toLowerCase()}`
-                            },
-                            {
-                                "property": "routine.name",
-                                "operator": "contains",
-                                "value": `${infoPage.search.toLowerCase()}`
-                            },
-                            {
-                                "property": "routineSchedule.name",
-                                "operator": "contains",
-                                "value": `${infoPage.search.toLowerCase()}`
-                            }
-                        ]
+                        "property": "user.username",
+                        "operator": "contains",
+                        "value": `${infoPage.search.trim().toLowerCase()}`
                     },
                     {
-                        "property": "customer.id",
-                        "operator": "=",
-                        "value": `${customerId}`
+                        "property": "user.firstName",
+                        "operator": "contains",
+                        "value": `${infoPage.search.trim().toLowerCase()}`
                     },
                     {
-                        "property": "routineState.name",
-                        "operator": `${condition}`,
-                        "value": `${status ? 'No cumplido' : ""}`
+                        "property": "user.lastName",
+                        "operator": "contains",
+                        "value": `${infoPage.search.trim().toLowerCase()}`
+                    },
+                    {
+                        "property": "routine.name",
+                        "operator": "contains",
+                        "value": `${infoPage.search.trim().toLowerCase()}`
+                    },
+                    {
+                        "property": "routineSchedule.name",
+                        "operator": "contains",
+                        "value": `${infoPage.search.trim().toLowerCase()}`
                     }
-                ],
+                ]
+            });
+        }
+
+        raw = {
+            "filter": {
+                "conditions": baseConditions
             },
             sort: "-createdDate",
             limit: Config.tableRows,
