@@ -2022,3 +2022,7 @@ i {
 .audit-container {
   padding: 2px 16px;
 }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

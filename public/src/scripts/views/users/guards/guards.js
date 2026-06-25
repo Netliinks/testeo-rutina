@@ -789,6 +789,7 @@ export class Guards {
                         xBtn.addEventListener('click', async (e) => {
                             e.stopPropagation();
                             xBtn.disabled = true;
+                            xBtn.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;"></span>';
                             await deleteGuardPhotoById(photoId);
                             renderPhotoGrid(photosCurrentPage);
                         });
