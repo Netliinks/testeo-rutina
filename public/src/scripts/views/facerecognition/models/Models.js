@@ -1,9 +1,12 @@
 import { getModels, requestModelTrain } from "../../../endpoints.js";
 import { Config } from "../../../Configs.js";
 
+const PAGE_SIZE = 10;
+
 export class Models {
     constructor() {
         this.datatableContainer = document.getElementById('datatable-container');
+        this.currentPage = 0;
     }
 
     async render() {
@@ -28,6 +31,11 @@ export class Models {
                             </tbody>
                         </table>
                     </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 16px;">
+                        <button class="btn" id="models-prev">&#8249; Anterior</button>
+                        <span id="models-page-info" style="font-size:13px;color:#808080;"></span>
+                        <button class="btn" id="models-next">Siguiente &#8250;</button>
+                    </div>
                 </div>
             </div>
         `;
@@ -42,7 +50,7 @@ export class Models {
                 setTimeout(() => {
                     trainBtn.disabled = false;
                     trainBtn.textContent = 'Entrenar modelo';
-                    this.loadModels();
+                    this.loadModels(this.currentPage);
                 }, 2000);
             } catch (err) {
                 console.error('requestModelTrain error:', err);
@@ -51,27 +59,43 @@ export class Models {
             }
         });
 
-        await this.loadModels();
+        document.getElementById('models-prev').addEventListener('click', () => {
+            if (this.currentPage > 0) this.loadModels(--this.currentPage);
+        });
+        document.getElementById('models-next').addEventListener('click', () => {
+            this.loadModels(++this.currentPage);
+        });
+
+        await this.loadModels(this.currentPage);
     }
 
-    async loadModels() {
+    async loadModels(page) {
         const tbody = document.getElementById('models-body');
+        const pageInfo = document.getElementById('models-page-info');
+        const prevBtn = document.getElementById('models-prev');
+        const nextBtn = document.getElementById('models-next');
         if (!tbody) return;
+
         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:24px;color:#808080;">Cargando...</td></tr>`;
-        const result = await getModels();
+
+        const result = await getModels(page, PAGE_SIZE);
         const models = Array.isArray(result) ? result : (result?.content ?? []);
+        const totalPages = result?.totalPages ?? (models.length < PAGE_SIZE ? page + 1 : page + 2);
 
         if (!models.length) {
             tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:24px;color:#808080;">Sin modelos</td></tr>`;
-            return;
+        } else {
+            tbody.innerHTML = models.map(m => `
+                <tr class="datatable_row">
+                    <td>${m.name ?? m.modelName ?? m.id ?? '-'}</td>
+                    <td>${m.status ?? m.state ?? '-'}</td>
+                    <td>${m.createdDate ?? m.creationDate ?? '-'}</td>
+                </tr>
+            `).join('');
         }
 
-        tbody.innerHTML = models.map(m => `
-            <tr class="datatable_row">
-                <td>${m.name ?? m.modelName ?? m.id ?? '-'}</td>
-                <td>${m.status ?? m.state ?? '-'}</td>
-                <td>${m.createdDate ?? m.creationDate ?? '-'}</td>
-            </tr>
-        `).join('');
+        pageInfo.textContent = `Página ${page + 1} / ${totalPages}`;
+        prevBtn.disabled = page === 0;
+        nextBtn.disabled = page >= totalPages - 1;
     }
 }

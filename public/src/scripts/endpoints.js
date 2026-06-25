@@ -334,11 +334,11 @@ export const getGuardPhotos = async (guardId, page, size) => {
     return res.json().catch(err => console.error('getGuardPhotos error:', err));
 };
 
-export const getModels = async () => {
+export const getModels = async (page, size) => {
     const requestOptions = {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify({}),
+        body: JSON.stringify({ page, size }),
         redirect: 'follow'
     };
     const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/getModels`, requestOptions);
