@@ -232,6 +232,17 @@ export const sendMail = async (raw) => {
         .then(result => console.log(result))
         .catch(error => console.log('error', error));
 }
+export const getFaceFile = async (path, fileName, storageName) => {
+    const params = new URLSearchParams({ path, fileName, storageName });
+    const requestOptions = {
+        method: 'GET',
+        headers: headers,
+        redirect: 'follow'
+    };
+    const blob = await fetch(`${NetliinkBase}rest/files/download?${params}`, requestOptions)
+        .then(res => res.blob());
+    return window.URL.createObjectURL(blob);
+};
 export const getFile = async (fileUrl) => {
     const url = `${NetliinkBase}rest/files?fileRef=`;
     const requestOptions = {
