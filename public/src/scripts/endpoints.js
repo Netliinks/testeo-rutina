@@ -323,6 +323,17 @@ export const postNotificationPush = async(data)=>{
     .catch(error => console.error('Fetch error:', error));
 }
 
+export const getGuardPhotos = async (guardId, page, size) => {
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ guardId, page, size }),
+        redirect: 'follow'
+    };
+    const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/getGuardPhotos`, requestOptions);
+    return res.json().catch(err => console.error('getGuardPhotos error:', err));
+};
+
 export const createGuardPhoto = async (guardId, fileRef) => {
     const requestOptions = {
         method: 'POST',
