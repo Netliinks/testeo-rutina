@@ -334,6 +334,17 @@ export const getGuardPhotos = async (guardId, page, size) => {
     return res.json().catch(err => console.error('getGuardPhotos error:', err));
 };
 
+export const deleteGuardPhotoById = async (photoId) => {
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ photoId }),
+        redirect: 'follow'
+    };
+    const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/deleteGuardPhotoById`, requestOptions);
+    return res.json().catch(err => console.error('deleteGuardPhotoById error:', err));
+};
+
 export const createGuardPhoto = async (guardId, fileRef) => {
     const requestOptions = {
         method: 'POST',
