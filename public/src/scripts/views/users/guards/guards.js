@@ -781,9 +781,20 @@ export class Guards {
                         const fileInfo = photo.photo;
                         const fileRef = `${fileInfo.storageName}://${fileInfo.path}?name=${encodeURIComponent(fileInfo.fileName)}`;
                         const url = await getFile(fileRef);
+                        const cell = document.createElement('div');
+                        cell.style.cssText = 'position:relative;';
+                        const xBtn = document.createElement('button');
+                        xBtn.textContent = '×';
+                        xBtn.style.cssText = 'position:absolute;top:3px;right:3px;width:18px;height:18px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1;padding:0;';
+                        xBtn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            xBtn.disabled = true;
+                            await deleteGuardPhotoById(photoId);
+                            renderPhotoGrid(photosCurrentPage);
+                        });
                         const img = document.createElement('img');
                         img.src = url;
-                        img.style.cssText = 'width:100%;height:80px;object-fit:cover;border-radius:4px;cursor:pointer;';
+                        img.style.cssText = 'width:100%;height:80px;object-fit:cover;border-radius:4px;cursor:pointer;display:block;';
                         img.addEventListener('click', () => {
                             const overlay = document.createElement('div');
                             overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;';
@@ -809,7 +820,9 @@ export class Guards {
                             });
                             document.body.appendChild(overlay);
                         });
-                        grid.appendChild(img);
+                        cell.appendChild(img);
+                        cell.appendChild(xBtn);
+                        grid.appendChild(cell);
                     }
                 }
                 pageInfo.textContent = `Página ${page + 1} / ${totalPages}`;
