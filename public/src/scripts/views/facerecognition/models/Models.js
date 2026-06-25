@@ -42,11 +42,12 @@ export class Models {
                 <table class="datatable_content">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th class="thead_centered">Estado</th>
-                            <th>Mensaje</th>
-                            <th>Inicio</th>
-                            <th>Fin</th>
+                            <th><span>ID</span></th>
+                            <th class="thead_centered"><span>Estado</span></th>
+                            <th><span>Mensaje</span></th>
+                            <th><span>Inicio</span></th>
+                            <th><span>Fin</span></th>
+                            <th class="header_filled"></th>
                         </tr>
                     </thead>
                     <tbody id="datatable-body" class="datatable_body"></tbody>
@@ -85,14 +86,14 @@ export class Models {
         const pagination = document.getElementById('pagination-container');
         if (!tbody) { this._stopPolling(); return; }
 
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:#808080;">Cargando...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:#808080;">Cargando...</td></tr>`;
 
         const result = await getModels(page, PAGE_SIZE);
         const models = Array.isArray(result) ? result : (result?.content ?? []);
         const totalPages = result?.totalPages ?? 1;
 
         if (!models.length) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:#808080;">Sin modelos</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:#808080;">Sin modelos</td></tr>`;
             pagination.innerHTML = '';
             return;
         }
