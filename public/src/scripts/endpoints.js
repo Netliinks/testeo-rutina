@@ -232,8 +232,8 @@ export const sendMail = async (raw) => {
         .then(result => console.log(result))
         .catch(error => console.log('error', error));
 }
-export const getFaceFile = async (path, fileName, storageName) => {
-    const params = new URLSearchParams({ path, fileName, storageName });
+export const getFaceFile = async (path, storageName) => {
+    const params = new URLSearchParams({ path, fileName: 'temp.png', storageName });
     const requestOptions = {
         method: 'GET',
         headers: headers,
