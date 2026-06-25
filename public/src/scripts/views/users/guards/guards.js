@@ -779,7 +779,7 @@ export class Guards {
                     for (const photo of photos) {
                         const photoId = photo.id;
                         const fileInfo = photo.photo;
-                        const url = await getFaceFile(fileInfo.path, fileInfo.fileName, fileInfo.storageName);
+                        const url = await getFaceFile(fileInfo.path, fileInfo.storageName);
                         const cell = document.createElement('div');
                         cell.style.cssText = 'position:relative;';
                         const xBtn = document.createElement('button');
