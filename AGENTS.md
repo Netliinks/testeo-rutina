@@ -54,3 +54,8 @@ Either:
 - `WIP` / `misc changes`
 
 When proposing or creating commits, **always** use this format. If multiple unrelated changes exist, **split into multiple commits** rather than one vague message.
+
+## File editing rules
+
+- **Never edit `.ts` files.** All source code lives in `.js` files — always make changes there instead.
+- If a `.ts` file appears alongside a `.js` counterpart, ignore the `.ts` file entirely.
