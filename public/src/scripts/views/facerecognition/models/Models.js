@@ -3,14 +3,33 @@ import { drawTagsIntoTables } from "../../../tools.js";
 import { Config } from "../../../Configs.js";
 
 const PAGE_SIZE = 10;
+const POLL_INTERVAL = 5000;
+const TERMINAL_STATES = new Set(['GENERATED', 'FAILED', 'ERROR', 'COMPLETED']);
 
 export class Models {
     constructor() {
         this.datatableContainer = document.getElementById('datatable-container');
         this.currentPage = 0;
+        this._pollTimer = null;
+    }
+
+    _stopPolling() {
+        if (this._pollTimer) {
+            clearTimeout(this._pollTimer);
+            this._pollTimer = null;
+        }
+    }
+
+    _schedulePolling() {
+        this._stopPolling();
+        this._pollTimer = setTimeout(async () => {
+            if (!document.getElementById('datatable-body')) return;
+            await this.loadModels(this.currentPage);
+        }, POLL_INTERVAL);
     }
 
     async render() {
+        this._stopPolling();
         this.datatableContainer.innerHTML = `
             <div class="datatable" id="datatable">
                 <div class="datatable_header">
@@ -64,7 +83,7 @@ export class Models {
     async loadModels(page) {
         const tbody = document.getElementById('datatable-body');
         const pagination = document.getElementById('pagination-container');
-        if (!tbody) return;
+        if (!tbody) { this._stopPolling(); return; }
 
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:#808080;">Cargando...</td></tr>`;
 
@@ -102,5 +121,12 @@ export class Models {
         document.getElementById('models-next')?.addEventListener('click', () => {
             if (this.currentPage < totalPages - 1) this.loadModels(++this.currentPage);
         });
+
+        const hasProcessing = models.some(m => !TERMINAL_STATES.has(m.modelState));
+        if (hasProcessing) {
+            this._schedulePolling();
+        } else {
+            this._stopPolling();
+        }
     }
 }
