@@ -687,6 +687,11 @@ export class Guards {
                         <label for="entity-customer">Seleccionar empresa <button style="background-color:white; color:#808080; font-size:12px;" id="btn-select-customer"><i class="fa-solid fa-arrow-up-right-from-square" style="font-size:12px; color:blue;"></i></button></label>
                     </div>
 
+                    <div style="margin-top: 16px;">
+                        <label style="font-size: 11px; color: #808080; display: block; margin-bottom: 6px;">SUBIR FOTO</label>
+                        <input type="file" class="input_file" accept="image/png, image/jpeg" id="entity-photo">
+                    </div>
+
                     <!--
                     <div class="material_input">
                     <input type="text" maxlength="10" id="entity-dni" class="input_filled" value="${data?.dni ?? ''}" disabled>
@@ -770,7 +775,16 @@ export class Guards {
                     // @ts-ignore
                     //department: document.getElementById('entity-department'),
                 };
-                let raw = JSON.stringify({
+                const _photoInput = document.getElementById('entity-photo');
+                let photoFileRef = null;
+                if (_photoInput.files.length > 0) {
+                    const photoResult = await setFile(_photoInput.files[0]);
+                    if (photoResult?.fileRef) {
+                        photoFileRef = photoResult.fileRef;
+                    }
+                }
+
+                const rawObj = {
                     // @ts-ignore
                    // "lastName": `${$value.lastName?.value}`,
                     // @ts-ignore
@@ -789,7 +803,11 @@ export class Guards {
                     "userPresent":`${$value.position.value}`
                     //"dni": `${$value.dni.value}`,
                     //"email": `${$value.email?.value}`,
-                });
+                };
+                if (photoFileRef) {
+                    rawObj.photo = photoFileRef;
+                }
+                let raw = JSON.stringify(rawObj);
                 //const existEmail = await getVerifyEmail($value.email?.value);
                 //if(existEmail == true){
                 //    alert("¡Correo electrónico ya existe!");
