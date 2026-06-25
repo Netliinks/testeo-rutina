@@ -3,8 +3,8 @@
 import { SignIn } from "./login.js";
 // GENERAL URL
 // ===================================================
-const NetliinkBase = 'https://backend.netliinks.com:443/';
-const NetliinksUrl = 'https://backend.netliinks.com:443/rest/entities/';
+export const NetliinkBase = (window.APP_CONFIG?.baseUrl ?? 'https://backend.netliinks.com:443/');
+const NetliinksUrl = `${NetliinkBase}rest/entities/`;
 // ===================================================
 // TOOLS
 // ===================================================
