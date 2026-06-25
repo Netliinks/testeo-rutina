@@ -28,6 +28,7 @@ import { Routines } from "../views/routines/routines/Routines.js";
 import { RoutineRegisters } from "../views/routines/details/Details.js";
 import { CredentialsView } from "../views/credentials/credentials.js";
 import { Audits } from "../views/audit/audit.js";
+import { Models } from "../views/facerecognition/models/Models.js";
 export class Sidebar {
   constructor() {
       this.sidebarContainer = document.getElementById('app-sidebar');
@@ -111,6 +112,20 @@ export class Sidebar {
                   </span>
                 </div>
 
+              </div>
+            </div>
+
+            <div class="sidebar_item">
+              <span class="sidebar_item_label">
+                <i class="fa-regular fa-face-viewfinder"></i> <div class="label">Reconocimiento Facial</div>
+              </span>
+
+              <div class="sidebar_subitems">
+                <div class="sidebar_subitem" id="render-fr-models">
+                  <span class="sidebar_subitem_label">
+                    <i class="fa-regular fa-cube"></i> <div class="label">Modelos</div>
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -407,6 +422,12 @@ renders() {
         clearTimeout(Config.timeOut);
         Config.currentScreen = null;
         new Audits().render(currentDateTime().date, currentDateTime().date);
+    });
+
+    document.getElementById('render-fr-models')?.addEventListener('click', () => {
+        clearTimeout(Config.timeOut);
+        Config.currentScreen = null;
+        new Models().render();
     });
   }
 }
