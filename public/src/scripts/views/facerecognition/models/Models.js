@@ -21,9 +21,10 @@ export class Models {
                         <table>
                             <thead>
                                 <tr class="datatable_head">
-                                    <th>Nombre</th>
                                     <th>Estado</th>
-                                    <th>Creado</th>
+                                    <th>Mensaje</th>
+                                    <th>Inicio</th>
+                                    <th>Fin</th>
                                 </tr>
                             </thead>
                             <tbody id="models-body">
@@ -80,16 +81,17 @@ export class Models {
 
         const result = await getModels(page, PAGE_SIZE);
         const models = Array.isArray(result) ? result : (result?.content ?? []);
-        const totalPages = result?.totalPages ?? (models.length < PAGE_SIZE ? page + 1 : page + 2);
+        const totalPages = result?.totalPages ?? 1;
 
         if (!models.length) {
             tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:24px;color:#808080;">Sin modelos</td></tr>`;
         } else {
             tbody.innerHTML = models.map(m => `
                 <tr class="datatable_row">
-                    <td>${m.name ?? m.modelName ?? m.id ?? '-'}</td>
-                    <td>${m.status ?? m.state ?? '-'}</td>
-                    <td>${m.createdDate ?? m.creationDate ?? '-'}</td>
+                    <td>${m.modelState ?? '-'}</td>
+                    <td>${m.message ?? '-'}</td>
+                    <td>${m.startedAt ? new Date(m.startedAt).toLocaleString() : '-'}</td>
+                    <td>${m.stoppedAt ? new Date(m.stoppedAt).toLocaleString() : '-'}</td>
                 </tr>
             `).join('');
         }
