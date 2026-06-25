@@ -943,7 +943,7 @@ export class Guards {
                     const pageInfo = document.getElementById('photos-page-info');
                     const prevBtn = document.getElementById('photos-prev');
                     const nextBtn = document.getElementById('photos-next');
-                    grid.innerHTML = '<p style="color:#808080;font-size:12px;grid-column:1/-1;text-align:center;margin:16px 0;">Cargando...</p>';
+                    grid.innerHTML = '<div style="grid-column:1/-1;display:flex;justify-content:center;align-items:center;min-height:80px;"><span style="display:inline-block;width:28px;height:28px;border:3px solid #e0e0e0;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span></div>';
                     const result = await getGuardPhotos(entityId, page, PHOTOS_PAGE_SIZE);
                     const photos = Array.isArray(result) ? result : (result?.content ?? []);
                     const totalPages = result?.totalPages ?? (photos.length < PHOTOS_PAGE_SIZE ? page + 1 : page + 2);
@@ -954,8 +954,12 @@ export class Guards {
                         for (const photo of photos) {
                             const photoId = photo.id;
                             const fileInfo = photo.photo;
-                            const url = await getFaceFile(fileInfo.path, fileInfo.storageName);
                             const cell = document.createElement('div');
+                            cell.style.cssText = 'position:relative;background:#f0f0f0;border-radius:4px;height:80px;display:flex;align-items:center;justify-content:center;';
+                            cell.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid #ccc;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span>';
+                            grid.appendChild(cell);
+                            const url = await getFaceFile(fileInfo.path, fileInfo.storageName);
+                            cell.innerHTML = '';
                             cell.style.cssText = 'position:relative;';
                             const xBtn = document.createElement('button');
                             xBtn.textContent = '×';
@@ -997,7 +1001,6 @@ export class Guards {
                             });
                             cell.appendChild(img);
                             cell.appendChild(xBtn);
-                            grid.appendChild(cell);
                         }
                     }
                     pageInfo.textContent = `Página ${page + 1} / ${totalPages}`;
