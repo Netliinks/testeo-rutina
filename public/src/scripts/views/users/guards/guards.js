@@ -776,11 +776,25 @@ export class Guards {
                 } else {
                     grid.innerHTML = '';
                     for (const photo of photos) {
-                        const fileRef = photo.fileRef ?? photo;
+                        const fileInfo = photo.photo;
+                        const fileRef = `${fileInfo.storageName}://${fileInfo.path}?name=${encodeURIComponent(fileInfo.fileName)}`;
                         const url = await getFile(fileRef);
                         const img = document.createElement('img');
                         img.src = url;
-                        img.style.cssText = 'width:100%;height:80px;object-fit:cover;border-radius:4px;';
+                        img.style.cssText = 'width:100%;height:80px;object-fit:cover;border-radius:4px;cursor:pointer;';
+                        img.addEventListener('click', () => {
+                            const overlay = document.createElement('div');
+                            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out;';
+                            const full = document.createElement('img');
+                            full.src = url;
+                            full.style.cssText = 'max-width:90vw;max-height:90vh;object-fit:contain;border-radius:6px;';
+                            overlay.appendChild(full);
+                            overlay.addEventListener('click', () => overlay.remove());
+                            document.addEventListener('keydown', function onEsc(e) {
+                                if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
+                            });
+                            document.body.appendChild(overlay);
+                        });
                         grid.appendChild(img);
                     }
                 }
