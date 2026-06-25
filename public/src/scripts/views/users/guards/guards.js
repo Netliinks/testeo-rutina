@@ -222,6 +222,9 @@ export class Guards {
                         <td>${client?.userPresent ?? ''}</dt>
                         <!-- <td>${client?.citadel?.description}</dt> -->
                         <td class="entity_options">
+                            <button class="button" id="photos-entity" data-entityId="${client.id}" data-entityName="${client.firstName} ${client.lastName}">
+                            <i class="fa-regular fa-images"></i>
+                            </button>
                             <button class="button" id="edit-entity" data-entityId="${client.id}">
                             <i class="fa-solid fa-pen"></i>
                             </button>
@@ -246,6 +249,7 @@ export class Guards {
         this.assignGuard();
         this.export();
         this.edit(this.entityDialogContainer, data);
+        this.editPhotos(this.entityDialogContainer);
         /*this.faceCamUser();*/
         this.remove();
         this.mobileUser();
@@ -980,6 +984,121 @@ export class Guards {
                 });
             };
         };
+    }
+    editPhotos(container) {
+        const buttons = document.querySelectorAll('#photos-entity');
+        buttons.forEach((btn) => {
+            const entityId = btn.dataset.entityid;
+            const guardName = btn.dataset.entityname;
+            btn.addEventListener('click', () => {
+                container.innerHTML = '';
+                container.style.display = 'flex';
+                container.innerHTML = `
+                    <div class="entity_editor" id="entity-editor">
+                        <div class="entity_editor_header">
+                            <div class="user_info">
+                                <div class="avatar"><i class="fa-regular fa-images"></i></div>
+                                <h1 class="entity_editor_title">Fotos <br><small>${guardName}</small></h1>
+                            </div>
+                            <button class="btn btn_close_editor" id="close"><i class="fa-solid fa-x"></i></button>
+                        </div>
+                        <div class="entity_editor_body">
+                            <label style="font-size:11px;color:#808080;display:block;margin-bottom:6px;">FOTOS</label>
+                            <div id="guard-photos-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;min-height:80px;"></div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                                <button id="photos-prev" style="background:none;border:1px solid #ccc;border-radius:4px;padding:4px 12px;cursor:pointer;font-size:16px;">&#8249;</button>
+                                <span id="photos-page-info" style="font-size:12px;color:#808080;"></span>
+                                <button id="photos-next" style="background:none;border:1px solid #ccc;border-radius:4px;padding:4px 12px;cursor:pointer;font-size:16px;">&#8250;</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('close').addEventListener('click', () => {
+                    container.style.display = 'none';
+                    container.innerHTML = '';
+                });
+
+                const PHOTOS_PAGE_SIZE = 6;
+                let photosCurrentPage = 0;
+
+                const renderPhotoGrid = async (page) => {
+                    const grid = document.getElementById('guard-photos-grid');
+                    const pageInfo = document.getElementById('photos-page-info');
+                    const prevBtn = document.getElementById('photos-prev');
+                    const nextBtn = document.getElementById('photos-next');
+                    grid.innerHTML = '<p style="color:#808080;font-size:12px;grid-column:1/-1;text-align:center;margin:16px 0;">Cargando...</p>';
+                    const result = await getGuardPhotos(entityId, page, PHOTOS_PAGE_SIZE);
+                    const photos = Array.isArray(result) ? result : (result?.content ?? []);
+                    const totalPages = result?.totalPages ?? (photos.length < PHOTOS_PAGE_SIZE ? page + 1 : page + 2);
+                    if (photos.length === 0) {
+                        grid.innerHTML = '<p style="color:#808080;font-size:12px;grid-column:1/-1;text-align:center;margin:16px 0;">Sin fotos</p>';
+                    } else {
+                        grid.innerHTML = '';
+                        for (const photo of photos) {
+                            const photoId = photo.id;
+                            const fileInfo = photo.photo;
+                            const url = await getFaceFile(fileInfo.path, fileInfo.storageName);
+                            const cell = document.createElement('div');
+                            cell.style.cssText = 'position:relative;';
+                            const xBtn = document.createElement('button');
+                            xBtn.textContent = '×';
+                            xBtn.style.cssText = 'position:absolute;top:3px;right:3px;width:18px;height:18px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1;padding:0;';
+                            xBtn.addEventListener('click', async (e) => {
+                                e.stopPropagation();
+                                xBtn.disabled = true;
+                                xBtn.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;"></span>';
+                                await deleteGuardPhotoById(photoId);
+                                renderPhotoGrid(photosCurrentPage);
+                            });
+                            const img = document.createElement('img');
+                            img.src = url;
+                            img.style.cssText = 'width:100%;height:80px;object-fit:cover;border-radius:4px;cursor:pointer;display:block;';
+                            img.addEventListener('click', () => {
+                                const overlay = document.createElement('div');
+                                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;';
+                                const full = document.createElement('img');
+                                full.src = url;
+                                full.style.cssText = 'max-width:90vw;max-height:80vh;object-fit:contain;border-radius:6px;';
+                                const deleteBtn = document.createElement('button');
+                                deleteBtn.textContent = 'Eliminar foto';
+                                deleteBtn.style.cssText = 'margin-top:16px;padding:8px 24px;background:#e53935;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;';
+                                deleteBtn.addEventListener('click', async (e) => {
+                                    e.stopPropagation();
+                                    deleteBtn.disabled = true;
+                                    deleteBtn.textContent = 'Eliminando...';
+                                    await deleteGuardPhotoById(photoId);
+                                    overlay.remove();
+                                    renderPhotoGrid(photosCurrentPage);
+                                });
+                                overlay.appendChild(full);
+                                overlay.appendChild(deleteBtn);
+                                overlay.addEventListener('click', () => overlay.remove());
+                                document.addEventListener('keydown', function onEsc(e) {
+                                    if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
+                                });
+                                document.body.appendChild(overlay);
+                            });
+                            cell.appendChild(img);
+                            cell.appendChild(xBtn);
+                            grid.appendChild(cell);
+                        }
+                    }
+                    pageInfo.textContent = `Página ${page + 1} / ${totalPages}`;
+                    prevBtn.disabled = page === 0;
+                    nextBtn.disabled = page >= totalPages - 1;
+                };
+
+                renderPhotoGrid(photosCurrentPage);
+
+                document.getElementById('photos-prev').addEventListener('click', () => {
+                    if (photosCurrentPage > 0) renderPhotoGrid(--photosCurrentPage);
+                });
+                document.getElementById('photos-next').addEventListener('click', () => {
+                    renderPhotoGrid(++photosCurrentPage);
+                });
+            });
+        });
     }
     changeUserPassword() {
         const changeUserPasswordKeys = document.querySelectorAll('#change-user-password');
