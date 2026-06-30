@@ -138,6 +138,7 @@ export class Customers {
           <td>${customer?.permitVehicular ? 'Si' : 'No'}</td>
           <td>${customer?.permitRoutine ? 'Si' : 'No'}</td>
           <td>${customer?.permitVisitStatic ? 'Si' : 'No'}</td>
+          <td>${customer?.licenseType ? customer?.licenseType : ''}</td>
           <td class="entity_options">
               <button class="button" id="edit-entity" data-entityId="${customer.id}">
                 <i class="fa-solid fa-pen"></i>
@@ -272,6 +273,17 @@ export class Customers {
             <div class="input_checkbox">
                 <label><input type="checkbox" class="checkbox" id="entity-qr-static"> Permitir QR estático para visita</label>
             </div>
+            <br>
+
+            <div class="material_input">
+                <label for="license-type">Tipo de licencia</label>
+                <br>
+                <br>
+                <select name="license-type" id="license-type">
+                    <option value="STANDARD" selected>STANDARD</option>
+                    <option value="POOL 50">POOL 50</option>
+                </select>
+            </div>
 
             <br>
             <br>
@@ -330,6 +342,7 @@ export class Customers {
                     reqNroVehicle: document.getElementById('entity-required-vehicular'),
                     reqNroReport: document.getElementById('entity-required-report'),
                     reqNroRoutine: document.getElementById('entity-required-routine'),
+                    licenseType: document.getElementById('license-type'),
                 };
                 const raw = JSON.stringify({
                     "name": `${inputsCollection.name.value}`,
@@ -348,6 +361,7 @@ export class Customers {
                     'reqNroVehicle': `${inputsCollection.reqNroVehicle.value ?? 0}`,
                     'reqNroReport': `${inputsCollection.reqNroReport.value ?? 0}`,
                     'reqNroRoutine': `${inputsCollection.reqNroRoutine.value ?? 0}`,
+                    'licenseType': `${inputsCollection.licenseType.value ?? 'STANDARD'}`,
                 });
                 const exist = await searchUniversalSingle2('name', 'contains', inputsCollection.name.value, 'business.id', '=', businessData.business.id, 'Customer');
                 //const exist = await searchCustomerbyName(inputsCollection.name.value, businessId)
@@ -427,6 +441,17 @@ export class Customers {
             <div class="input_checkbox">
                 <label><input type="checkbox" class="checkbox" id="entity-qr-static"> Permitir QR estático para visita</label>
             </div>
+            <br>
+
+             <div class="material_input">
+                <label for="license-type">Tipo de licencia</label>
+                <br>
+                <br>
+                <select name="license-type" id="license-type">
+                    <option value="STANDARD" selected>STANDARD</option>
+                    <option value="POOL 50">POOL 50</option>
+                </select>
+            </div>
 
             <br>
             <br>
@@ -485,6 +510,9 @@ export class Customers {
             if (data?.permitVisitStatic === true) {
               checkboxQRStatic?.setAttribute('checked', 'true');
             }
+
+            const licenseType = document.getElementById('license-type');
+            licenseType.value = data?.licenseType ?? 'STANDARD';
             inputObserver();
             inputSelect('State', 'entity-state', data.state.name);
             this.close();
@@ -508,6 +536,7 @@ export class Customers {
               reqNroVehicle: document.getElementById('entity-required-vehicular'),
               reqNroReport: document.getElementById('entity-required-report'),
               reqNroRoutine: document.getElementById('entity-required-routine'),
+              licenseType: document.getElementById('license-type'),
           };
             updateButton.addEventListener('click', () => {
               let raw = JSON.stringify({
@@ -524,6 +553,7 @@ export class Customers {
                   'reqNroVehicle': `${$value.reqNroVehicle.value ?? 0}`,
                   'reqNroReport': `${$value.reqNroReport.value ?? 0}`,
                   'reqNroRoutine': `${$value.reqNroRoutine.value ?? 0}`,
+                  'licenseType': `${$value.licenseType.value ?? 'STANDARD'}`,
               });
               update(raw);
             });
