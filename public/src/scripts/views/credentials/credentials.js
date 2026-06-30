@@ -165,6 +165,7 @@ export class CredentialsView {
                         }
                         objFinal = {
                             "Empresas": customer?.name ?? '',
+                            "Tipo Licencia": customer?.licenseType ?? '',
                             "Guardias": userTypes[0]["total"],
                             "Clientes": userTypes[1]["total"],
                             "Empleados": userTypes[2]["total"],
@@ -194,6 +195,7 @@ export class CredentialsView {
                 
                         objFinal = {
                             "Empresas": "",
+                            "Tipo Licencia": "",
                             "Guardias": countFinal.guard,
                             "Clientes": countFinal.customer,
                             "Empleados": countFinal.employee,
