@@ -822,7 +822,6 @@ export class Guards {
                                     }
                                 ],
                             },
-                            limit: 1
                         });
                         const existUserRoutine = await getFilterEntityData("RoutineUser", rawToRoutine);
                         if(existUserRoutine == undefined){
@@ -1920,7 +1919,6 @@ export class Guards {
                                                 }
                                             ],
                                         },
-                                        limit: 1
                                     });
                                     const existUserRoutine = await getFilterEntityData("RoutineUser", rawToRoutine);
                                     if(existUserRoutine == undefined){
