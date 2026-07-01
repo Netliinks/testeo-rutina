@@ -215,7 +215,7 @@ export class Guards {
                     //<button class="button" id="convert-entity" data-entityId="${client.id}"><i class="fa-solid fa-shield"></i></button>
                     row.innerHTML += `
                         <td>${client?.customer?.name ?? ''}</dt>
-                        <td>${client.firstName} ${client.lastName}</dt>
+                        <td>${client?.firstName} ${client?.lastName} ${client?.secondLastName}</dt>
                         <td>${client.username}</dt>
                         <td class="key"><button class="button" data-userid="${client.id}" id="change-user-password"><i class="fa-regular fa-key"></i></button></td>
                         <td class="tag"><span>${client.state.name}</span></td>
