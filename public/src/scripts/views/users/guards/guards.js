@@ -2161,34 +2161,96 @@ export class Guards {
         }
 
         async renderChangeCompanyInterface(entityID, currentCustomerId, currentCustomerName) {
+            const guardData = await getEntityData('User', entityID);
+            const initials = `${guardData?.firstName?.[0] ?? ''}${guardData?.lastName?.[0] ?? ''}`;
+
+            const rawToRoutine = JSON.stringify({
+                "filter": {
+                    "conditions": [
+                        {
+                            "property": "customer.id",
+                            "operator": "=",
+                            "value": `${currentCustomerId}`
+                        },
+                        {
+                            "property": "user.id",
+                            "operator": "=",
+                            "value": `${entityID}`
+                        }
+                    ],
+                },
+                limit: 100
+            });
+            const routines = await getFilterEntityData("RoutineUser", rawToRoutine);
+            const routineCount = routines.length;
+
             this.entityDialogContainer.innerHTML = '';
             this.entityDialogContainer.style.display = 'flex';
             this.entityDialogContainer.innerHTML = `
-                <div class="entity_editor" id="entity-editor">
+                <div class="entity_editor" id="entity-editor" style="width: 500px !important;">
                     <div class="entity_editor_header">
                         <div class="user_info">
-                            <div class="avatar"><i class="fa-solid fa-building"></i></div>
-                            <h1 class="entity_editor_title">Cambiar Empresa <br><small>Guardia</small></h1>
-                        </div>
-                        <button class="btn btn_close_editor" id="close"><i class="fa-solid fa-x"></i></button>
-                    </div>
-                    <div class="entity_editor_header">
-                        <div class="user_info">
-                            <div class="avatar"><i class="fa-solid fa-building"></i></div>
-                            <h1 class="entity_editor_title">Cambiar Empresa <br><small>Guardia</small></h1>
+                            <h1 class="entity_editor_title">Transferir guardia <small style="font-size: 14px; background: #e9ecef; padding: 2px 8px; border-radius: 12px; margin-left: 8px;">Paso 1 de 2</small></h1>
+                            <br><small>Define la empresa destino y el destino de las dependencias.</small>
                         </div>
                         <button class="btn btn_close_editor" id="close"><i class="fa-solid fa-x"></i></button>
                     </div>
 
                     <div class="entity_editor_body">
-                        <div class="material_input">
-                            <input type="text" id="entity-customer" autocomplete="none" class="input_filled" value="${currentCustomerName}" data-optionid="${currentCustomerId}">
-                            <label for="entity-customer">Seleccionar empresa <button style="background-color:white; color:#808080; font-size:12px;" id="btn-select-customer"><i class="fa-solid fa-arrow-up-right-from-square" style="font-size:12px; color:blue;"></i></button></label>
+                        <div class="user_card" style="display: flex; align-items: center; gap: 16px; padding: 16px; background: #f8f9fa; border-radius: 8px; margin-bottom: 16px; border: 1px solid #e9ecef;">
+                            <div class="avatar" style="width: 48px; height: 48px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #007bff;">${initials}</div>
+                            <div class="user_details">
+                                <h3 style="margin: 0; font-size: 16px;">${guardData.firstName} ${guardData.lastName}</h3>
+                                <p style="margin: 0; color: #6c757d; font-size: 14px;">Guardia de planta</p>
+                            </div>
                         </div>
+
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px;">
+                            <div class="material_input" style="flex: 1; margin: 0;">
+                                <input type="text" value="${currentCustomerName}" readonly class="input_filled">
+                                <label>Empresa actual</label>
+                            </div>
+                            <div style="color: #007bff;"><i class="fa-solid fa-arrow-right"></i></div>
+                            <div class="material_input" style="flex: 1; margin: 0;">
+                                <input type="text" id="entity-customer" autocomplete="none" readonly placeholder="Selecciona empresa..." class="input_filled" value="">
+                                <label for="entity-customer">Empresa destino <button id="btn-select-customer" style="background: none; border: none; color: #007bff; cursor: pointer;"><i class="fa-solid fa-arrow-up-right-from-square"></i></button></label>
+                            </div>
+                        </div>
+
+                        ${routineCount > 0 ? `
+                        <div class="alert_box" style="background: #fff3cd; color: #856404; padding: 12px; border-radius: 8px; display: flex; gap: 12px; margin-bottom: 24px; border: 1px solid #ffeeba;">
+                            <i class="fa-solid fa-circle-exclamation" style="font-size: 20px; margin-top: 4px;"></i>
+                            <div>
+                                <p style="margin: 0; font-weight: bold;">Este guardia tiene dependencias activas en ${currentCustomerName}.</p>
+                                <p style="margin: 0; font-size: 14px; background: #ffffff; display: inline-block; padding: 2px 8px; border-radius: 4px; margin-top: 4px; color: #856404; border: 1px solid #ffeeba;">${routineCount} rutinas asignadas</p>
+                            </div>
+                        </div>
+
+                        <div class="options_section">
+                            <h3 style="font-size: 16px; margin-bottom: 16px;">¿Qué deseas hacer con estas dependencias?</h3>
+
+                            <div class="option_card" style="border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; margin-bottom: 12px; display: flex; gap: 12px; cursor: pointer;" onclick="document.getElementById('reassign-guard').checked = true">
+                                <input type="radio" name="dependency-action" id="reassign-guard" value="reassign" checked style="margin-top: 4px;">
+                                <label for="reassign-guard" style="cursor: pointer;">
+                                    <b style="display: block; margin-bottom: 4px;">Asignar un guardia de reemplazo</b>
+                                    <p style="margin: 0; font-size: 14px; color: #6c757d;">Las rutinas serán adoptadas automáticamente por el reemplazo en ${currentCustomerName}.</p>
+                                </label>
+                            </div>
+
+                            <div class="option_card" style="border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; display: flex; gap: 12px; cursor: pointer;" onclick="document.getElementById('leave-orphan').checked = true">
+                                <input type="radio" name="dependency-action" id="leave-orphan" value="orphan" style="margin-top: 4px;">
+                                <label for="leave-orphan" style="cursor: pointer;">
+                                    <b style="display: block; margin-bottom: 4px;">Dejar las rutinas sin guardia asignado</b>
+                                    <p style="margin: 0; font-size: 14px; color: #6c757d;">Quedarán marcadas como <b>huérfanas</b> en el panel hasta que se reasignen manualmente.</p>
+                                </label>
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
 
-                    <div class="entity_editor_footer">
-                        <button class="btn btn_primary btn_widder" id="update-guard-customer">Guardar</button>
+                    <div class="entity_editor_footer" style="display: flex; justify-content: space-between;">
+                        <button class="btn btn_secondary" id="cancel-transfer" style="background: #e9ecef; border: none; color: #495057;">Cancelar</button>
+                        <button class="btn btn_primary" id="update-guard-customer" style="min-width: 120px;">Continuar <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i></button>
                     </div>
                 </div>
             `;
@@ -2206,12 +2268,16 @@ export class Guards {
                     alert("Empresa vacía!");
                 } else if (newCustomerId === currentCustomerId) {
                     alert("La empresa seleccionada es la misma que la actual.");
-                    new CloseDialog().x(this.entityDialogContainer);
                 }
                 else {
                     await this.performCustomerUpdate(entityID, newCustomerId, newCustomerName, currentCustomerId, currentCustomerName);
                 }
             });
+
+            const cancelButton = document.getElementById('cancel-transfer');
+            cancelButton.onclick = () => {
+                new CloseDialog().x(this.entityDialogContainer);
+            };
         }
 
         async performCustomerUpdate(entityId, newCustomerId, newCustomerName, oldCustomerId, oldCustomerName) {
