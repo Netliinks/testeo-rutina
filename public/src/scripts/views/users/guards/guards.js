@@ -226,6 +226,10 @@ export class Guards {
                             <i class="fa-solid fa-pen"></i>
                             </button>
 
+                            <button class="button" id="change-company-entity" data-entityId="${client.id}" data-current-customer-id="${client?.customer?.id ?? ''}" data-current-customer-name="${client?.customer?.name ?? ''}">
+                                <i class="fa-solid fa-building"></i>
+                            </button>
+
                             <button class="button" id="mobile-entity" data-entityId="${client.id}" data-entityName="${client.username}"><i class="fa-solid fa-mobile"></i></button>
 
                             
@@ -251,6 +255,7 @@ export class Guards {
         this.mobileUser();
         //this.convertToSuper();
         this.changeUserPassword();
+        this.changeCompany(); // Call the new method
     }
     /*<button class="button" id="facecam-entity" data-entityId="${client.id}" data-entityName="${client.firstName} ${client.lastName}">
                             <i class="fa-solid fa-image"></i>
@@ -2091,7 +2096,7 @@ export class Guards {
                         <td>${data?.name ?? ''}</dt>
                         <td>${data?.ruc ?? ''}</dt>
                         <td class="entity_options">
-                            <button class="button" id="edit-entity" data-entityId="${data.id}" data-entityName="${data?.name ?? ''}">
+                            <button class="button" id="select-this-customer" data-entityId="${data.id}" data-entityName="${data?.name ?? ''}">
                                 <i class="fa-solid fa-arrow-up-right-from-square"></i>
                             </button>
                         </td>
@@ -2101,7 +2106,7 @@ export class Guards {
             }
             const txtSearch = document.getElementById('search-modal');
             const btnSearchModal = document.getElementById('btnSearchModal');
-            const _selectCustomer = document.querySelectorAll('#edit-entity');
+            const _selectCustomer = document.querySelectorAll('#select-this-customer');
             const _closeButton = document.getElementById('cancel');
             const _dialog = document.getElementById('dialog-content');
             const prevModalButton = document.getElementById('prevModal');
@@ -2141,8 +2146,142 @@ export class Guards {
                 }
             }
         }
+        }
+
+        changeCompany() {
+            const changeCompanyButtons = document.querySelectorAll('#change-company-entity');
+            changeCompanyButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    const entityId = button.dataset.entityid;
+                    const currentCustomerId = button.dataset.currentCustomerId;
+                    const currentCustomerName = button.dataset.currentCustomerName;
+                    this.renderChangeCompanyInterface(entityId, currentCustomerId, currentCustomerName);
+                });
+            });
+        }
+
+        async renderChangeCompanyInterface(entityID, currentCustomerId, currentCustomerName) {
+            this.entityDialogContainer.innerHTML = '';
+            this.entityDialogContainer.style.display = 'flex';
+            this.entityDialogContainer.innerHTML = `
+                <div class="entity_editor" id="entity-editor">
+                    <div class="entity_editor_header">
+                        <div class="user_info">
+                            <div class="avatar"><i class="fa-solid fa-building"></i></div>
+                            <h1 class="entity_editor_title">Cambiar Empresa <br><small>Guardia</small></h1>
+                        </div>
+                        <button class="btn btn_close_editor" id="close"><i class="fa-solid fa-x"></i></button>
+                    </div>
+                    <div class="entity_editor_header">
+                        <div class="user_info">
+                            <div class="avatar"><i class="fa-solid fa-building"></i></div>
+                            <h1 class="entity_editor_title">Cambiar Empresa <br><small>Guardia</small></h1>
+                        </div>
+                        <button class="btn btn_close_editor" id="close"><i class="fa-solid fa-x"></i></button>
+                    </div>
+
+                    <div class="entity_editor_body">
+                        <div class="material_input">
+                            <input type="text" id="entity-customer" autocomplete="none" class="input_filled" value="${currentCustomerName}" data-optionid="${currentCustomerId}">
+                            <label for="entity-customer">Seleccionar empresa <button style="background-color:white; color:#808080; font-size:12px;" id="btn-select-customer"><i class="fa-solid fa-arrow-up-right-from-square" style="font-size:12px; color:blue;"></i></button></label>
+                        </div>
+                    </div>
+
+                    <div class="entity_editor_footer">
+                        <button class="btn btn_primary btn_widder" id="update-guard-customer">Guardar</button>
+                    </div>
+                </div>
+            `;
+            inputObserver();
+            this.selectCustomer(); // This will attach the event listener to #btn-select-customer
+            this.close();
+
+            const updateButton = document.getElementById('update-guard-customer');
+            updateButton.addEventListener('click', async () => {
+                const newCustomerIdInput = document.getElementById('entity-customer');
+                const newCustomerId = newCustomerIdInput.dataset.optionid;
+                const newCustomerName = newCustomerIdInput.value;
+
+                if (newCustomerId === '' || newCustomerId === undefined) {
+                    alert("Empresa vacía!");
+                } else if (newCustomerId === currentCustomerId) {
+                    alert("La empresa seleccionada es la misma que la actual.");
+                    new CloseDialog().x(this.entityDialogContainer);
+                }
+                else {
+                    await this.performCustomerUpdate(entityID, newCustomerId, newCustomerName, currentCustomerId, currentCustomerName);
+                }
+            });
+        }
+
+        async performCustomerUpdate(entityId, newCustomerId, newCustomerName, oldCustomerId, oldCustomerName) {
+            const rawToRoutine = JSON.stringify({
+                "filter": {
+                    "conditions": [
+                        {
+                            "property": "customer.id",
+                            "operator": "=",
+                            "value": `${oldCustomerId}`
+                        },
+                        {
+                            "property": "user.id",
+                            "operator": "=",
+                            "value": `${entityId}`
+                        }
+                    ],
+                },
+                limit: 1
+            });
+            const existUserRoutine = await getFilterEntityData("RoutineUser", rawToRoutine);
+            const guardData = await getEntityData('User', entityId);
+
+            if (existUserRoutine === undefined) {
+                alert(`Ocurrió un error buscando rutina`);
+            } else if (existUserRoutine.length > 0) {
+                for (let i = 0; i < existUserRoutine.length; i++) {
+                    await deleteEntity('RoutineUser', existUserRoutine[i].id);
+                }
+                const raw2 = JSON.stringify({
+                    "user": {
+                        "id": `${entityId}`
+                    },
+                    "model": '#NEWMOBILEADD'
+                });
+                await registerEntity(raw2, 'AndroidLogin');
+                const rawUpdate = JSON.stringify({
+                    "customer": {
+                        "id": `${newCustomerId}`
+                    },
+                    "userPresent":"" // Clear userPresent when changing company as it might be customer-specific
+                });
+                await updateEntity('User', entityId, rawUpdate);
+                const message = JSON.stringify({"title": "Cambio de empresa","body":`Ha sido removido de la empresa ${oldCustomerName}, y asignado a ${newCustomerName}. Por favor reinicie la aplicación ahora.`,"tokenUser":guardData['token'],"type":"routine-info"});
+                postNotificationPush(message);
+                alert("Empresa cambiada exitosamente y rutinas eliminadas.");
+            } else {
+                const raw2 = JSON.stringify({
+                    "user": {
+                        "id": `${entityId}`
+                    },
+                    "model": '#NEWMOBILEADD'
+                });
+                await registerEntity(raw2, 'AndroidLogin');
+                const rawUpdate = JSON.stringify({
+                    "customer": {
+                        "id": `${newCustomerId}`
+                    },
+                    "userPresent":"" // Clear userPresent when changing company
+                });
+                await updateEntity('User', entityId, rawUpdate);
+                const message = JSON.stringify({"title": "Cambio de empresa","body":`Ha sido removido de la empresa ${oldCustomerName}, y asignado a ${newCustomerName}. Por favor reinicie la aplicación ahora.`,"tokenUser":guardData['token'],"type":"routine-info"});
+                postNotificationPush(message);
+                alert("Empresa cambiada exitosamente.");
+            }
+
+            new CloseDialog().x(this.entityDialogContainer);
+            new Guards().render(infoPage.offset, infoPage.currentPage, infoPage.search, infoPage.showGuards);
+        }
     }
-}
 export const setUserPassword = async () => {
     /*const users = await getEntitiesData('User');
     const filterBySuperUsers = users.filter((data) => data.isSuper === false);
