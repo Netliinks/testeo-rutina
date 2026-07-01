@@ -2178,11 +2178,10 @@ export class Guards {
                             "value": `${entityID}`
                         }
                     ],
-                },
-                limit: 100
+                }
             });
-            const routines = await getFilterEntityData("RoutineUser", rawToRoutine);
-            const routineCount = routines.length;
+            const routines = await getFilterEntityCount("RoutineUser", rawToRoutine);
+            const routineCount = routines;
 
             this.entityDialogContainer.innerHTML = '';
             this.entityDialogContainer.style.display = 'flex';
@@ -2296,7 +2295,6 @@ export class Guards {
                         }
                     ],
                 },
-                limit: 1
             });
             const existUserRoutine = await getFilterEntityData("RoutineUser", rawToRoutine);
             const guardData = await getEntityData('User', entityId);
