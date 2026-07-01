@@ -290,28 +290,28 @@ export class Customers {
             <div class="material_input">
               <input type="number"
                 id="entity-required-visitemer"
-               autocomplete="none" min="0">
+               autocomplete="none" min="0" value="0">
               <label for="entity-required-visitemer">Requerido visita emergente</label>
             </div>
 
             <div class="material_input">
               <input type="number"
                 id="entity-required-vehicular"
-               autocomplete="none" min="0">
+               autocomplete="none" min="0" value="0">
               <label for="entity-required-vehicular">Requerido ingreso vehicular</label>
             </div>
 
             <div class="material_input">
               <input type="number"
                 id="entity-required-report"
-               autocomplete="none" min="0">
+               autocomplete="none" min="0" value="0">
               <label for="entity-required-report">Requerido reportes</label>
             </div>
 
             <div class="material_input">
               <input type="number"
                 id="entity-required-routine"
-               autocomplete="none" min="0">
+               autocomplete="none" min="0" value="0">
               <label for="entity-required-routine">Requerido rutinas</label>
             </div>
 
@@ -361,7 +361,7 @@ export class Customers {
                     'reqNroVehicle': `${inputsCollection.reqNroVehicle.value ?? 0}`,
                     'reqNroReport': `${inputsCollection.reqNroReport.value ?? 0}`,
                     'reqNroRoutine': `${inputsCollection.reqNroRoutine.value ?? 0}`,
-                    'licenseType': `${inputsCollection.licenseType.value ?? 'STANDARD'}`,
+                    'licenseType': `${inputsCollection.licenseType.value ?? 'STANDARD'}`
                 });
                 const exist = await searchUniversalSingle2('name', 'contains', inputsCollection.name.value, 'business.id', '=', businessData.business.id, 'Customer');
                 //const exist = await searchCustomerbyName(inputsCollection.name.value, businessId)
@@ -372,7 +372,7 @@ export class Customers {
                 }else if(exist == undefined || exist != 'none'){
                     alert("¡Nombre de empresa ya existente o no se ha podido comprobar!")
                 }else{
-                  registerEntity(raw, 'Customer');
+                  registerEntity(raw, 'Customer')
                   setTimeout(() => {
                       const container = document.getElementById('entity-editor-container');
                       new CloseDialog().x(container);
