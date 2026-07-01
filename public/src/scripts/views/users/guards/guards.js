@@ -227,7 +227,7 @@ export class Guards {
                             </button>
 
                             <button class="button" id="change-company-entity" data-entityId="${client.id}" data-current-customer-id="${client?.customer?.id ?? ''}" data-current-customer-name="${client?.customer?.name ?? ''}">
-                                <i class="fa-solid fa-building"></i>
+                                <i class="fa-solid fa-briefcase"></i>
                             </button>
 
                             <button class="button" id="mobile-entity" data-entityId="${client.id}" data-entityName="${client.username}"><i class="fa-solid fa-mobile"></i></button>
@@ -687,12 +687,12 @@ export class Guards {
                         <label for="entity-position">Puesto</label>
                     </div>
 
+                    <!--
                     <div class="material_input">
                         <input type="text" id="entity-customer" autocomplete="none" class="input_filled" value="${data?.customer?.name ?? ''}" data-optionid="${data?.customer?.id ?? ''}" disabled>
                         <label for="entity-customer">Seleccionar empresa <button style="background-color:white; color:#808080; font-size:12px;" id="btn-select-customer"><i class="fa-solid fa-arrow-up-right-from-square" style="font-size:12px; color:blue;"></i></button></label>
                     </div>
 
-                    <!--
                     <div class="material_input">
                     <input type="text" maxlength="10" id="entity-dni" class="input_filled" value="${data?.dni ?? ''}" disabled>
                     <label for="entity-dni">Cédula</label>
@@ -741,7 +741,7 @@ export class Guards {
                 </div>
             `;
             inputObserver();
-            this.selectCustomer();
+            //this.selectCustomer();
             //inputSelect('Citadel', 'entity-citadel');
             //inputSelect('Customer', 'entity-customer');
             inputSelect('State', 'entity-state', data.state.name);
@@ -767,7 +767,7 @@ export class Guards {
                     // @ts-ignore
                     status: document.getElementById('entity-state'),
                     position: document.getElementById('entity-position'),
-                    customer: document.getElementById('entity-customer'),
+                    //customer: document.getElementById('entity-customer'),
                     // @ts-ignore
                     //dni: document.getElementById('entity-dni'),
                     // @ts-ignore
@@ -786,9 +786,9 @@ export class Guards {
                     "state": {
                         "id": `${$value.status?.dataset.optionid}`
                     },
-                    "customer": {
-                        "id": `${$value.customer.dataset.optionid}`
-                    },
+                    //"customer": {
+                    //    "id": `${$value.customer.dataset.optionid}`
+                    //},
                     // @ts-ignore
                     "phone": `${$value.phone?.value}`,
                     "userPresent":`${$value.position.value}`
@@ -803,7 +803,7 @@ export class Guards {
                 //} 
                 //if ($value.dni.value === '' || $value.dni.value === undefined) {
                 //    alert("DNI vacío!");
-                if ($value.customer.dataset.optionid === '' || $value.customer.dataset.optionid === undefined) {
+                /*if ($value.customer.dataset.optionid === '' || $value.customer.dataset.optionid === undefined) {
                     alert("Empresa vacía!");
                 }else {
                     if($value.customer.dataset.optionid != data?.customer?.id){
@@ -853,10 +853,10 @@ export class Guards {
                             const message = JSON.stringify({"title": "Cambio de empresa","body":`Ha sido removido de la empresa ${data?.customer?.name ?? ''}, por favor reinicie la aplicación ahora.`,"tokenUser":data['token'],"type":"routine-info"});
                             postNotificationPush(message);
                         }
-                    }else{
+                    }else{*/
                         await update(raw);
-                    }
-                }
+                    //}
+                //}
             });
             const update = (raw) => {
                 updateEntity('User', entityId, raw)
@@ -2146,6 +2146,223 @@ export class Guards {
         }
         }
 
+        selectReplacementGuard(customerId, currentGuardId) {
+            const btnElement = document.getElementById('btn-select-guard');
+
+            if (btnElement) {
+                btnElement.addEventListener('click', async () => {
+                    const element = document.getElementById('entity-guard');
+                    modalTable(0, "", element);
+                });
+            }
+
+            async function modalTable(offset, search, element) {
+                const dialogContainer = document.getElementById('app-dialogs');
+                let raw = JSON.stringify({
+                    "filter": {
+                        "conditions": [
+                            {
+                                "property": "customer.id",
+                                "operator": "=",
+                                "value": `${customerId}`
+                            },
+                            {
+                                "property": "state.name",
+                                "operator": "=",
+                                "value": `Enabled`
+                            },
+                            {
+                                "property": "userType",
+                                "operator": "=",
+                                "value": `GUARD`
+                            },
+                            {
+                                "property": "isSuper",
+                                "operator": "=",
+                                "value": false
+                            },
+                            {
+                                "property": "id",
+                                "operator": "<>",
+                                "value": `${currentGuardId}`
+                            }
+                        ],
+                    },
+                    sort: "+username",
+                    limit: Config.modalRows,
+                    offset: offset,
+                    fetchPlan: 'full'
+                });
+                if (search != "") {
+                    raw = JSON.stringify({
+                        "filter": {
+                            "conditions": [
+                                {
+                                    "group": "OR",
+                                    "conditions": [
+                                        {
+                                            "property": "firstName",
+                                            "operator": "contains",
+                                            "value": `${search.toLowerCase()}`
+                                        },
+                                        {
+                                            "property": "lastName",
+                                            "operator": "contains",
+                                            "value": `${search.toLowerCase()}`
+                                        },
+                                        {
+                                            "property": "username",
+                                            "operator": "contains",
+                                            "value": `${search.toLowerCase()}`
+                                        },
+                                        {
+                                            "property": "dni",
+                                            "operator": "contains",
+                                            "value": `${search.toLowerCase()}`
+                                        }
+                                    ]
+                                },
+                                {
+                                    "property": "customer.id",
+                                    "operator": "=",
+                                    "value": `${customerId}`
+                                },
+                                {
+                                    "property": "state.name",
+                                    "operator": "=",
+                                    "value": `Enabled`
+                                },
+                                {
+                                    "property": "userType",
+                                    "operator": "=",
+                                    "value": `GUARD`
+                                },
+                                {
+                                    "property": "isSuper",
+                                    "operator": "=",
+                                    "value": false
+                                },
+                                {
+                                    "property": "id",
+                                    "operator": "<>",
+                                    "value": `${currentGuardId}`
+                                }
+                            ],
+                        },
+                        sort: "+username",
+                        limit: Config.modalRows,
+                        offset: offset,
+                        fetchPlan: 'full'
+                    });
+                }
+                let dataModal = await getFilterEntityData("User", raw);
+                dialogContainer.style.display = 'block';
+                dialogContainer.innerHTML = `
+                    <div class="dialog_content" id="dialog-content">
+                        <div class="dialog">
+                            <div class="dialog_container padding_8">
+                                <div class="dialog_header">
+                                    <h2>Seleccione el guardia de reemplazo</h2>
+                                </div>
+
+                                <div class="dialog_message padding_8">
+                                    <div class="datatable_tools">
+                                        <input type="search" class="search_input" placeholder="Buscar" id="search-modal">
+                                        <button class="datatable_button add_user" id="btnSearchModal">
+                                            <i class="fa-solid fa-search"></i>
+                                        </button>
+                                    </div>
+                                    <div class="dashboard_datatable">
+                                        <table class="datatable_content margin_t_16">
+                                        <thead>
+                                            <tr>
+                                                <th></th>
+                                                <th>Nombre</th>
+                                                <th>Usuario</th>
+                                                <th>DNI</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="datatable-modal-body">
+                                        </tbody>
+                                        </table>
+                                    </div>
+                                    <br>
+                                </div>
+
+                                <div class="dialog_footer">
+                                    <button class="btn btn_primary" id="prevModal"><i class="fa-solid fa-arrow-left"></i></button>
+                                    <button class="btn btn_primary" id="nextModal"><i class="fa-solid fa-arrow-right"></i></button>
+                                    <button class="btn btn_danger" id="cancelModal">Cancelar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                inputObserver();
+                const datetableBody = document.getElementById('datatable-modal-body');
+                if (dataModal.length === 0) {
+                    let row = document.createElement('tr');
+                    row.innerHTML = `<td colspan="4">No hay datos</td>`;
+                    datetableBody.appendChild(row);
+                } else {
+                    for (let i = 0; i < dataModal.length; i++) {
+                        let data = dataModal[i];
+                        let row = document.createElement('tr');
+                        row.innerHTML += `
+                            <td class="entity_options">
+                                <button class="button" id="select-this-guard" data-entityId="${data.id}" data-entityName="${data?.firstName} ${data?.lastName}">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                </button>
+                            </td>
+                            <td>${data?.firstName ?? ''} ${data?.lastName ?? ''}</td>
+                            <td>${data?.username ?? ''}</td>
+                            <td>${data?.dni ?? ''}</td>
+                        `;
+                        datetableBody.appendChild(row);
+                    }
+                }
+
+                const txtSearch = document.getElementById('search-modal');
+                const btnSearchModal = document.getElementById('btnSearchModal');
+                const _selectGuard = document.querySelectorAll('#select-this-guard');
+                const _closeButton = document.getElementById('cancelModal');
+                const _dialog = document.getElementById('dialog-content');
+                const prevModalButton = document.getElementById('prevModal');
+                const nextModalButton = document.getElementById('nextModal');
+
+                txtSearch.value = search ?? '';
+
+                _selectGuard.forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        element.setAttribute('data-optionid', btn.dataset.entityid);
+                        element.setAttribute('value', btn.dataset.entityname);
+                        element.classList.add('input_filled');
+                        new CloseDialog().x(_dialog);
+                    });
+                });
+
+                btnSearchModal.onclick = () => {
+                    modalTable(0, txtSearch.value, element);
+                };
+
+                _closeButton.onclick = () => {
+                    new CloseDialog().x(_dialog);
+                };
+
+                nextModalButton.onclick = () => {
+                    offset = Config.modalRows + offset;
+                    modalTable(offset, search, element);
+                };
+
+                prevModalButton.onclick = () => {
+                    if (offset > 0) {
+                        offset = offset - Config.modalRows;
+                        modalTable(offset, search, element);
+                    }
+                };
+            }
+        }
+
         changeCompany() {
             const changeCompanyButtons = document.querySelectorAll('#change-company-entity');
             changeCompanyButtons.forEach((button) => {
@@ -2187,8 +2404,7 @@ export class Guards {
                 <div class="entity_editor" id="entity-editor" style="width: 500px !important;">
                     <div class="entity_editor_header">
                         <div class="user_info">
-                            <h1 class="entity_editor_title">Transferir guardia <small style="font-size: 14px; background: #e9ecef; padding: 2px 8px; border-radius: 12px; margin-left: 8px;">Paso 1 de 2</small></h1>
-                            <br><small>Define la empresa destino y el destino de las dependencias.</small>
+                            <h1 class="entity_editor_title">Transferir guardia de empresa</h1>
                         </div>
                         <button class="btn btn_close_editor" id="close"><i class="fa-solid fa-x"></i></button>
                     </div>
@@ -2218,13 +2434,13 @@ export class Guards {
                         <div class="alert_box" style="background: #fff3cd; color: #856404; padding: 12px; border-radius: 8px; display: flex; gap: 12px; margin-bottom: 24px; border: 1px solid #ffeeba;">
                             <i class="fa-solid fa-circle-exclamation" style="font-size: 20px; margin-top: 4px;"></i>
                             <div>
-                                <p style="margin: 0; font-weight: bold;">Este guardia tiene dependencias activas en ${currentCustomerName}.</p>
+                                <p style="margin: 0; font-weight: bold;">Este guardia tiene rutinas activas en ${currentCustomerName}.</p>
                                 <p style="margin: 0; font-size: 14px; background: #ffffff; display: inline-block; padding: 2px 8px; border-radius: 4px; margin-top: 4px; color: #856404; border: 1px solid #ffeeba;">${routineCount} rutinas asignadas</p>
                             </div>
                         </div>
 
                         <div class="options_section">
-                            <h3 style="font-size: 16px; margin-bottom: 16px;">¿Qué deseas hacer con estas dependencias?</h3>
+                            <h3 style="font-size: 16px; margin-bottom: 16px;">¿Qué deseas hacer con estas rutinas?</h3>
 
                             <div class="option_card" style="border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; margin-bottom: 12px; display: flex; gap: 12px; cursor: pointer;" onclick="document.getElementById('reassign-guard').checked = true">
                                 <input type="radio" name="dependency-action" id="reassign-guard" value="reassign" checked style="margin-top: 4px;">
@@ -2242,42 +2458,106 @@ export class Guards {
                                 </label>
                             </div>
                         </div>
+
+                        <br>
+                        <div id="contenedor-guard" style="margin-top: -4px; margin-bottom: 16px; margin-left: 12px; padding: 20px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 8px 8px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); transition: all 0.3s ease;">
+    
+                            <h4 style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: #495057; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <i class="fa-solid fa-user-gear" style="margin-right: 6px; color: #0d6efd;"></i> Configuración del Reemplazo
+                            </h4>
+
+                            <div class="material_input" style="position: relative; margin: 0; display: flex; align-items: center; background: #ffffff; border: 1px solid #ced4da; border-radius: 6px; padding: 10px 14px; transition: border-color 0.2s;">
+                                
+                                <div style="flex: 1; display: flex; flex-direction: column-reverse;">
+                                    <input type="text" id="entity-guard" autocomplete="none" readonly placeholder="Selecciona guardia" class="input_filled" value="" 
+                                        style="border: none; outline: none; padding: 0; font-size: 15px; color: #212529; width: 100%; background: transparent; margin-top: 4px;">
+                                    
+                                    <label for="entity-guard" style="font-size: 12px; color: #6c757d; font-weight: 500; margin: 0; pointer-events: none;">
+                                        Guardia de reemplazo
+                                    </label>
+                                </div>
+
+                                <button id="btn-select-guard" style="background: #e9ecef; border: none; color: #0d6efd; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; margin-left: 8px;" title="Seleccionar guardia de reemplazo">
+                                    <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 13px;"></i>
+                                </button>
+                                
+                            </div>
+                        </div>
                         ` : ''}
                     </div>
 
-                    <div class="entity_editor_footer" style="display: flex; justify-content: space-between;">
-                        <button class="btn btn_secondary" id="cancel-transfer" style="background: #e9ecef; border: none; color: #495057;">Cancelar</button>
-                        <button class="btn btn_primary" id="update-guard-customer" style="min-width: 120px;">Continuar <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i></button>
+                    <div class="entity_editor_footer">
+                        <button class="btn btn_primary btn_widder" id="update-guard-customer">Continuar <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i></button>
                     </div>
                 </div>
             `;
+            //<button class="btn btn_secondary" id="cancel-transfer" style="background: #e9ecef; border: none; color: #495057;">Cancelar</button>
             inputObserver();
             this.selectCustomer(); // This will attach the event listener to #btn-select-customer
             this.close();
 
+            // 1. Seleccionamos los elementos necesarios
+            const radioReassign = document.getElementById('reassign-guard');
+            const miDiv = document.getElementById('contenedor-guard');
+            const optionCards = document.querySelectorAll('.option_card');
+
+            // 2. Función única para controlar la visibilidad
+            function actualizarVisibilidadDiv() {
+                if (radioReassign && miDiv) {
+                    if (radioReassign.checked) {
+                        miDiv.style.display = 'block';  // Muestra el div
+                    } else {
+                        miDiv.style.display = 'none';   // Oculta el div
+                    }
+                }
+            }
+
+            if (radioReassign) {
+                // 3. Escuchar cambios directos en los radio buttons (por si clickean el círculo o la etiqueta)
+                document.querySelectorAll('input[name="dependency-action"]').forEach(radio => {
+                    radio.addEventListener('change', actualizarVisibilidadDiv);
+                });
+
+                // 4. Escuchar clics en las tarjetas (.option_card) para forzar la actualización
+                optionCards.forEach(card => {
+                    card.addEventListener('click', () => {
+                        // Le damos un mini respiro (setTimeout 0) para asegurarnos de que
+                        // el onclick inline del HTML ya haya cambiado el '.checked = true'
+                        setTimeout(actualizarVisibilidadDiv, 0);
+                    });
+                });
+
+                // 5. Ejecutar al cargar la página para evaluar el estado inicial (que viene 'checked')
+                actualizarVisibilidadDiv();
+            }
+            this.selectReplacementGuard(currentCustomerId, entityID);
             const updateButton = document.getElementById('update-guard-customer');
             updateButton.addEventListener('click', async () => {
                 const newCustomerIdInput = document.getElementById('entity-customer');
                 const newCustomerId = newCustomerIdInput.dataset.optionid;
                 const newCustomerName = newCustomerIdInput.value;
+                const action = document.querySelector('input[name="dependency-action"]:checked')?.value;
+                const replacementGuardId = document.getElementById('entity-guard')?.dataset.optionid;
 
                 if (newCustomerId === '' || newCustomerId === undefined) {
                     alert("Empresa vacía!");
                 } else if (newCustomerId === currentCustomerId) {
                     alert("La empresa seleccionada es la misma que la actual.");
+                } else if (action === 'reassign' && !replacementGuardId) {
+                    alert("Debe seleccionar un guardia de reemplazo.");
                 }
                 else {
-                    await this.performCustomerUpdate(entityID, newCustomerId, newCustomerName, currentCustomerId, currentCustomerName);
+                    await this.performCustomerUpdate(entityID, newCustomerId, newCustomerName, currentCustomerId, currentCustomerName, action, replacementGuardId);
                 }
             });
 
-            const cancelButton = document.getElementById('cancel-transfer');
+            /*const cancelButton = document.getElementById('cancel-transfer');
             cancelButton.onclick = () => {
                 new CloseDialog().x(this.entityDialogContainer);
-            };
+            };*/
         }
 
-        async performCustomerUpdate(entityId, newCustomerId, newCustomerName, oldCustomerId, oldCustomerName) {
+        async performCustomerUpdate(entityId, newCustomerId, newCustomerName, oldCustomerId, oldCustomerName, action, replacementGuardId) {
             const rawToRoutine = JSON.stringify({
                 "filter": {
                     "conditions": [
@@ -2301,7 +2581,16 @@ export class Guards {
                 alert(`Ocurrió un error buscando rutina`);
             } else if (existUserRoutine.length > 0) {
                 for (let i = 0; i < existUserRoutine.length; i++) {
-                    await deleteEntity('RoutineUser', existUserRoutine[i].id);
+                    if (action === 'reassign' && replacementGuardId) {
+                        const rawReassign = JSON.stringify({
+                            "user": {
+                                "id": `${replacementGuardId}`
+                            }
+                        });
+                        await updateEntity('RoutineUser', existUserRoutine[i].id, rawReassign);
+                    } else {
+                        await deleteEntity('RoutineUser', existUserRoutine[i].id);
+                    }
                 }
                 const raw2 = JSON.stringify({
                     "user": {
@@ -2319,7 +2608,7 @@ export class Guards {
                 await updateEntity('User', entityId, rawUpdate);
                 const message = JSON.stringify({"title": "Cambio de empresa","body":`Ha sido removido de la empresa ${oldCustomerName}, y asignado a ${newCustomerName}. Por favor reinicie la aplicación ahora.`,"tokenUser":guardData['token'],"type":"routine-info"});
                 postNotificationPush(message);
-                alert("Empresa cambiada exitosamente y rutinas eliminadas.");
+                alert("Empresa cambiada exitosamente.");
             } else {
                 const raw2 = JSON.stringify({
                     "user": {
