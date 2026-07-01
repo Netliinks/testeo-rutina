@@ -8,6 +8,7 @@ ENV=""
 for arg in "$@"; do
   case "$arg" in
     --dev)  ENV="dev" ;;
+    --local)  ENV="local" ;;
     --prod) ENV="prod" ;;
   esac
 done
@@ -19,6 +20,7 @@ fi
 
 case "$ENV" in
   dev)  API_BASE="https://dev-backend.netliinks.com:443/" ;;
+  local)  API_BASE="http://localhost:8080/" ;;
   prod) API_BASE="https://backend.netliinks.com:443/" ;;
 esac
 
