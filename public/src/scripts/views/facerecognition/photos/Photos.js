@@ -87,15 +87,15 @@ export class Photos {
             return;
         }
 
-        const guardIds = [...new Set(photos.map((photo) => photo.guardId).filter(Boolean))];
+        const guardIds = [...new Set(photos.map((photo) => photo.guardExternalId).filter(Boolean))];
         const guardsById = await this._fetchGuardsByIds(guardIds);
 
         grid.innerHTML = '';
         for (const photo of photos) {
             const photoId = photo.id;
             const fileInfo = photo.photo;
-            const guard = guardsById[photo.guardId];
-            const guardName = guard ? `${guard.firstName ?? ''} ${guard.lastName ?? ''}`.trim() : photo.guardId;
+            const guard = guardsById[photo.guardExternalId];
+            const guardName = guard ? `${guard.firstName ?? ''} ${guard.lastName ?? ''}`.trim() : photo.guardExternalId;
             const cell = document.createElement('div');
             cell.style.cssText = 'position:relative;background:#f0f0f0;border-radius:4px;height:100px;display:flex;align-items:center;justify-content:center;';
             cell.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid #ccc;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span>';
