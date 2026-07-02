@@ -982,6 +982,25 @@ export class Guards {
                             const img = document.createElement('img');
                             img.src = url;
                             img.style.cssText = 'width:100%;height:80px;object-fit:cover;border-radius:4px;cursor:pointer;display:block;';
+                            const statusBadge = document.createElement('span');
+                            statusBadge.style.cssText = 'position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:1;';
+                            if (photo.encodingState === 'OK') {
+                                statusBadge.style.background = '#43a047';
+                                statusBadge.innerHTML = '<i class="fa-solid fa-check" style="color:#fff;font-size:9px;"></i>';
+                                statusBadge.title = 'Reconocimiento facial procesado';
+                            } else if (photo.encodingState === 'ERROR') {
+                                statusBadge.style.background = '#e53935';
+                                statusBadge.innerHTML = '<i class="fa-solid fa-xmark" style="color:#fff;font-size:9px;"></i>';
+                                statusBadge.title = 'Error al procesar el reconocimiento facial';
+                            } else if (!photo.encodingState) {
+                                statusBadge.style.background = 'rgba(0,0,0,0.5)';
+                                statusBadge.innerHTML = '<span style="display:inline-block;width:9px;height:9px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;"></span>';
+                                statusBadge.title = 'Procesando reconocimiento facial...';
+                            } else {
+                                statusBadge.style.background = 'rgba(0,0,0,0.5)';
+                                statusBadge.innerHTML = '<i class="fa-solid fa-question" style="color:#fff;font-size:9px;"></i>';
+                                statusBadge.title = 'Estado de reconocimiento facial desconocido';
+                            }
                             img.addEventListener('click', () => {
                                 const overlay = document.createElement('div');
                                 overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;';
@@ -1000,6 +1019,12 @@ export class Guards {
                                     renderPhotoGrid(photosCurrentPage);
                                 });
                                 overlay.appendChild(full);
+                                if (photo.encodingState !== 'OK') {
+                                    const detail = document.createElement('div');
+                                    detail.textContent = statusBadge.title;
+                                    detail.style.cssText = 'margin-top:12px;padding:6px 16px;background:rgba(255,255,255,0.15);color:#fff;border-radius:6px;font-size:13px;text-align:center;max-width:90vw;';
+                                    overlay.appendChild(detail);
+                                }
                                 overlay.appendChild(deleteBtn);
                                 overlay.addEventListener('click', () => overlay.remove());
                                 document.addEventListener('keydown', function onEsc(e) {
@@ -1009,6 +1034,7 @@ export class Guards {
                             });
                             cell.appendChild(img);
                             cell.appendChild(xBtn);
+                            cell.appendChild(statusBadge);
                         }
                     }
                     pageInfo.textContent = `Página ${page + 1} / ${totalPages}`;
