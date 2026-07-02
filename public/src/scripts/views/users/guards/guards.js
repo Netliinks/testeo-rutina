@@ -19,7 +19,8 @@ let infoPage = {
     offset: Config.offset,
     currentPage: currentPage,
     search: "",
-    showGuards: "THIS"
+    showGuards: "THIS",
+    variant: "default"
 };
 let dataPage;
 const currentUserData = async() => {
@@ -114,7 +115,9 @@ const getUsers = async () => {
     return dataPage;
 };
 export class Guards {
-    constructor() {
+    constructor(options = {}) {
+        this.variant = options.variant ?? infoPage.variant;
+        infoPage.variant = this.variant;
         this.dialogContainer = document.getElementById('app-dialogs');
         this.entityDialogContainer = document.getElementById('entity-editor-container');
         this.datatableContainer = document.getElementById('datatable-container');
@@ -178,7 +181,7 @@ export class Guards {
         infoPage.search = search;
         infoPage.showGuards = showGuards;
         this.datatableContainer.innerHTML = '';
-        this.datatableContainer.innerHTML = tableLayout;
+        this.datatableContainer.innerHTML = tableLayout(this.variant);
         const tableBody = document.getElementById('datatable-body');
         tableBody.innerHTML = '.Cargando...';
         let data = await getUsers();
@@ -213,6 +216,21 @@ export class Guards {
                 if((infoPage.showGuards === "N/A" && client?.customer?.id == undefined) || infoPage.showGuards === "THIS" || infoPage.showGuards === "ALL"){
                     let row = document.createElement('tr');
                     //<button class="button" id="convert-entity" data-entityId="${client.id}"><i class="fa-solid fa-shield"></i></button>
+                    const entityActions = this.variant === 'photos' ? `
+                            <button class="button" id="photos-entity" data-entityId="${client.id}" data-entityName="${client.firstName} ${client.lastName}">
+                            <i class="fa-regular fa-images"></i>
+                            </button>
+                    ` : `
+                            <button class="button" id="edit-entity" data-entityId="${client.id}">
+                            <i class="fa-solid fa-pen"></i>
+                            </button>
+
+                            <button class="button" id="mobile-entity" data-entityId="${client.id}" data-entityName="${client.username}"><i class="fa-solid fa-mobile"></i></button>
+
+                            <button class="button" id="remove-entity" data-entityId="${client.id}">
+                            <i class="fa-solid fa-trash"></i>
+                            </button>
+                    `;
                     row.innerHTML += `
                         <td>${client?.customer?.name ?? ''}</dt>
                         <td>${client.firstName} ${client.lastName}</dt>
@@ -222,21 +240,7 @@ export class Guards {
                         <td>${client?.userPresent ?? ''}</dt>
                         <!-- <td>${client?.citadel?.description}</dt> -->
                         <td class="entity_options">
-                            <button class="button" id="photos-entity" data-entityId="${client.id}" data-entityName="${client.firstName} ${client.lastName}">
-                            <i class="fa-regular fa-images"></i>
-                            </button>
-                            <button class="button" id="edit-entity" data-entityId="${client.id}">
-                            <i class="fa-solid fa-pen"></i>
-                            </button>
-
-                            <button class="button" id="mobile-entity" data-entityId="${client.id}" data-entityName="${client.username}"><i class="fa-solid fa-mobile"></i></button>
-
-                            
-
-                            <button class="button" id="remove-entity" data-entityId="${client.id}">
-                            <i class="fa-solid fa-trash"></i>
-                            </button>
-
+                            ${entityActions}
                         </dt>
                     `;
                     table.appendChild(row);
@@ -245,15 +249,18 @@ export class Guards {
             }
         }
         this.register();
-        this.import();
-        this.assignGuard();
-        this.export();
-        this.edit(this.entityDialogContainer, data);
-        this.editPhotos(this.entityDialogContainer);
-        /*this.faceCamUser();*/
-        this.remove();
-        this.mobileUser();
-        //this.convertToSuper();
+        if (this.variant === 'photos') {
+            this.editPhotos(this.entityDialogContainer);
+        } else {
+            this.import();
+            this.assignGuard();
+            this.export();
+            this.edit(this.entityDialogContainer, data);
+            /*this.faceCamUser();*/
+            this.remove();
+            this.mobileUser();
+            //this.convertToSuper();
+        }
         this.changeUserPassword();
     }
     /*<button class="button" id="facecam-entity" data-entityId="${client.id}" data-entityName="${client.firstName} ${client.lastName}">

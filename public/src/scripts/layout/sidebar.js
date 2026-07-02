@@ -121,6 +121,12 @@ export class Sidebar {
               </span>
 
               <div class="sidebar_subitems">
+                <div class="sidebar_subitem" id="render-fr-guards">
+                  <span class="sidebar_subitem_label">
+                    <i class="fa-regular fa-person-military-pointing"></i> <div class="label">Guardias</div>
+                  </span>
+                </div>
+
                 <div class="sidebar_subitem" id="render-fr-models">
                   <span class="sidebar_subitem_label">
                     <i class="fa-regular fa-cube"></i> <div class="label">Modelos</div>
@@ -301,7 +307,7 @@ renders() {
     document.getElementById('render-guards')?.addEventListener('click', () => {
       clearTimeout(Config.timeOut);
       Config.currentScreen = null;
-        new Guards().render(Config.offset, Config.currentPage, "", 'THIS');
+        new Guards({ variant: 'default' }).render(Config.offset, Config.currentPage, "", 'THIS');
     });
     document.getElementById('render-clients')?.addEventListener('click', () => {
       clearTimeout(Config.timeOut);
@@ -422,6 +428,12 @@ renders() {
         clearTimeout(Config.timeOut);
         Config.currentScreen = null;
         new Audits().render(currentDateTime().date, currentDateTime().date);
+    });
+
+    document.getElementById('render-fr-guards')?.addEventListener('click', () => {
+        clearTimeout(Config.timeOut);
+        Config.currentScreen = null;
+        new Guards({ variant: 'photos' }).render(Config.offset, Config.currentPage, "", 'THIS');
     });
 
     document.getElementById('render-fr-models')?.addEventListener('click', () => {
