@@ -231,11 +231,12 @@ export class Guards {
                             <i class="fa-solid fa-trash"></i>
                             </button>
                     `;
+                    const passwordColumn = this.variant === 'photos' ? '' : `<td class="key"><button class="button" data-userid="${client.id}" id="change-user-password"><i class="fa-regular fa-key"></i></button></td>`;
                     row.innerHTML += `
                         <td>${client?.customer?.name ?? ''}</dt>
                         <td>${client.firstName} ${client.lastName}</dt>
                         <td>${client.username}</dt>
-                        <td class="key"><button class="button" data-userid="${client.id}" id="change-user-password"><i class="fa-regular fa-key"></i></button></td>
+                        ${passwordColumn}
                         <td class="tag"><span>${client.state.name}</span></td>
                         <td>${client?.userPresent ?? ''}</dt>
                         <!-- <td>${client?.citadel?.description}</dt> -->
@@ -248,10 +249,10 @@ export class Guards {
                 }
             }
         }
-        this.register();
         if (this.variant === 'photos') {
             this.editPhotos(this.entityDialogContainer);
         } else {
+            this.register();
             this.import();
             this.assignGuard();
             this.export();
@@ -260,8 +261,8 @@ export class Guards {
             this.remove();
             this.mobileUser();
             //this.convertToSuper();
+            this.changeUserPassword();
         }
-        this.changeUserPassword();
     }
     /*<button class="button" id="facecam-entity" data-entityId="${client.id}" data-entityName="${client.firstName} ${client.lastName}">
                             <i class="fa-solid fa-image"></i>

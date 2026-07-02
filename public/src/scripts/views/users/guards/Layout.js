@@ -24,11 +24,13 @@ export const tableLayout = (variant = 'default') => `
           id="btnSearch">
           <i class="fa-solid fa-search"></i>
       </button>
+      ${variant === 'photos' ? '' : `
       <button
         class="datatable_button add_user"
         id="new-entity">
         <i class="fa-solid fa-user-plus"></i>
       </button>
+      `}
 
       ${variant === 'photos' ? '' : `
       <button
@@ -58,7 +60,7 @@ export const tableLayout = (variant = 'default') => `
         Nombre <i class="fa-regular fa-filter"></i>
       </span></th>
 
-      <th colspan="2"><span data-type="id">
+      <th colspan="${variant === 'photos' ? '1' : '2'}"><span data-type="id">
         ID <i class="fa-regular fa-filter"></i>
       </span></th>
 
