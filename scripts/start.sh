@@ -24,8 +24,11 @@ case "$ENV" in
   prod) API_BASE="https://backend.netliinks.com:443/" ;;
 esac
 
+CLIENT_ID="${CLIENT_ID:-c3c0353462}"
+CLIENT_SECRET="${CLIENT_SECRET:-2fc9f1be5d7b0d18f25be642b3af1e5b}"
+
 CONFIG_FILE="$ROOT/public/src/scripts/config.js"
-echo "window.APP_CONFIG = { baseUrl: '${API_BASE}' };" > "$CONFIG_FILE"
+echo "window.APP_CONFIG = { baseUrl: '${API_BASE}', clientId: '${CLIENT_ID}', clientSecret: '${CLIENT_SECRET}' };" > "$CONFIG_FILE"
 echo "[$ENV] config written → $CONFIG_FILE"
 
 if ! command -v python3 &>/dev/null; then
