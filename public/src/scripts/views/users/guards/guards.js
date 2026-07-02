@@ -918,9 +918,18 @@ export class Guards {
                 `;
 
                 document.getElementById('close').addEventListener('click', () => {
+                    stopPhotosPolling();
                     container.style.display = 'none';
                     container.innerHTML = '';
                 });
+
+                let photosPollIntervalId = null;
+                const stopPhotosPolling = () => {
+                    if (photosPollIntervalId) {
+                        clearInterval(photosPollIntervalId);
+                        photosPollIntervalId = null;
+                    }
+                };
 
                 document.getElementById('btn-upload-photo').addEventListener('click', async () => {
                     const input = document.getElementById('entity-photo');
@@ -946,12 +955,14 @@ export class Guards {
                 const PHOTOS_PAGE_SIZE = 6;
                 let photosCurrentPage = 0;
 
-                const renderPhotoGrid = async (page) => {
+                const renderPhotoGrid = async (page, silent = false) => {
                     const grid = document.getElementById('guard-photos-grid');
                     const pageInfo = document.getElementById('photos-page-info');
                     const prevBtn = document.getElementById('photos-prev');
                     const nextBtn = document.getElementById('photos-next');
-                    grid.innerHTML = '<div style="grid-column:1/-1;display:flex;justify-content:center;align-items:center;min-height:80px;"><span style="display:inline-block;width:28px;height:28px;border:3px solid #e0e0e0;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span></div>';
+                    if (!silent) {
+                        grid.innerHTML = '<div style="grid-column:1/-1;display:flex;justify-content:center;align-items:center;min-height:80px;"><span style="display:inline-block;width:28px;height:28px;border:3px solid #e0e0e0;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span></div>';
+                    }
                     const result = await getGuardPhotos(entityId, page, PHOTOS_PAGE_SIZE);
                     const photos = Array.isArray(result) ? result : (result?.content ?? []);
                     const totalPages = result?.totalPages ?? (photos.length < PHOTOS_PAGE_SIZE ? page + 1 : page + 2);
@@ -1040,6 +1051,14 @@ export class Guards {
                     pageInfo.textContent = `Página ${page + 1} / ${totalPages}`;
                     prevBtn.disabled = page === 0;
                     nextBtn.disabled = page >= totalPages - 1;
+
+                    const hasPendingEncoding = photos.some((photo) => !photo.encodingState);
+                    stopPhotosPolling();
+                    if (hasPendingEncoding) {
+                        photosPollIntervalId = setInterval(() => {
+                            renderPhotoGrid(photosCurrentPage, true);
+                        }, 5000);
+                    }
                 };
 
                 renderPhotoGrid(photosCurrentPage);
