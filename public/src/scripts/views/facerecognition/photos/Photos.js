@@ -1,4 +1,4 @@
-import { getAllGuardPhotos, getFaceFile, deleteGuardPhotoById } from "../../../endpoints.js";
+import { getAllGuardPhotos, getFaceFile, deleteGuardPhotoById, getFilterEntityData } from "../../../endpoints.js";
 
 const PAGE_SIZE = 12;
 const POLL_INTERVAL = 5000;
@@ -44,6 +44,31 @@ export class Photos {
         await this.loadPhotos(this.currentPage);
     }
 
+    async _fetchGuardsByIds(guardIds) {
+        if (!guardIds.length) return {};
+        const raw = JSON.stringify({
+            filter: {
+                conditions: [
+                    {
+                        property: 'id',
+                        operator: 'in',
+                        value: guardIds
+                    }
+                ]
+            },
+            limit: guardIds.length,
+            offset: 0,
+            fetchPlan: 'full'
+        });
+        const result = await getFilterEntityData('User', raw);
+        const guards = Array.isArray(result) ? result : (result?.content ?? []);
+        const guardsById = {};
+        guards.forEach((guard) => {
+            guardsById[guard.id] = guard;
+        });
+        return guardsById;
+    }
+
     async loadPhotos(page) {
         const grid = document.getElementById('photos-grid');
         const pagination = document.getElementById('pagination-container');
@@ -62,17 +87,22 @@ export class Photos {
             return;
         }
 
+        const guardIds = [...new Set(photos.map((photo) => photo.guardId).filter(Boolean))];
+        const guardsById = await this._fetchGuardsByIds(guardIds);
+
         grid.innerHTML = '';
         for (const photo of photos) {
             const photoId = photo.id;
             const fileInfo = photo.photo;
+            const guard = guardsById[photo.guardId];
+            const guardName = guard ? `${guard.firstName ?? ''} ${guard.lastName ?? ''}`.trim() : photo.guardId;
             const cell = document.createElement('div');
             cell.style.cssText = 'position:relative;background:#f0f0f0;border-radius:4px;height:100px;display:flex;align-items:center;justify-content:center;';
             cell.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid #ccc;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span>';
             grid.appendChild(cell);
             const url = await getFaceFile(fileInfo.path, fileInfo.storageName);
             cell.innerHTML = '';
-            cell.style.cssText = 'position:relative;';
+            cell.style.cssText = 'position:relative;display:flex;flex-direction:column;background:#f0f0f0;border-radius:4px;overflow:hidden;';
 
             const xBtn = document.createElement('button');
             xBtn.textContent = '×';
@@ -87,7 +117,12 @@ export class Photos {
 
             const img = document.createElement('img');
             img.src = url;
-            img.style.cssText = 'width:100%;height:100px;object-fit:cover;border-radius:4px;cursor:pointer;display:block;';
+            img.style.cssText = 'width:100%;height:90px;object-fit:cover;cursor:pointer;display:block;';
+
+            const caption = document.createElement('div');
+            caption.textContent = guardName || '-';
+            caption.title = guardName || '';
+            caption.style.cssText = 'font-size:11px;color:#555;padding:4px 6px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
 
             const statusBadge = document.createElement('span');
             statusBadge.style.cssText = 'position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:1;';
@@ -148,6 +183,7 @@ export class Photos {
             });
 
             cell.appendChild(img);
+            cell.appendChild(caption);
             cell.appendChild(xBtn);
             cell.appendChild(statusBadge);
         }
