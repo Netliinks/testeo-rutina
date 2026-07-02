@@ -128,15 +128,15 @@ export class Sidebar {
                   </span>
                 </div>
 
-                <div class="sidebar_subitem" id="render-fr-models">
-                  <span class="sidebar_subitem_label">
-                    <i class="fa-regular fa-cube"></i> <div class="label">Modelos</div>
-                  </span>
-                </div>
-
                 <div class="sidebar_subitem" id="render-fr-photos">
                   <span class="sidebar_subitem_label">
                     <i class="fa-regular fa-images"></i> <div class="label">Fotos</div>
+                  </span>
+                </div>
+
+                <div class="sidebar_subitem" id="render-fr-models">
+                  <span class="sidebar_subitem_label">
+                    <i class="fa-regular fa-cube"></i> <div class="label">Modelos</div>
                   </span>
                 </div>
               </div>
@@ -443,16 +443,16 @@ renders() {
         new Guards({ variant: 'photos' }).render(Config.offset, Config.currentPage, "", 'THIS');
     });
 
-    document.getElementById('render-fr-models')?.addEventListener('click', () => {
-        clearTimeout(Config.timeOut);
-        Config.currentScreen = null;
-        new Models().render();
-    });
-
     document.getElementById('render-fr-photos')?.addEventListener('click', () => {
         clearTimeout(Config.timeOut);
         Config.currentScreen = null;
         new Photos().render();
+    });
+
+    document.getElementById('render-fr-models')?.addEventListener('click', () => {
+        clearTimeout(Config.timeOut);
+        Config.currentScreen = null;
+        new Models().render();
     });
   }
 }
