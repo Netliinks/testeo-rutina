@@ -10,13 +10,15 @@ const NetliinksUrl = `${NetliinkBase}rest/entities/`;
 // ===================================================
 export let token = localStorage.getItem('access_token');
 export const _userAgent = navigator.userAgent;
+export const clientId = window.APP_CONFIG?.clientId ?? '';
+export const clientSecret = window.APP_CONFIG?.clientSecret ?? '';
+export const basicAuth = `Basic ${btoa(`${clientId}:${clientSecret}`)}`;
 // ===================================================
 // HEADERS
 // ===================================================
 let headers = new Headers();
 headers.append('Authorization', `Bearer ${token}`);
 headers.append('Content-Type', "application/json");
-headers.append('Cookie', "JSESSIONID=CDD208A868EAABD1F523BB6F3C8946AF");
 // ===================================================
 // GET TOKEN
 // ===================================================
@@ -34,7 +36,7 @@ export const getToken = async (mail, password) => {
         headers: {
             Accept: 'application/json',
             "User-agent": `${_userAgent}`,
-            Authorization: 'Basic YzNjMDM1MzQ2MjoyZmM5ZjFiZTVkN2IwZDE4ZjI1YmU2NDJiM2FmMWU1Yg==',
+            Authorization: basicAuth,
             "Content-Type": 'application/x-www-form-urlencoded',
             Cookie: "JSESSIONID=CDD208A868EAABD1F523BB6F3C8946AF",
         }
