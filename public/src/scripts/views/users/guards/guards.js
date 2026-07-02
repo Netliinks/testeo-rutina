@@ -1035,6 +1035,12 @@ export class Guards {
                                     detail.textContent = statusBadge.title;
                                     detail.style.cssText = 'margin-top:12px;padding:6px 16px;background:rgba(255,255,255,0.15);color:#fff;border-radius:6px;font-size:13px;text-align:center;max-width:90vw;';
                                     overlay.appendChild(detail);
+                                    if (photo.detail) {
+                                        const detailMessage = document.createElement('div');
+                                        detailMessage.textContent = photo.detail;
+                                        detailMessage.style.cssText = 'margin-top:8px;padding:6px 16px;color:#ccc;font-size:12px;text-align:center;max-width:90vw;';
+                                        overlay.appendChild(detailMessage);
+                                    }
                                 }
                                 overlay.appendChild(deleteBtn);
                                 overlay.addEventListener('click', () => overlay.remove());
