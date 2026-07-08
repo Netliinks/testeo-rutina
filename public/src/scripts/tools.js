@@ -1785,21 +1785,42 @@ export const generateFileSimpleXls = (ar, title, extension) => {
 // Función para pausar
 export const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const formatearFechaPorZona = (fechaTexto, origenPorDefecto = 'UTC', zonaHorariaDestino = 'America/Guayaquil') => {
+export const formatearFechaPorZona = (fechaTexto, horaReferencia = null, zonaHorariaDestino = 'America/Guayaquil') => {
    try {
     if (!fechaTexto) return null;
 
     let limpio = String(fechaTexto).trim().replace(' ', 'T');
+    let seAjusto = false;
+    let originalAuditHour = '';
 
     // 1. Verificamos si el texto YA trae una zona horaria explícita (Z, +00:00, -05:00, etc.)
     const tieneZonaExplicita = limpio.includes('Z') || limpio.includes('+') || /-\d{2}:\d{2}$/.test(limpio);
 
     if (!tieneZonaExplicita) {
-      // 2. Si no tiene zona, aplicamos tu regla de negocio sin adivinar:
-      if (origenPorDefecto === 'Ecuador') {
-        limpio = limpio + '-05:00'; // Forzamos a JS a entender que ya es hora de Ecuador
+      // 2. Si se proporciona una hora de referencia (como creationTime), verificamos si coincide
+      if (horaReferencia) {
+        const horaEnTexto = limpio.split('T')[1]?.slice(0, 5);
+        const [hA, mA] = horaEnTexto.split(':').map(Number);
+        const [hR, mR] = String(horaReferencia).trim().slice(0, 5).split(':').map(Number);
+
+        const minsA = hA * 60 + mA;
+        const minsR = hR * 60 + mR;
+
+        // Diferencia circular en minutos (maneja cambio de día si fuera necesario)
+        const diff = (minsA - minsR + 1440) % 1440;
+
+        // Si la diferencia es de ~5 horas (300 min), es UTC
+        // Damos un margen de 15 minutos para variaciones del servidor
+        if (Math.abs(diff - 300) <= 15) {
+          originalAuditHour = limpio.split('T')[1]?.split('.')[0] || '';
+          limpio = limpio + 'Z';      // Asumimos que es UTC y ajustamos a Ecuador
+          seAjusto = true;
+        } else {
+          limpio = limpio + '-05:00'; // Ya es Ecuador o es local
+        }
       } else {
-        limpio = limpio + 'Z';      // Forzamos a JS a entender que es UTC puro
+        limpio = limpio + 'Z';      // Sin referencia: asumimos UTC por defecto
+        seAjusto = true;
       }
     }
 
@@ -1821,7 +1842,22 @@ export const formatearFechaPorZona = (fechaTexto, origenPorDefecto = 'UTC', zona
     const partes = formateador.formatToParts(fecha);
     const f = Object.fromEntries(partes.map(p => [p.type, p.value]));
 
-    return `${f.year}-${f.month}-${f.day} ${f.hour}:${f.minute}:${f.second}`;
+    const resultado = `${f.year}-${f.month}-${f.day} ${f.hour}:${f.minute}:${f.second}`;
+
+    if (seAjusto && horaReferencia) {
+        const [hRes, mRes] = `${f.hour}:${f.minute}`.split(':').map(Number);
+        const [hR, mR] = String(horaReferencia).trim().slice(0, 5).split(':').map(Number);
+        const minsRes = hRes * 60 + mRes;
+        const minsR = hR * 60 + mR;
+
+        // Si después del ajuste la hora coincide con la referencia (margen de 5 min), no mostramos el paréntesis
+        if (Math.abs(minsRes - minsR) <= 5) {
+            return resultado;
+        }
+        return `${resultado} (Movil: ${horaReferencia})`;
+    }
+
+    return resultado;
 
   } catch (error) {
     console.error("Error crítico:", error);

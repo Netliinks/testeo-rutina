@@ -147,7 +147,7 @@ export const UIRightSidebar = `
   <br>
   <div class="material_input">
     <input type="text" id="creationDateTime" autocomplete="none" class="input_filled" disabled>
-    <label for="creationDateTime"><i class="fa-solid fa-calendar"></i> Fecha Programada (Todo el día)</label>
+    <label for="creationDateTime"><i class="fa-solid fa-calendar"></i> Fecha Destino (Todo el día)</label>
   </div>
 
   <br>
