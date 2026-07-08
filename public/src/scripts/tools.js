@@ -1784,3 +1784,47 @@ export const generateFileSimpleXls = (ar, title, extension) => {
 
 // Función para pausar
 export const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const formatearFechaPorZona = (fechaTexto, origenPorDefecto = 'UTC', zonaHorariaDestino = 'America/Guayaquil') => {
+   try {
+    if (!fechaTexto) return null;
+
+    let limpio = String(fechaTexto).trim().replace(' ', 'T');
+
+    // 1. Verificamos si el texto YA trae una zona horaria explícita (Z, +00:00, -05:00, etc.)
+    const tieneZonaExplicita = limpio.includes('Z') || limpio.includes('+') || /-\d{2}:\d{2}$/.test(limpio);
+
+    if (!tieneZonaExplicita) {
+      // 2. Si no tiene zona, aplicamos tu regla de negocio sin adivinar:
+      if (origenPorDefecto === 'Ecuador') {
+        limpio = limpio + '-05:00'; // Forzamos a JS a entender que ya es hora de Ecuador
+      } else {
+        limpio = limpio + 'Z';      // Forzamos a JS a entender que es UTC puro
+      }
+    }
+
+    const fecha = new Date(limpio);
+
+    if (isNaN(fecha.getTime())) {
+      console.error("Dato inválido recibido ->", JSON.stringify(fechaTexto));
+      return null;
+    }
+
+    // 3. Formateo exacto a la zona destino
+    const formateador = new Intl.DateTimeFormat('en-US', {
+      timeZone: zonaHorariaDestino,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false
+    });
+
+    const partes = formateador.formatToParts(fecha);
+    const f = Object.fromEntries(partes.map(p => [p.type, p.value]));
+
+    return `${f.year}-${f.month}-${f.day} ${f.hour}:${f.minute}:${f.second}`;
+
+  } catch (error) {
+    console.error("Error crítico:", error);
+    return null;
+  }
+}

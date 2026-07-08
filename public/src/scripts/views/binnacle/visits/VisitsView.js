@@ -5,7 +5,7 @@
 //
 import { Config } from "../../../Configs.js";
 import { getEntityData, getFilterEntityData, getFile, getFilterEntityCount } from "../../../endpoints.js";
-import { CloseDialog, drawTagsIntoTables, renderRightSidebar, filterDataByHeaderType, verifyUserType, inputObserver, pageNumbers, fillBtnPagination, sleep } from "../../../tools.js";
+import { CloseDialog, drawTagsIntoTables, renderRightSidebar, filterDataByHeaderType, verifyUserType, inputObserver, pageNumbers, fillBtnPagination, sleep, formatearFechaPorZona } from "../../../tools.js";
 import { UIContentLayout, UIRightSidebar } from "./Layout.js";
 import { UITableSkeletonTemplate } from "./Template.js";
 import { exportVisitCsv, exportVisitPdf, exportVisitXls } from "../../../exportFiles/visits.js";
@@ -151,7 +151,7 @@ export class Visits {
                     <td>${visit.dni}</td>
                     <td>[${visit?.user?.username ?? ''}] ${visit?.user?.firstName ?? ''} ${visit?.user?.lastName ?? ''}</td>
                     <td id="table-date">${visit.creationDate}</td>
-                    <td id="table-time" style="white-space: nowrap">${visit.creationTime}</td>
+                    <td>${formatearFechaPorZona(visit.createdDate)}</td>
                     <td>${verifyUserType(visit?.user?.userType ?? '')}</td>
                     <td class="tag"><span>${visit?.visitState?.name ?? ''}</span></td>
 
@@ -168,6 +168,7 @@ export class Visits {
                 //this.fixCreatedDate();
             }
         };
+        //<td id="table-time" style="white-space: nowrap">${visit.creationTime}</td>
         this.searchVisit = async (tableBody /*, visits: any*/) => {
             const search = document.getElementById('search');
             const btnSearch = document.getElementById('btnSearch');
@@ -289,7 +290,6 @@ export class Visits {
             });
             const renderInterface = async (entity) => {
                 let entityData = await getEntityData('Visit', entity);
-                console.log(entityData);
                 renderRightSidebar(UIRightSidebar);
                 const controlImages = document.getElementById('galeria');
                 const visitName = document.getElementById('visit-name');
@@ -331,6 +331,8 @@ export class Visits {
                 if (entityData?.checkBlacklist === true) {
                     checkboxBlackList?.setAttribute('checked', 'true');
                 }
+                const creationDateTime = document.getElementById('creationDateTime');
+                creationDateTime.value = `${entityData?.creationDate ?? ''} ${entityData?.creationTime ?? ''}`;
                 if (entityData?.image !== undefined || entityData?.image2 !== undefined || entityData?.image3 !== undefined || entityData?.image4 !== undefined || entityData?.camera1 !== undefined || entityData?.camera2 !== undefined || entityData?.camera3 !== undefined || entityData?.camera4 !== undefined) {
                     let images = [];
                     if (entityData?.image !== undefined) {
