@@ -193,6 +193,8 @@ export class AlertsRegisters {
         this.appContainer = document.getElementById('datatable-container');
         this.render = async () => {
             Config.currentScreen = "AlertsRegisters";
+            clearTimeout(Config.timeOut);
+            Config.timeOut = null;
             this.appContainer.innerHTML = '';
             this.appContainer.innerHTML = UIContentLayout;
             // Getting interface elements
@@ -202,37 +204,37 @@ export class AlertsRegisters {
             viewTitle.innerText = pageName;
             tableBody.innerHTML = '.Cargando... Esto puede tomar unos momentos';
             let notesArray = await GetAlerts();
-            //console.log(notesArray)
-            //if(infoPage.currentPage == 1){
-                const change = async () => {
-                    clearTimeout(Config.timeOut);
-                    if(infoPage.counter == Config.timeReolad){
-                        //const newRegisters1 = await getFilterEntityCount(infoPage.table[0], raw1);
-                        //const newRegisters2 = await getFilterEntityCount(infoPage.table[1], raw2);
-                        //console.log(infoPage.count);
-                        //console.log(newRegisters);
-                        /*if(newRegisters1 > infoPage.count1 || newRegisters2 > infoPage.count2){
-                            console.log("updates detected")
-                            infoPage.newRegister = true;
-                            infoPage.countNewRegister1 = newRegisters1 - infoPage.count1;
-                            infoPage.countNewRegister2 = newRegisters2 - infoPage.count2;
-                            new AlertsRegisters().render();
-                        }else{
-                            console.log("no updates")
-                            Config.timeOut = setTimeout(change, infoPage.counter);
-                        }*/
-                       console.log(`verificando actualizaciones...`);
-                        new AlertsRegisters().render();
-                        
-                    }else if(infoPage.counter == 10){
-                        infoPage.counter = Config.timeReolad;
-                        Config.timeOut = setTimeout(change, infoPage.counter);
-                    }
+            const change = async () => {
+                clearTimeout(Config.timeOut);
+                Config.timeOut = null;
+                if (Config.currentScreen !== "AlertsRegisters") {
+                    return;
                 }
+                if(infoPage.counter == Config.timeReolad){
+                    //const newRegisters1 = await getFilterEntityCount(infoPage.table[0], raw1);
+                    //const newRegisters2 = await getFilterEntityCount(infoPage.table[1], raw2);
+                    //console.log(infoPage.count);
+                    //console.log(newRegisters);
+                    /*if(newRegisters1 > infoPage.count1 || newRegisters2 > infoPage.count2){
+                        console.log("updates detected")
+                        infoPage.newRegister = true;
+                        infoPage.countNewRegister1 = newRegisters1 - infoPage.count1;
+                        infoPage.countNewRegister2 = newRegisters2 - infoPage.count2;
+                        new AlertsRegisters().render();
+                    }else{
+                        console.log("no updates")
+                        Config.timeOut = setTimeout(change, infoPage.counter);
+                    }*/
+                   console.log(`verificando actualizaciones...`);
+                    new AlertsRegisters().render();
+                }else if(infoPage.counter == 10){
+                    infoPage.counter = Config.timeReolad;
+                    Config.timeOut = setTimeout(change, infoPage.counter);
+                }
+            }
+            if (Config.currentScreen === "AlertsRegisters") {
                 Config.timeOut = setTimeout(change, infoPage.counter);
-            //}else{
-            //    clearTimeout(Config.timeOut);
-            //}
+            }
             tableBody.innerHTML = UITableSkeletonTemplate.repeat(tableRows);
             // Exec functions
             this.load(tableBody, currentPage, notesArray);
