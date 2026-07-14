@@ -226,13 +226,7 @@ export class Guards {
                             <i class="fa-solid fa-pen"></i>
                             </button>
 
-                            <button class="button" id="change-company-entity" data-entityId="${client.id}" data-current-customer-id="${client?.customer?.id ?? ''}" data-current-customer-name="${client?.customer?.name ?? ''}">
-                                <i class="fa-solid fa-briefcase"></i>
-                            </button>
-
                             <button class="button" id="mobile-entity" data-entityId="${client.id}" data-entityName="${client.username}"><i class="fa-solid fa-mobile"></i></button>
-
-                            
 
                             <button class="button" id="remove-entity" data-entityId="${client.id}">
                             <i class="fa-solid fa-trash"></i>
@@ -255,7 +249,6 @@ export class Guards {
         this.mobileUser();
         //this.convertToSuper();
         this.changeUserPassword();
-        this.changeCompany(); // Call the new method
     }
     /*<button class="button" id="facecam-entity" data-entityId="${client.id}" data-entityName="${client.firstName} ${client.lastName}">
                             <i class="fa-solid fa-image"></i>
@@ -687,12 +680,12 @@ export class Guards {
                         <label for="entity-position">Puesto</label>
                     </div>
 
-                    <!--
                     <div class="material_input">
                         <input type="text" id="entity-customer" autocomplete="none" class="input_filled" value="${data?.customer?.name ?? ''}" data-optionid="${data?.customer?.id ?? ''}" disabled>
                         <label for="entity-customer">Seleccionar empresa <button style="background-color:white; color:#808080; font-size:12px;" id="btn-select-customer"><i class="fa-solid fa-arrow-up-right-from-square" style="font-size:12px; color:blue;"></i></button></label>
                     </div>
 
+                    <!--
                     <div class="material_input">
                     <input type="text" maxlength="10" id="entity-dni" class="input_filled" value="${data?.dni ?? ''}" disabled>
                     <label for="entity-dni">Cédula</label>
@@ -741,7 +734,7 @@ export class Guards {
                 </div>
             `;
             inputObserver();
-            //this.selectCustomer();
+            this.selectCustomer();
             //inputSelect('Citadel', 'entity-citadel');
             //inputSelect('Customer', 'entity-customer');
             inputSelect('State', 'entity-state', data.state.name);
@@ -767,7 +760,7 @@ export class Guards {
                     // @ts-ignore
                     status: document.getElementById('entity-state'),
                     position: document.getElementById('entity-position'),
-                    //customer: document.getElementById('entity-customer'),
+                    customer: document.getElementById('entity-customer'),
                     // @ts-ignore
                     //dni: document.getElementById('entity-dni'),
                     // @ts-ignore
@@ -786,9 +779,9 @@ export class Guards {
                     "state": {
                         "id": `${$value.status?.dataset.optionid}`
                     },
-                    //"customer": {
-                    //    "id": `${$value.customer.dataset.optionid}`
-                    //},
+                    "customer": {
+                        "id": `${$value.customer.dataset.optionid}`
+                    },
                     // @ts-ignore
                     "phone": `${$value.phone?.value}`,
                     "userPresent":`${$value.position.value}`
@@ -803,63 +796,18 @@ export class Guards {
                 //} 
                 //if ($value.dni.value === '' || $value.dni.value === undefined) {
                 //    alert("DNI vacío!");
-                /*if ($value.customer.dataset.optionid === '' || $value.customer.dataset.optionid === undefined) {
+                if ($value.customer.dataset.optionid === '' || $value.customer.dataset.optionid === undefined) {
                     alert("Empresa vacía!");
                 }else {
                     if($value.customer.dataset.optionid != data?.customer?.id){
-                        const rawToRoutine = JSON.stringify({
-                            "filter": {
-                                "conditions": [
-                                    {
-                                        "property": "customer.id",
-                                        "operator": "=",
-                                        "value": `${data?.customer?.id}`
-                                    },
-                                    {
-                                        "property": "user.id",
-                                        "operator": "=",
-                                        "value": `${entityId}`
-                                    }
-                                ],
-                            },
-                        });
-                        const existUserRoutine = await getFilterEntityData("RoutineUser", rawToRoutine);
-                        if(existUserRoutine == undefined){
-                            alert(`Ocurrió un error buscando rutina`);
-                        }else if(existUserRoutine.length > 0){
-                            for(let i=0; i<existUserRoutine.length; i++){
-                                await deleteEntity('RoutineUser', existUserRoutine[i].id);
-                            }
-                            //alert(`No se puede cambiar la empresa, el guardia tiene rutina asignada en ${data?.customer?.name}`);
-                            const raw2 = JSON.stringify({
-                                "user": {
-                                    "id": `${data.id}`
-                                },
-                                "model": '#NEWMOBILEADD'
-                            });
-                            await registerEntity(raw2, 'AndroidLogin');
-                            await update(raw);
-                            const message = JSON.stringify({"title": "Cambio de empresa","body":`Ha sido removido de la empresa ${data?.customer?.name ?? ''}, por favor reinicie la aplicación ahora.`,"tokenUser":data['token'],"type":"routine-info"});
-                            postNotificationPush(message);
-                        }else{
-                            const raw2 = JSON.stringify({
-                                "user": {
-                                    "id": `${data.id}`
-                                },
-                                "model": '#NEWMOBILEADD'
-                            });
-                            await registerEntity(raw2, 'AndroidLogin');
-                            await update(raw);
-                            const message = JSON.stringify({"title": "Cambio de empresa","body":`Ha sido removido de la empresa ${data?.customer?.name ?? ''}, por favor reinicie la aplicación ahora.`,"tokenUser":data['token'],"type":"routine-info"});
-                            postNotificationPush(message);
-                        }
-                    }else{*/
+                        this.changeCompany(entityId, data?.customer?.id, data?.customer?.name, $value.customer.dataset.optionid, $value.customer.value, raw);
+                    }else{
                         await update(raw);
-                    //}
-                //}
+                    }
+                }
             });
-            const update = (raw) => {
-                updateEntity('User', entityId, raw)
+            const update = async (raw) => {
+                await updateEntity('User', entityId, raw)
                     .then((res) => {
                     setTimeout(async () => {
                         let tableBody = document.getElementById('datatable-body');
@@ -2147,17 +2095,19 @@ export class Guards {
         }
         }
 
-        selectReplacementGuard(customerId, currentGuardId) {
+        selectReplacementGuard(customerId, currentGuardId, entityID, currentCustomerName, otherData) {
             const btnElement = document.getElementById('btn-select-guard');
 
             if (btnElement) {
                 btnElement.addEventListener('click', async () => {
-                    const element = document.getElementById('entity-guard');
-                    modalTable(0, "", element);
+                    const newCustInput = document.getElementById('entity-customer');
+                    const nId = newCustInput.dataset.optionid;
+                    const nName = newCustInput.value;
+                    modalTable.call(this, 0, "", nId, nName);
                 });
             }
 
-            async function modalTable(offset, search, element) {
+            async function modalTable(offset, search, nId, nName) {
                 const dialogContainer = document.getElementById('app-dialogs');
                 let raw = JSON.stringify({
                     "filter": {
@@ -2327,7 +2277,6 @@ export class Guards {
                 const btnSearchModal = document.getElementById('btnSearchModal');
                 const _selectGuard = document.querySelectorAll('#select-this-guard');
                 const _closeButton = document.getElementById('cancelModal');
-                const _dialog = document.getElementById('dialog-content');
                 const prevModalButton = document.getElementById('prevModal');
                 const nextModalButton = document.getElementById('nextModal');
 
@@ -2335,51 +2284,33 @@ export class Guards {
 
                 _selectGuard.forEach((btn) => {
                     btn.addEventListener('click', () => {
-                        element.setAttribute('data-optionid', btn.dataset.entityid);
-                        element.setAttribute('value', btn.dataset.entityname);
-                        element.classList.add('input_filled');
-                        new CloseDialog().x(_dialog);
+                        this.changeCompany(entityID, customerId, currentCustomerName, nId, nName, otherData, btn.dataset.entityid, btn.dataset.entityname);
                     });
                 });
 
                 btnSearchModal.onclick = () => {
-                    modalTable(0, txtSearch.value, element);
+                    modalTable.call(this, 0, txtSearch.value, nId, nName);
                 };
 
                 _closeButton.onclick = () => {
-                    new CloseDialog().x(_dialog);
+                    this.changeCompany(entityID, customerId, currentCustomerName, nId, nName, otherData);
                 };
 
                 nextModalButton.onclick = () => {
                     offset = Config.modalRows + offset;
-                    modalTable(offset, search, element);
+                    modalTable.call(this, offset, search, nId, nName);
                 };
 
                 prevModalButton.onclick = () => {
                     if (offset > 0) {
                         offset = offset - Config.modalRows;
-                        modalTable(offset, search, element);
+                        modalTable.call(this, offset, search, nId, nName);
                     }
                 };
             }
         }
 
-        changeCompany() {
-            const changeCompanyButtons = document.querySelectorAll('#change-company-entity');
-            changeCompanyButtons.forEach((button) => {
-                button.addEventListener('click', () => {
-                    const entityId = button.dataset.entityid;
-                    const currentCustomerId = button.dataset.currentCustomerId;
-                    const currentCustomerName = button.dataset.currentCustomerName;
-                    this.renderChangeCompanyInterface(entityId, currentCustomerId, currentCustomerName);
-                });
-            });
-        }
-
-        async renderChangeCompanyInterface(entityID, currentCustomerId, currentCustomerName) {
-            const guardData = await getEntityData('User', entityID);
-            const initials = `${guardData?.firstName?.[0] ?? ''}${guardData?.lastName?.[0] ?? ''}`;
-
+        async changeCompany(entityID, currentCustomerId, currentCustomerName, newCustomerId = '', newCustomerName = '', otherData = null, replacementGuardId = '', replacementGuardName = '') {
             const rawToRoutine = JSON.stringify({
                 "filter": {
                     "conditions": [
@@ -2396,106 +2327,125 @@ export class Guards {
                     ],
                 }
             });
-            const routines = await getFilterEntityCount("RoutineUser", rawToRoutine);
-            const routineCount = routines;
+            const routineCount = await getFilterEntityCount("RoutineUser", rawToRoutine);
 
-            this.entityDialogContainer.innerHTML = '';
-            this.entityDialogContainer.style.display = 'flex';
-            this.entityDialogContainer.innerHTML = `
-                <div class="entity_editor" id="entity-editor" style="width: 500px !important;">
-                    <div class="entity_editor_header">
-                        <div class="user_info">
-                            <h1 class="entity_editor_title">Transferir guardia de empresa</h1>
-                        </div>
-                        <button class="btn btn_close_editor" id="close"><i class="fa-solid fa-x"></i></button>
-                    </div>
+            if (routineCount === 0) {
+                await this.performCustomerUpdate(entityID, newCustomerId, newCustomerName, currentCustomerId, currentCustomerName, 'orphan', null, otherData);
+                return;
+            }
 
-                    <div class="entity_editor_body">
-                        <div class="user_card" style="display: flex; align-items: center; gap: 16px; padding: 16px; background: #f8f9fa; border-radius: 8px; margin-bottom: 16px; border: 1px solid #e9ecef;">
-                            <div class="avatar" style="width: 48px; height: 48px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #007bff;">${initials}</div>
-                            <div class="user_details">
-                                <h3 style="margin: 0; font-size: 16px;">${guardData.firstName} ${guardData.lastName}</h3>
-                                <p style="margin: 0; color: #6c757d; font-size: 14px;">Guardia de planta</p>
-                            </div>
-                        </div>
+            const guardData = await getEntityData('User', entityID);
+            const initials = `${guardData?.firstName?.[0] ?? ''}${guardData?.lastName?.[0] ?? ''}`;
 
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px;">
-                            <div class="material_input" style="flex: 1; margin: 0;">
-                                <input type="text" value="${currentCustomerName}" readonly class="input_filled">
-                                <label>Empresa actual</label>
-                            </div>
-                            <div style="color: #007bff;"><i class="fa-solid fa-arrow-right"></i></div>
-                            <div class="material_input" style="flex: 1; margin: 0;">
-                                <input type="text" id="entity-customer" autocomplete="none" readonly placeholder="Selecciona empresa..." class="input_filled" value="">
-                                <label for="entity-customer">Empresa destino <button id="btn-select-customer" style="background: none; border: none; color: #007bff; cursor: pointer;"><i class="fa-solid fa-arrow-up-right-from-square"></i></button></label>
-                            </div>
-                        </div>
-
-                        ${routineCount > 0 ? `
-                        <div class="alert_box" style="background: #fff3cd; color: #856404; padding: 12px; border-radius: 8px; display: flex; gap: 12px; margin-bottom: 24px; border: 1px solid #ffeeba;">
-                            <i class="fa-solid fa-circle-exclamation" style="font-size: 20px; margin-top: 4px;"></i>
-                            <div>
-                                <p style="margin: 0; font-weight: bold;">Este guardia tiene rutinas activas en ${currentCustomerName}.</p>
-                                <p style="margin: 0; font-size: 14px; background: #ffffff; display: inline-block; padding: 2px 8px; border-radius: 4px; margin-top: 4px; color: #856404; border: 1px solid #ffeeba;">${routineCount} rutinas asignadas</p>
-                            </div>
-                        </div>
-
-                        <div class="options_section">
-                            <h3 style="font-size: 16px; margin-bottom: 16px;">¿Qué deseas hacer con estas rutinas?</h3>
-
-                            <div class="option_card" style="border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; margin-bottom: 12px; display: flex; gap: 12px; cursor: pointer;" onclick="document.getElementById('reassign-guard').checked = true">
-                                <input type="radio" name="dependency-action" id="reassign-guard" value="reassign" checked style="margin-top: 4px;">
-                                <label for="reassign-guard" style="cursor: pointer;">
-                                    <b style="display: block; margin-bottom: 4px;">Asignar un guardia de reemplazo</b>
-                                    <p style="margin: 0; font-size: 14px; color: #6c757d;">Las rutinas serán adoptadas automáticamente por el reemplazo en ${currentCustomerName}.</p>
-                                </label>
+            this.dialogContainer.style.display = 'block';
+            this.dialogContainer.innerHTML = `
+                <div class="dialog_content" id="dialog-content">
+                    <div class="dialog" style="width: 500px !important;">
+                        <div class="dialog_container padding_8">
+                            <div class="dialog_header" style="display: flex; justify-content: space-between; align-items: center;">
+                                <h2>Transferir guardia de empresa</h2>
+                                <button class="btn_close_modal" id="close-modal" style="background: none; border: none; color: #adb5bd; cursor: pointer; padding: 0 8px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);"><i class="fa-solid fa-x" style="font-size: 15px;"></i></button>
                             </div>
 
-                            <div class="option_card" style="border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; display: flex; gap: 12px; cursor: pointer;" onclick="document.getElementById('leave-orphan').checked = true">
-                                <input type="radio" name="dependency-action" id="leave-orphan" value="orphan" style="margin-top: 4px;">
-                                <label for="leave-orphan" style="cursor: pointer;">
-                                    <b style="display: block; margin-bottom: 4px;">Dejar las rutinas sin guardia asignado</b>
-                                    <p style="margin: 0; font-size: 14px; color: #6c757d;">Quedarán marcadas como <b>huérfanas</b> en el panel hasta que se reasignen manualmente.</p>
-                                </label>
-                            </div>
-                        </div>
-
-                        <br>
-                        <div id="contenedor-guard" style="margin-top: -4px; margin-bottom: 16px; margin-left: 12px; padding: 20px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 8px 8px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); transition: all 0.3s ease;">
-    
-                            <h4 style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: #495057; text-transform: uppercase; letter-spacing: 0.5px;">
-                                <i class="fa-solid fa-user-gear" style="margin-right: 6px; color: #0d6efd;"></i> Configuración del Reemplazo
-                            </h4>
-
-                            <div class="material_input" style="position: relative; margin: 0; display: flex; align-items: center; background: #ffffff; border: 1px solid #ced4da; border-radius: 6px; padding: 10px 14px; transition: border-color 0.2s;">
-                                
-                                <div style="flex: 1; display: flex; flex-direction: column-reverse;">
-                                    <input type="text" id="entity-guard" autocomplete="none" readonly placeholder="Selecciona guardia" class="input_filled" value="" 
-                                        style="border: none; outline: none; padding: 0; font-size: 15px; color: #212529; width: 100%; background: transparent; margin-top: 4px;">
-                                    
-                                    <label for="entity-guard" style="font-size: 12px; color: #6c757d; font-weight: 500; margin: 0; pointer-events: none;">
-                                        Guardia de reemplazo
-                                    </label>
+                            <div class="dialog_message padding_8">
+                                <div class="user_card" style="display: flex; align-items: center; gap: 16px; padding: 16px; background: #f8f9fa; border-radius: 8px; margin-bottom: 16px; border: 1px solid #e9ecef;">
+                                    <div class="avatar" style="width: 48px; height: 48px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #007bff;">${initials}</div>
+                                    <div class="user_details">
+                                        <h3 style="margin: 0; font-size: 16px;">${guardData.firstName} ${guardData.lastName}</h3>
+                                        <p style="margin: 0; color: #6c757d; font-size: 14px;">Guardia de planta</p>
+                                    </div>
                                 </div>
 
-                                <button id="btn-select-guard" style="background: #e9ecef; border: none; color: #0d6efd; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; margin-left: 8px;" title="Seleccionar guardia de reemplazo">
-                                    <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 13px;"></i>
-                                </button>
-                                
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px;">
+                                    <div class="material_input" style="flex: 1; margin: 0;">
+                                        <input type="text" value="${currentCustomerName}" readonly class="input_filled">
+                                        <label>Empresa actual</label>
+                                    </div>
+                                    <div style="color: #007bff;"><i class="fa-solid fa-arrow-right"></i></div>
+                                    <div class="material_input" style="flex: 1; margin: 0;">
+                                        <input type="text" id="entity-customer" autocomplete="none" readonly placeholder="Selecciona empresa..." class="input_filled" value="${newCustomerName}" data-optionid="${newCustomerId}">
+                                        <label for="entity-customer">Empresa destino</label>
+                                    </div>
+                                </div>
+
+                                ${routineCount > 0 ? `
+                                <div class="alert_box" style="background: #fff3cd; color: #856404; padding: 12px; border-radius: 8px; display: flex; gap: 12px; margin-bottom: 24px; border: 1px solid #ffeeba;">
+                                    <i class="fa-solid fa-circle-exclamation" style="font-size: 20px; margin-top: 4px;"></i>
+                                    <div>
+                                        <p style="margin: 0; font-weight: bold;">Este guardia tiene rutinas activas en ${currentCustomerName}.</p>
+                                        <p style="margin: 0; font-size: 14px; background: #ffffff; display: inline-block; padding: 2px 8px; border-radius: 4px; margin-top: 4px; color: #856404; border: 1px solid #ffeeba;">${routineCount} rutinas asignadas</p>
+                                    </div>
+                                </div>
+
+                                <div class="options_section">
+                                    <h3 style="font-size: 16px; margin-bottom: 16px;">¿Qué deseas hacer con estas rutinas?</h3>
+
+                                    <div class="option_card" style="border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; margin-bottom: 12px; display: flex; gap: 12px; cursor: pointer;" onclick="document.getElementById('reassign-guard').checked = true">
+                                        <input type="radio" name="dependency-action" id="reassign-guard" value="reassign" checked style="margin-top: 4px;">
+                                        <label for="reassign-guard" style="cursor: pointer;">
+                                            <b style="display: block; margin-bottom: 4px;">Asignar un guardia de reemplazo</b>
+                                            <p style="margin: 0; font-size: 14px; color: #6c757d;">Las rutinas serán adoptadas automáticamente por el reemplazo en ${currentCustomerName}.</p>
+                                        </label>
+                                    </div>
+
+                                    <div class="option_card" style="border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; display: flex; gap: 12px; cursor: pointer;" onclick="document.getElementById('leave-orphan').checked = true">
+                                        <input type="radio" name="dependency-action" id="leave-orphan" value="orphan" style="margin-top: 4px;">
+                                        <label for="leave-orphan" style="cursor: pointer;">
+                                            <b style="display: block; margin-bottom: 4px;">Dejar las rutinas sin guardia asignado</b>
+                                            <p style="margin: 0; font-size: 14px; color: #6c757d;">Quedarán marcadas como <b>huérfanas</b> en el panel hasta que se reasignen manualmente.</p>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <br>
+                                <div id="contenedor-guard" style="margin-top: -4px; margin-bottom: 16px; margin-left: 12px; padding: 20px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 8px 8px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); transition: all 0.3s ease;">
+
+                                    <h4 style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: #495057; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        <i class="fa-solid fa-user-gear" style="margin-right: 6px; color: #0d6efd;"></i> Configuración del Reemplazo
+                                    </h4>
+
+                                    <div class="material_input" style="position: relative; margin: 0; display: flex; align-items: center; background: #ffffff; border: 1px solid #ced4da; border-radius: 6px; padding: 10px 14px; transition: border-color 0.2s;">
+
+                                        <div style="flex: 1; display: flex; flex-direction: column-reverse;">
+                                            <input type="text" id="entity-guard" autocomplete="none" readonly placeholder="Selecciona guardia" class="input_filled" value="${replacementGuardName}" data-optionid="${replacementGuardId}"
+                                                style="border: none; outline: none; padding: 0; font-size: 15px; color: #212529; width: 100%; background: transparent; margin-top: 4px;">
+
+                                            <label for="entity-guard" style="font-size: 12px; color: #6c757d; font-weight: 500; margin: 0; pointer-events: none;">
+                                                Guardia de reemplazo
+                                            </label>
+                                        </div>
+
+                                        <button id="btn-select-guard" style="background: #e9ecef; border: none; color: #0d6efd; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; margin-left: 8px;" title="Seleccionar guardia de reemplazo">
+                                            <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 13px;"></i>
+                                        </button>
+
+                                    </div>
+                                </div>
+                                ` : ''}
+                            </div>
+
+                            <div class="dialog_footer">
+                                <button class="btn btn_primary btn_widder" id="update-guard-customer">Continuar <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i></button>
                             </div>
                         </div>
-                        ` : ''}
-                    </div>
-
-                    <div class="entity_editor_footer">
-                        <button class="btn btn_primary btn_widder" id="update-guard-customer">Continuar <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i></button>
                     </div>
                 </div>
             `;
+            //<button class="btn btn_danger btn_widder" id="cancel-transfer">Cancelar</button>
             //<button class="btn btn_secondary" id="cancel-transfer" style="background: #e9ecef; border: none; color: #495057;">Cancelar</button>
             inputObserver();
-            this.selectCustomer(); // This will attach the event listener to #btn-select-customer
-            this.close();
+
+            const closeButtonModal = document.getElementById('close-modal');
+            closeButtonModal.onclick = () => {
+                const _dialog = document.getElementById('dialog-content');
+                new CloseDialog().x(_dialog);
+            };
+
+            /*const cancelButton = document.getElementById('cancel-transfer');
+            cancelButton.onclick = () => {
+                const _dialog = document.getElementById('dialog-content');
+                new CloseDialog().x(_dialog);
+            };*/
 
             // 1. Seleccionamos los elementos necesarios
             const radioReassign = document.getElementById('reassign-guard');
@@ -2531,7 +2481,7 @@ export class Guards {
                 // 5. Ejecutar al cargar la página para evaluar el estado inicial (que viene 'checked')
                 actualizarVisibilidadDiv();
             }
-            this.selectReplacementGuard(currentCustomerId, entityID);
+            this.selectReplacementGuard(currentCustomerId, entityID, entityID, currentCustomerName, otherData);
             const updateButton = document.getElementById('update-guard-customer');
             updateButton.addEventListener('click', async () => {
                 const newCustomerIdInput = document.getElementById('entity-customer');
@@ -2548,7 +2498,7 @@ export class Guards {
                     alert("Debe seleccionar un guardia de reemplazo.");
                 }
                 else {
-                    await this.performCustomerUpdate(entityID, newCustomerId, newCustomerName, currentCustomerId, currentCustomerName, action, replacementGuardId);
+                    await this.performCustomerUpdate(entityID, newCustomerId, newCustomerName, currentCustomerId, currentCustomerName, action, replacementGuardId, otherData);
                 }
             });
 
@@ -2558,7 +2508,7 @@ export class Guards {
             };*/
         }
 
-        async performCustomerUpdate(entityId, newCustomerId, newCustomerName, oldCustomerId, oldCustomerName, action, replacementGuardId) {
+        async performCustomerUpdate(entityId, newCustomerId, newCustomerName, oldCustomerId, oldCustomerName, action, replacementGuardId, otherData = null) {
             const rawToRoutine = JSON.stringify({
                 "filter": {
                     "conditions": [
@@ -2600,12 +2550,22 @@ export class Guards {
                     "model": '#NEWMOBILEADD'
                 });
                 await registerEntity(raw2, 'AndroidLogin');
-                const rawUpdate = JSON.stringify({
-                    "customer": {
-                        "id": `${newCustomerId}`
-                    },
-                    "userPresent":"" // Clear userPresent when changing company as it might be customer-specific
-                });
+
+                let rawUpdate;
+                if(otherData){
+                    let parseData = JSON.parse(otherData);
+                    parseData.customer = { id: `${newCustomerId}` };
+                    //parseData.userPresent = "";
+                    rawUpdate = JSON.stringify(parseData);
+                }else{
+                    rawUpdate = JSON.stringify({
+                        "customer": {
+                            "id": `${newCustomerId}`
+                        },
+                        //"userPresent":""
+                    });
+                }
+
                 await updateEntity('User', entityId, rawUpdate);
                 const message = JSON.stringify({"title": "Cambio de empresa","body":`Ha sido removido de la empresa ${oldCustomerName}, y asignado a ${newCustomerName}. Por favor reinicie la aplicación ahora.`,"tokenUser":guardData['token'],"type":"routine-info"});
                 postNotificationPush(message);
@@ -2618,18 +2578,30 @@ export class Guards {
                     "model": '#NEWMOBILEADD'
                 });
                 await registerEntity(raw2, 'AndroidLogin');
-                const rawUpdate = JSON.stringify({
-                    "customer": {
-                        "id": `${newCustomerId}`
-                    },
-                    "userPresent":"" // Clear userPresent when changing company
-                });
+
+                let rawUpdate;
+                if(otherData){
+                    let parseData = JSON.parse(otherData);
+                    parseData.customer = { id: `${newCustomerId}` };
+                    //parseData.userPresent = "";
+                    rawUpdate = JSON.stringify(parseData);
+                }else{
+                    rawUpdate = JSON.stringify({
+                        "customer": {
+                            "id": `${newCustomerId}`
+                        },
+                        //"userPresent":""
+                    });
+                }
+
                 await updateEntity('User', entityId, rawUpdate);
                 const message = JSON.stringify({"title": "Cambio de empresa","body":`Ha sido removido de la empresa ${oldCustomerName}, y asignado a ${newCustomerName}. Por favor reinicie la aplicación ahora.`,"tokenUser":guardData['token'],"type":"routine-info"});
                 postNotificationPush(message);
                 alert("Empresa cambiada exitosamente.");
             }
 
+            const _dialog = document.getElementById('dialog-content');
+            new CloseDialog().x(_dialog);
             new CloseDialog().x(this.entityDialogContainer);
             new Guards().render(infoPage.offset, infoPage.currentPage, infoPage.search, infoPage.showGuards);
         }
