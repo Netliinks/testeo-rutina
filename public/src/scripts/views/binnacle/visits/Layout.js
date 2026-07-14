@@ -37,8 +37,8 @@ export const UIContentLayout = `
             Fecha <i class="fa-regular fa-filter"></i>
             </span></th>
 
-            <th class="thead_centered" width=120><span data-type="time">
-            Hora <i class="fa-regular fa-filter"></i>
+            <th class="thead_centered" width=120><span data-type="creation">
+            Creación (GMT-5) <i class="fa-regular fa-filter"></i>
             </span></th>
 
             <th class="thead_centered" width=150><span data-type="citadel">
@@ -80,6 +80,10 @@ export const UIContentLayout = `
                   Importar
                 </button>
         */
+
+                /*<th class="thead_centered" width=120><span data-type="time">
+            Hora <i class="fa-regular fa-filter"></i>
+            </span></th>*/
 export const UIRightSidebar = `
 <div class="entity_editor" id="entity-editor">
 <div class="entity_editor_header">
@@ -138,6 +142,12 @@ export const UIRightSidebar = `
 
   <div class="input_checkbox">
       <label><input type="checkbox" class="checkbox" id="entity-blacklist" disabled> Lista Negra</label>
+  </div>
+  <br>
+  <br>
+  <div class="material_input">
+    <input type="text" id="creationDateTime" autocomplete="none" class="input_filled" disabled>
+    <label for="creationDateTime"><i class="fa-solid fa-calendar"></i> Fecha Destino (Todo el día)</label>
   </div>
 
   <br>

@@ -295,6 +295,9 @@ export class RoutineRegisters {
         this.siebarDialogContainer = document.getElementById('entity-editor-container');
         this.appContainer = document.getElementById('datatable-container');
         this.render = async (offset, actualPage, search, check, statusSearch) => {
+            Config.currentScreen = "RoutineRegisters";
+            clearTimeout(Config.timeOut);
+            Config.timeOut = null;
             const previousSearch = infoPage.search;
             const previousStatus = infoPage.statusSearch;
             const previousCheck = infoPage.check;
@@ -320,6 +323,10 @@ export class RoutineRegisters {
             if(infoPage.currentPage == 1){
                 const change = async () => {
                     clearTimeout(Config.timeOut);
+                    Config.timeOut = null;
+                    if (Config.currentScreen !== "RoutineRegisters") {
+                        return;
+                    }
                     if(infoPage.counter == Config.timeReolad){
                         //const newRegisters = await getFilterEntityCount(infoPage.table, raw);
                         //console.log(infoPage.count);
@@ -340,9 +347,12 @@ export class RoutineRegisters {
                         Config.timeOut = setTimeout(change, infoPage.counter);
                     }
                 }
-                Config.timeOut = setTimeout(change, infoPage.counter);
+                if (Config.currentScreen === "RoutineRegisters") {
+                    Config.timeOut = setTimeout(change, infoPage.counter);
+                }
             }else{
                 clearTimeout(Config.timeOut);
+                Config.timeOut = null;
             }
             tableBody.innerHTML = UITableSkeletonTemplate.repeat(tableRows);
             // Exec functions
