@@ -1,4 +1,4 @@
-import { getAllGuardPhotos, getFaceFile, deleteGuardPhotoById, getFilterEntityData } from "../../../endpoints.js";
+import { getAllGuardFailedPhotos, getFaceFile, deleteGuardPhotoById, getFilterEntityData } from "../../../endpoints.js";
 
 const PAGE_SIZE = 12;
 const POLL_INTERVAL = 5000;
@@ -76,7 +76,7 @@ export class Photos {
 
         grid.innerHTML = '<div style="grid-column:1/-1;display:flex;justify-content:center;align-items:center;min-height:100px;"><span style="display:inline-block;width:28px;height:28px;border:3px solid #e0e0e0;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span></div>';
 
-        const result = await getAllGuardPhotos(page, PAGE_SIZE);
+        const result = await getAllGuardFailedPhotos(page, PAGE_SIZE);
         const photos = Array.isArray(result) ? result : (result?.content ?? []);
         const totalPages = result?.totalPages ?? 1;
 
