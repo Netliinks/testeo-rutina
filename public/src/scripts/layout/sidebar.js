@@ -30,6 +30,7 @@ import { CredentialsView } from "../views/credentials/credentials.js";
 import { Audits } from "../views/audit/audit.js";
 import { Models } from "../views/facerecognition/models/Models.js";
 import { Photos } from "../views/facerecognition/photos/Photos.js";
+import { Accesses } from "../views/facerecognition/accesses/Accesses.js";
 export class Sidebar {
   constructor() {
       this.sidebarContainer = document.getElementById('app-sidebar');
@@ -137,6 +138,12 @@ export class Sidebar {
                 <div class="sidebar_subitem" id="render-fr-models">
                   <span class="sidebar_subitem_label">
                     <i class="fa-regular fa-cube"></i> <div class="label">Modelos</div>
+                  </span>
+                </div>
+
+                <div class="sidebar_subitem" id="render-fr-accesses">
+                  <span class="sidebar_subitem_label">
+                    <i class="fa-regular fa-door-open"></i> <div class="label">Accesos</div>
                   </span>
                 </div>
               </div>
@@ -453,6 +460,12 @@ renders() {
         clearTimeout(Config.timeOut);
         Config.currentScreen = null;
         new Models().render();
+    });
+
+    document.getElementById('render-fr-accesses')?.addEventListener('click', () => {
+        clearTimeout(Config.timeOut);
+        Config.currentScreen = null;
+        new Accesses().render();
     });
   }
 }
