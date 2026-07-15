@@ -347,15 +347,15 @@ export const getGuardPhotos = async (guardId, page, size) => {
     return res.json().catch(err => console.error('getGuardPhotos error:', err));
 };
 
-export const getAllGuardPhotos = async (page, size) => {
+export const getAllGuardFailedPhotos = async (page, size) => {
     const requestOptions = {
         method: 'POST',
         headers: headers,
         body: JSON.stringify({ page, size }),
         redirect: 'follow'
     };
-    const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/getAllGuardPhotos`, requestOptions);
-    return res.json().catch(err => console.error('getAllGuardPhotos error:', err));
+    const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/getAllGuardFailedPhotos`, requestOptions);
+    return res.json().catch(err => console.error('getAllGuardFailedPhotos error:', err));
 };
 
 export const getModels = async (page, size) => {
@@ -378,6 +378,28 @@ export const requestModelTrain = async () => {
     };
     const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/requestModelTrain`, requestOptions);
     return res.json().catch(err => console.error('requestModelTrain error:', err));
+};
+
+export const getAllAccesses = async (page, size) => {
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ page, size }),
+        redirect: 'follow'
+    };
+    const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/getAllAccesses`, requestOptions);
+    return res.json().catch(err => console.error('getAllAccesses error:', err));
+};
+
+export const getAllAccessesFromGuardByExternalId = async (guardId, page, size) => {
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ guardId, page, size }),
+        redirect: 'follow'
+    };
+    const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/getAllAccessesFromGuardByExternalId`, requestOptions);
+    return res.json().catch(err => console.error('getAllAccessesFromGuardByExternalId error:', err));
 };
 
 export const deleteGuardPhotoById = async (photoId) => {
