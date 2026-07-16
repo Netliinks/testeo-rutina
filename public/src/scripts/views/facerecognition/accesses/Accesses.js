@@ -1,8 +1,9 @@
 import { getAllAccesses, getFaceFile } from "../../../endpoints.js";
+import { pageNumbers, fillBtnPagination } from "../../../tools.js";
+import { Config } from "../../../Configs.js";
 
 const PAGE_SIZE_OPTIONS = [6, 12, 24, 48];
 const DEFAULT_PAGE_SIZE = 12;
-const PAGE_WINDOW = 1;
 const POLL_INTERVAL = 5000;
 
 export class Accesses {
@@ -59,11 +60,10 @@ export class Accesses {
 
     _renderPagination(page, totalPages) {
         const pagination = document.getElementById('pagination-container');
-        pagination.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;';
         pagination.innerHTML = '';
 
         const sizeWrapper = document.createElement('div');
-        sizeWrapper.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:12px;color:#555;';
+        sizeWrapper.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:#555;margin-bottom:10px;';
         const sizeLabel = document.createElement('label');
         sizeLabel.textContent = 'Mostrar';
         sizeLabel.setAttribute('for', 'accesses-page-size');
@@ -85,59 +85,52 @@ export class Accesses {
         sizeWrapper.appendChild(sizeSelect);
         pagination.appendChild(sizeWrapper);
 
-        const nav = document.createElement('div');
-        nav.style.cssText = 'display:flex;align-items:center;gap:4px;';
+        const buttonsWrapper = document.createElement('div');
+        buttonsWrapper.style.cssText = 'display:flex;align-items:center;justify-content:center;';
 
-        const prevBtn = document.createElement('button');
-        prevBtn.className = `datatable_button${page === 0 ? ' disabled' : ''}`;
-        prevBtn.disabled = page === 0;
-        prevBtn.innerHTML = '&#8249;';
-        prevBtn.addEventListener('click', () => {
-            if (this.currentPage > 0) this.loadAccesses(--this.currentPage);
-        });
-        nav.appendChild(prevBtn);
+        const currentPage = page + 1;
 
-        const pageButton = (p) => {
-            const btn = document.createElement('button');
-            btn.className = `datatable_button${p === page ? ' isActive' : ''}`;
-            btn.style.cssText = p === page ? 'font-weight:bold;background:#6F7ADD;color:#fff;' : '';
-            btn.textContent = String(p + 1);
-            btn.addEventListener('click', () => {
-                if (p !== this.currentPage) this.loadAccesses(this.currentPage = p);
+        const setupButton = (p) => {
+            const button = document.createElement('button');
+            button.classList.add('pagination_button');
+            button.setAttribute('name', 'pagination-button');
+            button.setAttribute('id', 'btnPag' + p);
+            button.innerText = String(p);
+            button.addEventListener('click', () => {
+                if (p !== currentPage) this.loadAccesses(this.currentPage = p - 1);
             });
-            return btn;
+            return button;
         };
 
-        const ellipsis = () => {
-            const span = document.createElement('span');
-            span.textContent = '…';
-            span.style.cssText = 'padding:0 4px;color:#808080;font-size:13px;';
-            return span;
-        };
+        if (totalPages <= Config.maxLimitPage) {
+            for (let p = 1; p <= totalPages; p++) {
+                buttonsWrapper.appendChild(setupButton(p));
+            }
+        } else {
+            const prevButton = document.createElement('button');
+            prevButton.classList.add('pagination_button');
+            prevButton.innerText = '<<';
+            prevButton.addEventListener('click', () => {
+                if (this.currentPage > 0) this.loadAccesses(--this.currentPage);
+            });
+            buttonsWrapper.appendChild(prevButton);
 
-        const pagesToShow = new Set([0, totalPages - 1]);
-        for (let p = page - PAGE_WINDOW; p <= page + PAGE_WINDOW; p++) {
-            if (p >= 0 && p < totalPages) pagesToShow.add(p);
+            const pages = pageNumbers(totalPages, Config.maxLimitPage, currentPage);
+            for (const p of pages) {
+                if (p > 0 && p <= totalPages) buttonsWrapper.appendChild(setupButton(p));
+            }
+
+            const nextButton = document.createElement('button');
+            nextButton.classList.add('pagination_button');
+            nextButton.innerText = '>>';
+            nextButton.addEventListener('click', () => {
+                if (this.currentPage < totalPages - 1) this.loadAccesses(++this.currentPage);
+            });
+            buttonsWrapper.appendChild(nextButton);
         }
-        const sortedPages = [...pagesToShow].sort((a, b) => a - b);
 
-        let lastRendered = -1;
-        for (const p of sortedPages) {
-            if (lastRendered !== -1 && p - lastRendered > 1) nav.appendChild(ellipsis());
-            nav.appendChild(pageButton(p));
-            lastRendered = p;
-        }
-
-        const nextBtn = document.createElement('button');
-        nextBtn.className = `datatable_button${page >= totalPages - 1 ? ' disabled' : ''}`;
-        nextBtn.disabled = page >= totalPages - 1;
-        nextBtn.innerHTML = '&#8250;';
-        nextBtn.addEventListener('click', () => {
-            if (this.currentPage < totalPages - 1) this.loadAccesses(++this.currentPage);
-        });
-        nav.appendChild(nextBtn);
-
-        pagination.appendChild(nav);
+        pagination.appendChild(buttonsWrapper);
+        fillBtnPagination(currentPage, Config.colorPagination);
     }
 
     async loadAccesses(page) {
