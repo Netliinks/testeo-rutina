@@ -391,11 +391,11 @@ export const getAllAccesses = async (page, size) => {
     return res.json().catch(err => console.error('getAllAccesses error:', err));
 };
 
-export const getAllAccessesFromGuardByExternalId = async (guardId, page, size) => {
+export const getAllAccessesFromGuardByExternalId = async (externalGuardId, page, size) => {
     const requestOptions = {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify({ guardId, page, size }),
+        body: JSON.stringify({ externalGuardId, page, size }),
         redirect: 'follow'
     };
     const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/getAllAccessesFromGuardByExternalId`, requestOptions);
