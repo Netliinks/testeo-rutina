@@ -104,7 +104,7 @@ export class CredentialsView {
                         sort: "-createdDate",
                         limit: Config.limitExport,
                         offset: offset,
-                        fetchPlan: type === 'Customer' && status ? 'full' : null,
+                        ...(type?.toLowerCase() === 'customer' && status ? { fetchPlan: 'full' } : {})
                     });
                     return rawToCount;
                 };
