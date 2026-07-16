@@ -1,12 +1,15 @@
 import { getAllAccesses, getFaceFile } from "../../../endpoints.js";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE_OPTIONS = [6, 12, 24, 48];
+const DEFAULT_PAGE_SIZE = 12;
+const PAGE_WINDOW = 1;
 const POLL_INTERVAL = 5000;
 
 export class Accesses {
     constructor() {
         this.datatableContainer = document.getElementById('datatable-container');
         this.currentPage = 0;
+        this.pageSize = DEFAULT_PAGE_SIZE;
         this._pollTimer = null;
     }
 
@@ -54,6 +57,89 @@ export class Accesses {
         return groups;
     }
 
+    _renderPagination(page, totalPages) {
+        const pagination = document.getElementById('pagination-container');
+        pagination.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;';
+        pagination.innerHTML = '';
+
+        const sizeWrapper = document.createElement('div');
+        sizeWrapper.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:12px;color:#555;';
+        const sizeLabel = document.createElement('label');
+        sizeLabel.textContent = 'Mostrar';
+        sizeLabel.setAttribute('for', 'accesses-page-size');
+        const sizeSelect = document.createElement('select');
+        sizeSelect.id = 'accesses-page-size';
+        sizeSelect.style.cssText = 'font-size:12px;padding:2px 6px;border-radius:4px;border:1px solid #ccc;';
+        PAGE_SIZE_OPTIONS.forEach((size) => {
+            const opt = document.createElement('option');
+            opt.value = String(size);
+            opt.textContent = String(size);
+            if (size === this.pageSize) opt.selected = true;
+            sizeSelect.appendChild(opt);
+        });
+        sizeSelect.addEventListener('change', () => {
+            this.pageSize = Number(sizeSelect.value);
+            this.loadAccesses(this.currentPage = 0);
+        });
+        sizeWrapper.appendChild(sizeLabel);
+        sizeWrapper.appendChild(sizeSelect);
+        pagination.appendChild(sizeWrapper);
+
+        const nav = document.createElement('div');
+        nav.style.cssText = 'display:flex;align-items:center;gap:4px;';
+
+        const prevBtn = document.createElement('button');
+        prevBtn.className = `datatable_button${page === 0 ? ' disabled' : ''}`;
+        prevBtn.disabled = page === 0;
+        prevBtn.innerHTML = '&#8249;';
+        prevBtn.addEventListener('click', () => {
+            if (this.currentPage > 0) this.loadAccesses(--this.currentPage);
+        });
+        nav.appendChild(prevBtn);
+
+        const pageButton = (p) => {
+            const btn = document.createElement('button');
+            btn.className = `datatable_button${p === page ? ' isActive' : ''}`;
+            btn.style.cssText = p === page ? 'font-weight:bold;background:#6F7ADD;color:#fff;' : '';
+            btn.textContent = String(p + 1);
+            btn.addEventListener('click', () => {
+                if (p !== this.currentPage) this.loadAccesses(this.currentPage = p);
+            });
+            return btn;
+        };
+
+        const ellipsis = () => {
+            const span = document.createElement('span');
+            span.textContent = '…';
+            span.style.cssText = 'padding:0 4px;color:#808080;font-size:13px;';
+            return span;
+        };
+
+        const pagesToShow = new Set([0, totalPages - 1]);
+        for (let p = page - PAGE_WINDOW; p <= page + PAGE_WINDOW; p++) {
+            if (p >= 0 && p < totalPages) pagesToShow.add(p);
+        }
+        const sortedPages = [...pagesToShow].sort((a, b) => a - b);
+
+        let lastRendered = -1;
+        for (const p of sortedPages) {
+            if (lastRendered !== -1 && p - lastRendered > 1) nav.appendChild(ellipsis());
+            nav.appendChild(pageButton(p));
+            lastRendered = p;
+        }
+
+        const nextBtn = document.createElement('button');
+        nextBtn.className = `datatable_button${page >= totalPages - 1 ? ' disabled' : ''}`;
+        nextBtn.disabled = page >= totalPages - 1;
+        nextBtn.innerHTML = '&#8250;';
+        nextBtn.addEventListener('click', () => {
+            if (this.currentPage < totalPages - 1) this.loadAccesses(++this.currentPage);
+        });
+        nav.appendChild(nextBtn);
+
+        pagination.appendChild(nav);
+    }
+
     async loadAccesses(page) {
         const container = document.getElementById('accesses-container');
         const pagination = document.getElementById('pagination-container');
@@ -61,7 +147,7 @@ export class Accesses {
 
         container.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;min-height:100px;"><span style="display:inline-block;width:28px;height:28px;border:3px solid #e0e0e0;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span></div>';
 
-        const result = await getAllAccesses(page, PAGE_SIZE);
+        const result = await getAllAccesses(page, this.pageSize);
         const accesses = Array.isArray(result) ? result : (result?.content ?? []);
         const totalPages = result?.totalPages ?? 1;
 
@@ -163,18 +249,7 @@ export class Accesses {
             }
         }
 
-        pagination.innerHTML = `
-            <button class="datatable_button${page === 0 ? ' disabled' : ''}" id="accesses-prev" ${page === 0 ? 'disabled' : ''}>&#8249;</button>
-            <span style="padding:0 12px;font-size:13px;">${page + 1} / ${totalPages}</span>
-            <button class="datatable_button${page >= totalPages - 1 ? ' disabled' : ''}" id="accesses-next" ${page >= totalPages - 1 ? 'disabled' : ''}>&#8250;</button>
-        `;
-
-        document.getElementById('accesses-prev')?.addEventListener('click', () => {
-            if (this.currentPage > 0) this.loadAccesses(--this.currentPage);
-        });
-        document.getElementById('accesses-next')?.addEventListener('click', () => {
-            if (this.currentPage < totalPages - 1) this.loadAccesses(++this.currentPage);
-        });
+        this._renderPagination(page, totalPages);
 
         const hasPending = accesses.some((access) => access.correct === null || access.correct === undefined);
         if (hasPending) {
