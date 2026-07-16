@@ -75,7 +75,7 @@ export class CredentialsView {
                     new CloseDialog().x(_dialog);
                 };
                 
-                const rawToModify = (offset, property, operator, value, property1, operator1, value1, property2, operator2, value2, status) => {
+                const rawToModify = (offset, property, operator, value, property1, operator1, value1, property2, operator2, value2, status, type) => {
                     const rawToCount = JSON.stringify({
                         "filter": {
                             "conditions": [
@@ -104,13 +104,16 @@ export class CredentialsView {
                         sort: "-createdDate",
                         limit: Config.limitExport,
                         offset: offset,
-                        fetchPlan: status ? 'full' : null,
+                        fetchPlan: type === 'Customer' && status ? 'full' : null,
                     });
                     return rawToCount;
                 };
                 const businessId = Config.currentUser.business.id;
                 const allStatesCustomers =  _inputElements.checkCustomer.checked ? true : false;
-                const rawCustomer = rawToModify(0, "business.id", "=", businessId, "name", "<>", "", "name", "<>", "", allStatesCustomers);
+                const allStatesUsers =  _inputElements.checkUser.checked ? true : false;
+                subtitleModal.value = "Obteniendo empresas...";
+                messageModal.innerText = `0 / 0`;
+                const rawCustomer = rawToModify(0, "business.id", "=", businessId, "name", "<>", "", "name", "<>", "", allStatesCustomers, "Customer");
                 const nroCustomers = await getFilterEntityCount("Customer", rawCustomer);
                 if (nroCustomers === undefined) {
                     infoPage.onPressed = false;
@@ -134,7 +137,7 @@ export class CredentialsView {
                     let offset = 0;
                     for (let x = 0; x < pages; x++) {
                         if (infoPage.onPressed) {
-                            const rawToCount = rawToModify(offset, "business.id", "=", businessId, "name", "<>", "", "name", "<>", "", allStatesCustomers);
+                            const rawToCount = rawToModify(offset, "business.id", "=", businessId, "name", "<>", "", "name", "<>", "", allStatesCustomers, "Customer");
                             array[x] = await getFilterEntityData("Customer", rawToCount);
                             for (let y = 0; y < array[x].length; y++) {
                                 customers.push(array[x][y]);
@@ -161,7 +164,7 @@ export class CredentialsView {
                         messageModal.innerText = `${i + 1} / ${customers.length}`;
                         for(let j=0; j < userTypes.length; j++){
                             const userType = userTypes[j];
-                            const rawToCount = rawToModify(0, "customer.id", "=", customer.id, "isSuper", "=", userType["isSuper"], "userType", "=", userType["type"], allStatesCustomers);
+                            const rawToCount = rawToModify(0, "customer.id", "=", customer.id, "isSuper", "=", userType["isSuper"], "userType", "=", userType["type"], allStatesUsers, "User");
                             userType["total"] = await getFilterEntityCount("User", rawToCount);
                         }
                         objFinal = {
