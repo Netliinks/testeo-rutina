@@ -1810,35 +1810,54 @@ function inferirZonaOrigen(horaTexto, horaReferencia, offsetEsperadoMin = 300, m
   if (!horaTexto || !horaReferencia) {
     return { esUtc: null, motivo: 'sin_datos_suficientes' };
   }
- 
+
   const parsearHora = (str) => {
-    const m = String(str).trim().match(/^(\d{1,2}):(\d{2})/);
-    if (!m) return null;
-    return Number(m[1]) * 60 + Number(m[2]);
+    const s = String(str).trim();
+
+    // Caso esperado: "HH:MM..." puro (creationTime del dispositivo)
+    let m = s.match(/^(\d{1,2}):(\d{2})/);
+    if (m) return Number(m[1]) * 60 + Number(m[2]);
+
+    // Caso datetime completo: extraemos solo el componente de hora.
+    // Esto SOLO tiene sentido si horaReferencia es un valor legítimo
+    // distinto de fechaTexto (ver chequeo de duplicado más abajo).
+    m = s.match(/[T\s](\d{2}):(\d{2})/);
+    if (m) return Number(m[1]) * 60 + Number(m[2]);
+
+    return null;
   };
- 
+
+  // Si horaReferencia es idéntico a horaTexto, NO es una referencia real
+  // comparando dos relojes distintos — es el síntoma de un bug de origen
+  // (típicamente: creationTime vino vacío y algún fallback usó createdDate
+  // dos veces). Tratarlo como "sin referencia válida" en vez de inferir
+  // coincide_local, que daría una falsa confianza de diff=0.
+  if (String(horaTexto).trim() === String(horaReferencia).trim()) {
+    return { esUtc: null, motivo: 'referencia_duplicada_de_fecha' };
+  }
+
   const minsA = parsearHora(horaTexto);
   const minsR = parsearHora(horaReferencia);
- 
+
   if (minsA === null || minsR === null) {
     return { esUtc: null, motivo: 'formato_hora_invalido' };
   }
- 
+
   // Diferencia circular (maneja cambio de día)
   const diff = (minsA - minsR + 1440) % 1440;
- 
+
   // Evidencia fuerte de UTC: el diff coincide con el offset esperado (~5h)
   if (Math.abs(diff - offsetEsperadoMin) <= margenMin) {
     return { esUtc: true, motivo: 'coincide_utc', diffMin: diff };
   }
- 
+
   // Evidencia fuerte de que YA es local: el diff está cerca de 0
   // (circular: también cuenta si está cerca de 1440, ej. diff=1439 ~ diff=1)
   const distanciaACero = Math.min(diff, 1440 - diff);
   if (distanciaACero <= margenMin) {
     return { esUtc: false, motivo: 'coincide_local', diffMin: diff };
   }
- 
+
   // Ni una cosa ni la otra: esto NO es evidencia de "es local", es un caso
   // ambiguo. Típicamente ocurre cuando el registro se creó offline en el
   // dispositivo y se sincronizó al servidor mucho después: creationTime y
@@ -1846,7 +1865,7 @@ function inferirZonaOrigen(horaTexto, horaReferencia, offsetEsperadoMin = 300, m
   // horas del día ya no dice nada confiable sobre la zona horaria.
   return { esUtc: null, motivo: 'diff_inesperado_posible_atraso_offline', diffMin: diff };
 }
- 
+
 function formatearEnZona(fecha, zonaHorariaDestino) {
   const formateador = new Intl.DateTimeFormat('en-US', {
     timeZone: zonaHorariaDestino,
@@ -1859,7 +1878,7 @@ function formatearEnZona(fecha, zonaHorariaDestino) {
   );
   return `${partes.year}-${partes.month}-${partes.day} ${partes.hour}:${partes.minute}:${partes.second}`;
 }
- 
+
 /**
  * Formatea una fecha ambigua (sin timezone explícita) a una zona destino,
  * infiriendo el origen mediante una hora de referencia opcional.
@@ -1889,18 +1908,18 @@ export function formatearFechaPorZona(fechaTexto, horaReferencia = null, opcione
     offsetEsperadoUtcMin = 300,
     margenMin = 15,
   } = opciones;
- 
+
   try {
     if (!fechaTexto) return null;
- 
+
     let limpio = String(fechaTexto).trim().replace(' ', 'T');
     const tieneZonaExplicita = /[Zz]$|[+-]\d{2}:\d{2}$/.test(limpio);
- 
+
     let inferencia = { esUtc: null, motivo: 'zona_explicita' };
- 
+
     if (!tieneZonaExplicita) {
       const horaEnTexto = limpio.split('T')[1];
- 
+
       if (horaReferencia && horaEnTexto) {
         inferencia = inferirZonaOrigen(horaEnTexto, horaReferencia, offsetEsperadoUtcMin, margenMin);
       } else if (!horaReferencia) {
@@ -1910,7 +1929,7 @@ export function formatearFechaPorZona(fechaTexto, horaReferencia = null, opcione
         // no hay nada que comparar, se cae a offset local por defecto.
         inferencia = { esUtc: null, motivo: 'fecha_sin_componente_hora' };
       }
- 
+
       if (inferencia.esUtc === null && inferencia.motivo !== 'sin_referencia_default_utc') {
         // Heurística inconclusa (probable atraso offline entre creationTime
         // y createdDate): lo dejamos trazado en vez de asumir en silencio.
@@ -1919,18 +1938,18 @@ export function formatearFechaPorZona(fechaTexto, horaReferencia = null, opcione
           `[formatearFechaPorZona] Inferencia ambigua (${inferencia.motivo})${detalleDiff} para "${fechaTexto}" con referencia "${horaReferencia}". Se asume offset local ${offsetOrigenAsumido}, pero podría ser incorrecto.`
         );
       }
- 
+
       limpio += inferencia.esUtc === true ? 'Z' : offsetOrigenAsumido;
     }
- 
+
     const fecha = new Date(limpio);
     if (isNaN(fecha.getTime())) {
       console.error('Dato inválido recibido ->', JSON.stringify(fechaTexto));
       return null;
     }
- 
+
     const resultado = formatearEnZona(fecha, zonaHorariaDestino);
- 
+
     // El paréntesis solo se muestra cuando hubo una conversión UTC
     // confirmada (esUtc === true) y aun así el resultado no coincide con
     // el device. En el caso ambiguo (esUtc === null, posible atraso
@@ -1941,26 +1960,26 @@ export function formatearFechaPorZona(fechaTexto, horaReferencia = null, opcione
       const partesHora = resultado.split(' ')[1];
       const [hRes, mRes] = partesHora.split(':').map(Number);
       const [hR, mR] = String(horaReferencia).trim().slice(0, 5).split(':').map(Number);
- 
+
       if (!Number.isNaN(hR) && !Number.isNaN(mR)) {
         const minsRes = hRes * 60 + mRes;
         const minsR = hR * 60 + mR;
- 
+
         if (Math.abs(minsRes - minsR) <= 5) {
           return resultado;
         }
         return `${resultado} (Movil: ${horaReferencia})`;
       }
     }
- 
+
     return resultado;
- 
+
   } catch (error) {
     console.error('Error crítico:', error);
     return null;
   }
 }
- 
+
 /* ---------- Ejemplo de uso ---------- */
 //
 // formatearFechaPorZona('2024-05-10T13:45:00', '08:47');
@@ -1976,3 +1995,10 @@ export function formatearFechaPorZona(fechaTexto, horaReferencia = null, opcione
 // => '2024-05-10 15:00:00'   (diff_inesperado_posible_atraso_offline:
 //     sin evidencia confiable de la zona, se asume offset local por defecto,
 //     SIN sufijo -> queda trazado solo vía console.warn con el detalle del diff)
+//
+// formatearFechaPorZona('2023-04-03T22:57:47.793', '2023-04-03T22:57:47.793');
+// => '2023-04-03 17:57:47'   (referencia_duplicada_de_fecha: horaReferencia
+//     es idéntica a fechaTexto -> no es una comparación real, es síntoma de
+//     un bug del caller (creationTime vacío con fallback a createdDate).
+//     Se asume offset local por defecto, sin sufijo, con warning explícito
+//     para que sea fácil de rastrear el origen del problema.)
