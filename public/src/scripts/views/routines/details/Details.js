@@ -298,6 +298,7 @@ export class RoutineRegisters {
             Config.currentScreen = "RoutineRegisters";
             clearTimeout(Config.timeOut);
             Config.timeOut = null;
+            const previousOffset = infoPage.offset;
             const previousSearch = infoPage.search;
             const previousStatus = infoPage.statusSearch;
             const previousCheck = infoPage.check;
@@ -309,16 +310,32 @@ export class RoutineRegisters {
             infoPage.currentPage = actualPage;
             infoPage.search = search;
             infoPage.check = check;
-            //infoPage.countNewRegister = countNewRegister;
             infoPage.statusSearch = statusSearch;
-            this.appContainer.innerHTML = '';
-            this.appContainer.innerHTML = UIContentLayout;
+
+            let isLayoutRendered = document.querySelector('#datatable[data-view="RoutineRegisters"]');
+            if (!isLayoutRendered) {
+                this.appContainer.innerHTML = UIContentLayout;
+                const datatable = document.getElementById('datatable');
+                if (datatable) datatable.setAttribute('data-view', 'RoutineRegisters');
+                this.searchNotes();
+                this.export();
+            }
+
             // Getting interface elements
             const viewTitle = document.getElementById('view-title');
             const tableBody = document.getElementById('datatable-body');
             // Changing interface element content
-            viewTitle.innerText = pageName;
-            tableBody.innerHTML = '.Cargando... Esto puede tomar unos momentos';
+            if (viewTitle) viewTitle.innerText = pageName;
+
+            const isAutoUpdate = isLayoutRendered && !returningToPage1 && !searchChanged && !statusChanged && !checkChanged && offset === previousOffset;
+
+            if (tableBody && !isAutoUpdate) {
+                tableBody.innerHTML = UITableSkeletonTemplate.repeat(10);
+                const allButtons = document.getElementsByName("pagination-button");
+                allButtons.forEach(btn => btn.style.backgroundColor = "");
+                fillBtnPagination(actualPage, Config.colorPagination);
+            }
+
             let notesArray = await GetRoutinesDetails(returningToPage1 || searchChanged || statusChanged || checkChanged);
             if(infoPage.currentPage == 1){
                 const change = async () => {
@@ -354,13 +371,15 @@ export class RoutineRegisters {
                 clearTimeout(Config.timeOut);
                 Config.timeOut = null;
             }
-            tableBody.innerHTML = UITableSkeletonTemplate.repeat(tableRows);
-            // Exec functions
-            this.load(tableBody, currentPage, notesArray);
-            this.searchNotes(tableBody /*, notesArray*/);
-            new filterDataByHeaderType().filter();
-            this.pagination(notesArray, tableRows, infoPage.currentPage);
-            this.export();
+            if (tableBody) {
+                // Exec functions
+                this.load(tableBody, 1, notesArray);
+                this.pagination(notesArray, tableRows, infoPage.currentPage);
+            }
+
+            if (!isLayoutRendered) {
+                new filterDataByHeaderType().filter();
+            }
             // Rendering icons
         };
         this.load = async (tableBody, currentPage, notes) => {
@@ -467,12 +486,10 @@ export class RoutineRegisters {
                 // Rendering icons*/
             });
             btnSearch.addEventListener('click', async () => {
-                infoPage.offset = Config.offset;
-                infoPage.currentPage = Config.currentPage;
                 infoPage.lastCreatedDate = undefined;
                 infoPage.countNewRegister = 0;
                 dataPage = [];
-                new RoutineRegisters().render(Config.offset, Config.currentPage, search.value.toLowerCase().trim(), check.checked, statusSearch.value);
+                new RoutineRegisters().render(0, 1, search.value.toLowerCase().trim(), check.checked, statusSearch.value);
             });
         };
         /*this.obtainDelay = async (register) =>{
@@ -945,9 +962,12 @@ export class RoutineRegisters {
             button.setAttribute("id", "btnPag" + page);
             button.innerText = page;
             button.addEventListener('click', () => {
-                infoPage.offset = Config.tableRows * (page - 1);
-                currentPage = page;
-                new RoutineRegisters().render(infoPage.offset, currentPage, infoPage.search, infoPage.check, infoPage.statusSearch); //new RoutineRegisters().load(tableBody, page, items)
+                const allButtons = document.getElementsByName("pagination-button");
+                allButtons.forEach(btn => btn.style.backgroundColor = "");
+                button.style.backgroundColor = Config.colorPagination;
+
+                const newOffset = Config.tableRows * (page - 1);
+                new RoutineRegisters().render(newOffset, page, infoPage.search, infoPage.check, infoPage.statusSearch); //new RoutineRegisters().load(tableBody, page, items)
             });
             return button;
         }
@@ -973,11 +993,15 @@ export class RoutineRegisters {
         }
         function setupButtonsEvents(prevButton, nextButton) {
             prevButton.addEventListener('click', () => {
-                new RoutineRegisters().render(Config.offset, Config.currentPage, infoPage.search, infoPage.check, infoPage.statusSearch);
+                const allButtons = document.getElementsByName("pagination-button");
+                allButtons.forEach(btn => btn.style.backgroundColor = "");
+                new RoutineRegisters().render(0, 1, infoPage.search, infoPage.check, infoPage.statusSearch);
             });
             nextButton.addEventListener('click', () => {
-                infoPage.offset = Config.tableRows * (pageCount - 1);
-                new RoutineRegisters().render(infoPage.offset, pageCount, infoPage.search, infoPage.check, infoPage.statusSearch);
+                const allButtons = document.getElementsByName("pagination-button");
+                allButtons.forEach(btn => btn.style.backgroundColor = "");
+                const newOffset = Config.tableRows * (pageCount - 1);
+                new RoutineRegisters().render(newOffset, pageCount, infoPage.search, infoPage.check, infoPage.statusSearch);
             });
         }
     };
