@@ -329,6 +329,15 @@ export class RoutineRegisters {
 
             const isAutoUpdate = isLayoutRendered && !returningToPage1 && !searchChanged && !statusChanged && !checkChanged && offset === previousOffset;
 
+            if (!isAutoUpdate) {
+                const checkEl = document.getElementById('entity-check');
+                const searchEl = document.getElementById('search');
+                const statusSearchEl = document.getElementById('status-search');
+                if (checkEl) checkEl.checked = infoPage.check;
+                if (searchEl) searchEl.value = infoPage.search;
+                if (statusSearchEl) statusSearchEl.value = infoPage.statusSearch;
+            }
+
             if (tableBody && !isAutoUpdate) {
                 tableBody.innerHTML = UITableSkeletonTemplate.repeat(10);
                 const allButtons = document.getElementsByName("pagination-button");
@@ -468,9 +477,6 @@ export class RoutineRegisters {
             const search = document.getElementById('search');
             const btnSearch = document.getElementById('btnSearch');
             const statusSearch = document.getElementById('status-search');
-            check.checked = infoPage.check;
-            search.value = infoPage.search;
-            statusSearch.value = infoPage.statusSearch;
             await search.addEventListener('keyup', () => {
                 /*const arrayNotes = notes.filter((note) => `${note.title}
                 ${note.content}
