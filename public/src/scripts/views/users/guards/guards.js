@@ -908,7 +908,7 @@ export class Guards {
                         <div class="entity_editor_body">
                             <div style="margin-bottom:16px;">
                                 <label style="font-size:11px;color:#808080;display:block;margin-bottom:6px;">SUBIR FOTO</label>
-                                <input type="file" class="input_file" accept="image/png, image/jpeg" id="entity-photo">
+                                <input type="file" class="input_file" accept="image/png, image/jpeg" id="entity-photo" multiple>
                                 <button class="btn btn_primary" id="btn-upload-photo" style="margin-top:8px;width:100%;">Subir</button>
                             </div>
                             <label style="font-size:11px;color:#808080;display:block;margin-bottom:6px;">FOTOS</label>
@@ -939,18 +939,27 @@ export class Guards {
                 document.getElementById('btn-upload-photo').addEventListener('click', async () => {
                     const input = document.getElementById('entity-photo');
                     if (!input.files.length) return;
+                    const files = Array.from(input.files);
                     const uploadBtn = document.getElementById('btn-upload-photo');
                     uploadBtn.disabled = true;
-                    uploadBtn.textContent = 'Subiendo...';
+                    let uploaded = 0;
+                    uploadBtn.textContent = `Subiendo 0/${files.length}...`;
                     try {
-                        const photoResult = await setFile(input.files[0]);
-                        if (photoResult?.fileRef) {
-                            await createGuardPhoto(entityId, photoResult.fileRef);
-                        }
+                        await Promise.all(files.map(async (file) => {
+                            try {
+                                const photoResult = await setFile(file);
+                                if (photoResult?.fileRef) {
+                                    await createGuardPhoto(entityId, photoResult.fileRef);
+                                }
+                            } catch (err) {
+                                console.error('upload error:', err);
+                            } finally {
+                                uploaded++;
+                                uploadBtn.textContent = `Subiendo ${uploaded}/${files.length}...`;
+                            }
+                        }));
                         input.value = '';
                         renderPhotoGrid(photosCurrentPage);
-                    } catch (err) {
-                        console.error('upload error:', err);
                     } finally {
                         uploadBtn.disabled = false;
                         uploadBtn.textContent = 'Subir';
