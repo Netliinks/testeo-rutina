@@ -549,11 +549,12 @@ export class Customers {
             const lngInput = document.getElementById('entity-longitude');
             const defaultCenter = [-1.8312, -78.1834];
             const defaultZoom = 6;
+            const selectedZoom = 17;
             const savedLat = parseFloat(data?.latitude);
             const savedLng = parseFloat(data?.longitude);
             const hasSavedPosition = !isNaN(savedLat) && !isNaN(savedLng);
             const initialCenter = hasSavedPosition ? [savedLat, savedLng] : defaultCenter;
-            const map = L.map('entity-map').setView(initialCenter, hasSavedPosition ? 15 : defaultZoom);
+            const map = L.map('entity-map').setView(initialCenter, hasSavedPosition ? selectedZoom : defaultZoom);
             locationMapInstance = map;
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors',
@@ -575,7 +576,7 @@ export class Customers {
                     });
                 }
                 if (recenter) {
-                    map.setView([lat, lng], map.getZoom() < 15 ? 15 : map.getZoom());
+                    map.setView([lat, lng], selectedZoom);
                 }
             };
             if (marker) {
@@ -585,7 +586,7 @@ export class Customers {
                 });
             }
             map.on('click', (e) => {
-                setPosition(e.latlng.lat, e.latlng.lng, false);
+                setPosition(e.latlng.lat, e.latlng.lng, true);
             });
             const onCoordsInput = () => {
                 const lat = parseFloat(latInput.value);
