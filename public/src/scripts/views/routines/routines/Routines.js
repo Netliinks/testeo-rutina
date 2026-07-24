@@ -4,7 +4,7 @@ import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, filterData
 import { Config } from "../../../Configs.js";
 import { tableLayout } from "./Layout.js";
 import { tableLayoutTemplate } from "./Template.js";
-import { Locations } from "../routines/locations/Locations.js";
+import { Schedules } from "./schedules/Schedules.js";
 import { RoutineUsers } from "../routines/users/Users.js";
 import { exportRoutinePdf, exportRoutinePdf2 } from "../../../exportFiles/extraRoutine.js";
 const tableRows = Config.tableRows;
@@ -1192,7 +1192,7 @@ export class Routines {
       locationRoutine.forEach((buttonKey) => {
             buttonKey.addEventListener('click', async () => {
                 let entityId = buttonKey.dataset.entityid;
-                new Locations().render(Config.offset, Config.currentPage, "", entityId);
+                new Schedules().render(Config.offset, Config.currentPage, "", entityId);
             });
         });
   }
