@@ -480,6 +480,12 @@ export class Customers {
                   <label for="entity-longitude">Longitud</label>
                 </div>
               </div>
+              <div class="material_input">
+                <input type="number"
+                  id="entity-location-radius"
+                 autocomplete="none" min="1" step="any" class="input_filled" value="${data?.locationRadius ?? ''}">
+                <label for="entity-location-radius">Radio de ubicación (metros)</label>
+              </div>
               <div class="entity_map" id="entity-map"></div>
             </div>
 
@@ -613,8 +619,13 @@ export class Customers {
               locationEnabled: document.getElementById('entity-location-enabled'),
               latitude: document.getElementById('entity-latitude'),
               longitude: document.getElementById('entity-longitude'),
+              locationRadius: document.getElementById('entity-location-radius'),
           };
             updateButton.addEventListener('click', () => {
+              if ($value.locationEnabled.checked && !(parseFloat($value.locationRadius.value) > 0)) {
+                alert('El radio de ubicación debe ser un número positivo');
+                return;
+              }
               let raw = JSON.stringify({
                   // @ts-ignore
                   "ruc": `${$value.ruc.value}`,
@@ -632,6 +643,7 @@ export class Customers {
                   'locationEnabled': `${$value.locationEnabled.checked ? true : false}`,
                   'latitude': `${$value.latitude.value}`,
                   'longitude': `${$value.longitude.value}`,
+                  'locationRadius': `${$value.locationRadius.value}`,
               });
               update(raw);
             });
