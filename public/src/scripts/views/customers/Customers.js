@@ -486,6 +486,7 @@ export class Customers {
                  autocomplete="none" min="1" step="any" class="input_filled" value="${data?.locationRadius ?? ''}">
                 <label for="entity-location-radius">Radio de ubicación (metros)</label>
               </div>
+              <input type="hidden" id="entity-location-zoom" value="${data?.zoomLevel ?? ''}">
               <div class="entity_map" id="entity-map"></div>
             </div>
 
@@ -547,14 +548,21 @@ export class Customers {
             }
             const latInput = document.getElementById('entity-latitude');
             const lngInput = document.getElementById('entity-longitude');
+            const zoomInput = document.getElementById('entity-location-zoom');
             const defaultCenter = [-1.8312, -78.1834];
             const defaultZoom = 6;
+            const savedZoomFallback = 15;
             const savedLat = parseFloat(data?.latitude);
             const savedLng = parseFloat(data?.longitude);
             const hasSavedPosition = !isNaN(savedLat) && !isNaN(savedLng);
             const initialCenter = hasSavedPosition ? [savedLat, savedLng] : defaultCenter;
-            const map = L.map('entity-map').setView(initialCenter, hasSavedPosition ? 15 : defaultZoom);
+            const savedZoom = parseInt(zoomInput.value);
+            const initialZoom = hasSavedPosition ? (isNaN(savedZoom) ? savedZoomFallback : savedZoom) : defaultZoom;
+            const map = L.map('entity-map').setView(initialCenter, initialZoom);
             locationMapInstance = map;
+            map.on('zoomend', () => {
+                zoomInput.value = map.getZoom();
+            });
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors',
                 maxZoom: 19,
@@ -620,6 +628,7 @@ export class Customers {
               latitude: document.getElementById('entity-latitude'),
               longitude: document.getElementById('entity-longitude'),
               locationRadius: document.getElementById('entity-location-radius'),
+              locationZoom: document.getElementById('entity-location-zoom'),
           };
             updateButton.addEventListener('click', () => {
               if ($value.locationEnabled.checked && !(parseFloat($value.locationRadius.value) > 0)) {
@@ -644,6 +653,7 @@ export class Customers {
                   'latitude': `${$value.latitude.value}`,
                   'longitude': `${$value.longitude.value}`,
                   'locationRadius': `${$value.locationRadius.value}`,
+                  'zoomLevel': `${$value.locationZoom.value}`,
               });
               update(raw);
             });
