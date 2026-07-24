@@ -560,6 +560,7 @@ export class Customers {
             const initialZoom = hasSavedPosition ? (isNaN(savedZoom) ? savedZoomFallback : savedZoom) : defaultZoom;
             const map = L.map('entity-map').setView(initialCenter, initialZoom);
             locationMapInstance = map;
+            zoomInput.value = map.getZoom();
             map.on('zoomend', () => {
                 zoomInput.value = map.getZoom();
             });
