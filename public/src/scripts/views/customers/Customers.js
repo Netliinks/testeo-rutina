@@ -379,6 +379,7 @@ export class Customers {
                 RInterface('Customer', entityId);
             });
         });
+        let locationMapInstance = null;
         const RInterface = async (entities, entityID) => {
             const data = await getEntityData(entities, entityID);
             this.entityDialogContainer.innerHTML = '';
@@ -458,7 +459,11 @@ export class Customers {
               <label for="entity-required-routine">Requerido rutinas</label>
             </div>
 
-            <div class="entity_map_field">
+            <div class="input_checkbox">
+                <label><input type="checkbox" class="checkbox" id="entity-location-enabled"> Habilitar ubicación</label>
+            </div>
+
+            <div class="entity_map_field" id="entity-location-fields" style="display: none;">
               <label class="entity_map_label">Ubicación</label>
               <p class="entity_map_hint">Escribe la latitud y longitud o selecciona el punto en el mapa.</p>
               <div class="entity_map_coords">
@@ -486,6 +491,10 @@ export class Customers {
           </div>
         </div>
       `;
+            if (locationMapInstance) {
+              locationMapInstance.remove();
+              locationMapInstance = null;
+            }
             const checkboxMarcation = document.getElementById('entity-marcation');
             if (data.permitMarcation === true) {
               checkboxMarcation?.setAttribute('checked', 'true');
@@ -507,11 +516,29 @@ export class Customers {
             }
             inputObserver();
             inputSelect('State', 'entity-state', data.state.name);
-            initLocationMap(data);
+            const checkboxLocationEnabled = document.getElementById('entity-location-enabled');
+            const locationFields = document.getElementById('entity-location-fields');
+            if (data?.locationEnabled === true) {
+              checkboxLocationEnabled?.setAttribute('checked', 'true');
+              locationFields.style.display = 'block';
+              initLocationMap(data);
+            }
+            checkboxLocationEnabled.addEventListener('change', () => {
+              if (checkboxLocationEnabled.checked) {
+                locationFields.style.display = 'block';
+                initLocationMap(data);
+              } else {
+                locationFields.style.display = 'none';
+              }
+            });
             this.close();
             UUpdate(entityID);
         };
         const initLocationMap = (data) => {
+            if (locationMapInstance) {
+                setTimeout(() => locationMapInstance.invalidateSize(), 200);
+                return;
+            }
             const latInput = document.getElementById('entity-latitude');
             const lngInput = document.getElementById('entity-longitude');
             const defaultCenter = [-1.8312, -78.1834];
@@ -521,6 +548,7 @@ export class Customers {
             const hasSavedPosition = !isNaN(savedLat) && !isNaN(savedLng);
             const initialCenter = hasSavedPosition ? [savedLat, savedLng] : defaultCenter;
             const map = L.map('entity-map').setView(initialCenter, hasSavedPosition ? 15 : defaultZoom);
+            locationMapInstance = map;
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors',
                 maxZoom: 19,
@@ -582,6 +610,7 @@ export class Customers {
               reqNroVehicle: document.getElementById('entity-required-vehicular'),
               reqNroReport: document.getElementById('entity-required-report'),
               reqNroRoutine: document.getElementById('entity-required-routine'),
+              locationEnabled: document.getElementById('entity-location-enabled'),
               latitude: document.getElementById('entity-latitude'),
               longitude: document.getElementById('entity-longitude'),
           };
@@ -600,6 +629,7 @@ export class Customers {
                   'reqNroVehicle': `${$value.reqNroVehicle.value ?? 0}`,
                   'reqNroReport': `${$value.reqNroReport.value ?? 0}`,
                   'reqNroRoutine': `${$value.reqNroRoutine.value ?? 0}`,
+                  'locationEnabled': `${$value.locationEnabled.checked ? true : false}`,
                   'latitude': `${$value.latitude.value}`,
                   'longitude': `${$value.longitude.value}`,
               });
