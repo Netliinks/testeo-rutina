@@ -458,6 +458,26 @@ export class Customers {
               <label for="entity-required-routine">Requerido rutinas</label>
             </div>
 
+            <div class="entity_map_field">
+              <label class="entity_map_label">Ubicación</label>
+              <p class="entity_map_hint">Escribe la latitud y longitud o selecciona el punto en el mapa.</p>
+              <div class="entity_map_coords">
+                <div class="material_input">
+                  <input type="number"
+                    id="entity-latitude"
+                   autocomplete="none" step="any" class="input_filled" value="${data?.latitude ?? ''}">
+                  <label for="entity-latitude">Latitud</label>
+                </div>
+                <div class="material_input">
+                  <input type="number"
+                    id="entity-longitude"
+                   autocomplete="none" step="any" class="input_filled" value="${data?.longitude ?? ''}">
+                  <label for="entity-longitude">Longitud</label>
+                </div>
+              </div>
+              <div class="entity_map" id="entity-map"></div>
+            </div>
+
           </div>
           <!-- END EDITOR BODY -->
 
@@ -487,8 +507,62 @@ export class Customers {
             }
             inputObserver();
             inputSelect('State', 'entity-state', data.state.name);
+            initLocationMap(data);
             this.close();
             UUpdate(entityID);
+        };
+        const initLocationMap = (data) => {
+            const latInput = document.getElementById('entity-latitude');
+            const lngInput = document.getElementById('entity-longitude');
+            const defaultCenter = [-1.8312, -78.1834];
+            const defaultZoom = 6;
+            const savedLat = parseFloat(data?.latitude);
+            const savedLng = parseFloat(data?.longitude);
+            const hasSavedPosition = !isNaN(savedLat) && !isNaN(savedLng);
+            const initialCenter = hasSavedPosition ? [savedLat, savedLng] : defaultCenter;
+            const map = L.map('entity-map').setView(initialCenter, hasSavedPosition ? 15 : defaultZoom);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19,
+            }).addTo(map);
+            let marker = hasSavedPosition ? L.marker(initialCenter, { draggable: true }).addTo(map) : null;
+            const setPosition = (lat, lng, recenter) => {
+                latInput.value = lat;
+                lngInput.value = lng;
+                latInput.classList.add('input_filled');
+                lngInput.classList.add('input_filled');
+                if (marker) {
+                    marker.setLatLng([lat, lng]);
+                } else {
+                    marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+                    marker.on('dragend', () => {
+                        const position = marker.getLatLng();
+                        setPosition(position.lat, position.lng, false);
+                    });
+                }
+                if (recenter) {
+                    map.setView([lat, lng], map.getZoom() < 15 ? 15 : map.getZoom());
+                }
+            };
+            if (marker) {
+                marker.on('dragend', () => {
+                    const position = marker.getLatLng();
+                    setPosition(position.lat, position.lng, false);
+                });
+            }
+            map.on('click', (e) => {
+                setPosition(e.latlng.lat, e.latlng.lng, false);
+            });
+            const onCoordsInput = () => {
+                const lat = parseFloat(latInput.value);
+                const lng = parseFloat(lngInput.value);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    setPosition(lat, lng, true);
+                }
+            };
+            latInput.addEventListener('change', onCoordsInput);
+            lngInput.addEventListener('change', onCoordsInput);
+            setTimeout(() => map.invalidateSize(), 200);
         };
         const UUpdate = async (entityId) => {
             const updateButton = document.getElementById('update-changes');
@@ -508,6 +582,8 @@ export class Customers {
               reqNroVehicle: document.getElementById('entity-required-vehicular'),
               reqNroReport: document.getElementById('entity-required-report'),
               reqNroRoutine: document.getElementById('entity-required-routine'),
+              latitude: document.getElementById('entity-latitude'),
+              longitude: document.getElementById('entity-longitude'),
           };
             updateButton.addEventListener('click', () => {
               let raw = JSON.stringify({
@@ -524,6 +600,8 @@ export class Customers {
                   'reqNroVehicle': `${$value.reqNroVehicle.value ?? 0}`,
                   'reqNroReport': `${$value.reqNroReport.value ?? 0}`,
                   'reqNroRoutine': `${$value.reqNroRoutine.value ?? 0}`,
+                  'latitude': `${$value.latitude.value}`,
+                  'longitude': `${$value.longitude.value}`,
               });
               update(raw);
             });
