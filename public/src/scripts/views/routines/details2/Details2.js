@@ -21,7 +21,7 @@ let infoPage = {
     search: "",
     check: false,
     counter: 10,
-    table: "RoutineMarcation",
+    table: "RoutineRegister",
     newRegister: false,
     countNewRegister: 0,
     statusSearch: "Todos",
@@ -30,7 +30,12 @@ let infoPage = {
 };
 let dataPage = [];
 let raw;
-const GetRoutinesMarcations = async (forceReloadPage1 = false) => {
+const currentBusiness = async () => {
+    const currentUser = await getUserInfo();
+    const business = await getEntityData('User', `${currentUser.attributes.id}`);
+    return business;
+};
+const GetRoutinesDetails = async (forceReloadPage1 = false) => {
     //const notesRaw = await getEntitiesData('RoutineRegister');
     //const notes = notesRaw.filter((data) => data.customer?.id === `${customerId}`);
     infoPage.counter = 10;
@@ -46,11 +51,12 @@ const GetRoutinesMarcations = async (forceReloadPage1 = false) => {
         condition = '=';
     }
     if(infoPage.check == true){
+        const businessData = await currentBusiness();
         const baseConditions = [
             {
-                "property": "routineRelation.business.id",
+                "property": "business.id",
                 "operator": "=",
-                "value": `${Config.currentUser.business.id}`
+                "value": `${businessData.business.id}`
             },
             {
                 "property": "routineState.name",
@@ -80,17 +86,17 @@ const GetRoutinesMarcations = async (forceReloadPage1 = false) => {
                         "value": `${infoPage.search.trim().toLowerCase()}`
                     },
                     {
-                        "property": "routineRelation.routine.name",
+                        "property": "routine.name",
                         "operator": "contains",
                         "value": `${infoPage.search.trim().toLowerCase()}`
                     },
                     {
-                        "property": "routineRelation.routineSchedule.name",
+                        "property": "routineSchedule.name",
                         "operator": "contains",
                         "value": `${infoPage.search.trim().toLowerCase()}`
                     },
                     {
-                        "property": "routineRelation.customer.name",
+                        "property": "customer.name",
                         "operator": "contains",
                         "value": `${infoPage.search.trim().toLowerCase()}`
                     }
@@ -110,7 +116,7 @@ const GetRoutinesMarcations = async (forceReloadPage1 = false) => {
     }else{
         const baseConditions = [
             {
-                "property": "routineRelation.customer.id",
+                "property": "customer.id",
                 "operator": "=",
                 "value": `${customerId}`
             },
@@ -142,12 +148,12 @@ const GetRoutinesMarcations = async (forceReloadPage1 = false) => {
                         "value": `${infoPage.search.trim().toLowerCase()}`
                     },
                     {
-                        "property": "routineRelation.routine.name",
+                        "property": "routine.name",
                         "operator": "contains",
                         "value": `${infoPage.search.trim().toLowerCase()}`
                     },
                     {
-                        "property": "routineRelation.routineSchedule.name",
+                        "property": "routineSchedule.name",
                         "operator": "contains",
                         "value": `${infoPage.search.trim().toLowerCase()}`
                     }
@@ -167,8 +173,8 @@ const GetRoutinesMarcations = async (forceReloadPage1 = false) => {
     }
 
     if(dataPage.length == 0 || infoPage.offset != 0 || forceReloadPage1){
-        infoPage.count = await getFilterEntityCount("RoutineMarcation", JSON.stringify(raw));
-        dataPage = await getFilterEntityData("RoutineMarcation", JSON.stringify(raw));
+        infoPage.count = await getFilterEntityCount("RoutineRegister", JSON.stringify(raw));
+        dataPage = await getFilterEntityData("RoutineRegister", JSON.stringify(raw));
         if (infoPage.offset == 0 && dataPage.length > 0) {
             let latestTs = infoPage.lastCreatedDate ? new Date(infoPage.lastCreatedDate).getTime() : 0;
             let latestDate = infoPage.lastCreatedDate;
@@ -216,7 +222,7 @@ const GetRoutinesMarcations = async (forceReloadPage1 = false) => {
                 ]
             }
         };
-        infoPage.newData = await getFilterEntityData("RoutineMarcation", JSON.stringify(query));
+        infoPage.newData = await getFilterEntityData("RoutineRegister", JSON.stringify(query));
     }
     // Check if there are new records to add or existing records to update
     if (infoPage.offset == 0 && infoPage.newData.length > 0) {
@@ -339,7 +345,7 @@ export class RoutineRegisters {
                 fillBtnPagination(actualPage, Config.colorPagination);
             }
 
-            let notesArray = await GetRoutinesMarcations(returningToPage1 || searchChanged || statusChanged || checkChanged);
+            let notesArray = await GetRoutinesDetails(returningToPage1 || searchChanged || statusChanged || checkChanged);
             if(infoPage.currentPage == 1){
                 const change = async () => {
                     clearTimeout(Config.timeOut);
@@ -410,9 +416,9 @@ export class RoutineRegisters {
                     //let obsMessage = await this.obtainDelay(register);
                     let row = document.createElement('TR');
                     row.innerHTML += `
-                    <td>${calculateLine(register?.routineRelation?.customer?.name, 40)}</td>
-                    <td>${calculateLine(register?.routineRelation?.routine?.name, 40)}</td>
-                    <td>${calculateLine(register?.routineRelation?.routineSchedule?.name, 40)}</td>
+                    <td>${calculateLine(register?.customer?.name, 40)}</td>
+                    <td>${calculateLine(register?.routine?.name, 40)}</td>
+                    <td>${calculateLine(register?.routineSchedule?.name, 40)}</td>
                     <td>${calculateLine(`${register?.user?.firstName ?? ''} ${register?.user?.lastName ?? ''}`, 40)}</td>
                     <td>${register?.user?.username ?? ''}</td>
                     <td class="tag"><span>${register?.routineState?.name ?? ''}</span></td>
@@ -507,14 +513,14 @@ export class RoutineRegisters {
                 });
             });
             const previewBox = async (noteId) => {
-                const register = await getEntityData('RoutineMarcation', noteId);
+                const register = await getEntityData('RoutineRegister', noteId);
                 renderRightSidebar(UIRightSidebar);
                 const sidebarContainer = document.getElementById('entity-editor-container');
                 const closeSidebar = document.getElementById('close');
                 closeSidebar.addEventListener('click', () => {
                     new CloseDialog().x(sidebarContainer);
                 });
-                // RoutineMarcation details
+                // RoutineRegister details
                 const _details = {
                     picture: document.getElementById('register-picture-placeholder'),
                     content1: document.getElementById('register-content1'),
@@ -546,8 +552,8 @@ export class RoutineRegisters {
                     _details.content1.style.display = 'flex'
                     _details.content1.innerText = register?.observation ?? '';
                 }
-                _details.routine.value = register?.routineRelation?.routine?.name ?? '';
-                _details.schedule.value = register?.routineRelation?.routineSchedule?.name ?? '';
+                _details.routine.value = register?.routine?.name ?? '';
+                _details.schedule.value = register?.routineSchedule?.name ?? '';
                 _details.locationLat.value = `Lat: ${register?.latitude ?? ''}`;
                 _details.locationLong.value = `Lng: ${register?.longitude ?? ''}`;
                 _details.author.value = register?.user?.username ?? ''
@@ -558,9 +564,6 @@ export class RoutineRegisters {
                 _details.targeTime.value = register?.targetTime ?? '';
                 _details.targetDate2.value = register?.targetDate2 ?? '';
                 _details.targeTime2.value = register?.targetTime2 ?? '';
-                _details.consoleDate.value = register?.consoleDate ?? '';
-                _details.consoleTime.value = register?.consoleTime ?? '';
-                _details.consoleAuthor.value = register?.consoleUser ?? '';
                 if (register.attachment !== undefined) {
                     const image = await getFile(register.attachment);
                     _details.picture.innerHTML = `
@@ -583,7 +586,7 @@ export class RoutineRegisters {
                     update(raw)
                 })
                 const update = (raw) => {
-                    updateEntity('RoutineMarcation', noteId, raw)
+                    updateEntity('RoutineRegister', noteId, raw)
                         .then((res) => {
                             setTimeout(async () => {
                                 let tableBody = document.getElementById('datatable-container');
@@ -781,14 +784,14 @@ export class RoutineRegisters {
                             //const headers = ['Título', 'Contenido', 'Autor', 'Fecha', 'Hora']
                             let rawToExport=(offset)=>{
                                 let condition = {
-                                    property: "routineRelation.customer.id",
+                                    property: "customer.id",
                                     value: `${_values.customer.dataset.optionid}`,
                                     order: "-createdDate"
                                 }
                                 if(exportAllCustomers.checked){
-                                    condition.property = "routineRelation.business.id";
+                                    condition.property = "business.id";
                                     condition.value = `${Config.currentUser.business.id}`;
-                                    condition.order = "+routineRelation.customer.name,-createdDate"
+                                    condition.order = "+customer.name,-createdDate"
                                 }
                                 let rawExport = JSON.stringify({
                                     "filter": {
@@ -823,7 +826,7 @@ export class RoutineRegisters {
                                 return rawExport;
                             }
                             let rawExport = rawToExport(0);
-                            const totalRegisters = await getFilterEntityCount("RoutineMarcation", rawExport);
+                            const totalRegisters = await getFilterEntityCount("RoutineRegister", rawExport);
                             if(totalRegisters === undefined){
                                 onPressed = false;
                                 const _dialog = document.getElementById('dialog-content');
@@ -843,7 +846,7 @@ export class RoutineRegisters {
                                 for(let i = 0; i < pages; i++){
                                     if(onPressed){
                                         rawExport = rawToExport(offset);
-                                        array[i] = await getFilterEntityData("RoutineMarcation", rawExport); //await getEvents();
+                                        array[i] = await getFilterEntityData("RoutineRegister", rawExport); //await getEvents();
                                         for(let y=0; y<array[i].length; y++){
                                             registers.push(array[i][y]);
                                         }
@@ -877,12 +880,12 @@ export class RoutineRegisters {
                                                             image = await getFile(register.attachment);
                                                         }
                                                         let obj = {
-                                                            "rutina": `${register?.routineRelation?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                                                            "ubicacion": `${register?.routineRelation?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                                                            "rutina": `${register?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                                                            "ubicacion": `${register?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
                                                             "fecha": `${register.creationDate}`,
                                                             "hora": `${register.creationTime}`,
                                                             "estado": `${register?.routineState?.name ?? ''}`,
-                                                            "cords": `${register?.latitude ?? ''}, ${register?.longitude ?? ''}`,
+                                                            "cords": `${register?.cords ?? ''}`,
                                                             "usuario": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
                                                             "observacion": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
                                                             "imagen": `${image}`
