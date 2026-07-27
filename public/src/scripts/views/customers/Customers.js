@@ -637,7 +637,7 @@ export class Customers {
                 alert('El radio de ubicación debe ser un número mayor a 0 y menor o igual a 60');
                 return;
               }
-              let raw = JSON.stringify({
+              const payload = {
                   // @ts-ignore
                   "ruc": `${$value.ruc.value}`,
                   "state": {
@@ -652,11 +652,20 @@ export class Customers {
                   'reqNroReport': `${$value.reqNroReport.value ?? 0}`,
                   'reqNroRoutine': `${$value.reqNroRoutine.value ?? 0}`,
                   'locationEnabled': `${$value.locationEnabled.checked ? true : false}`,
-                  'latitude': `${$value.latitude.value}`,
-                  'longitude': `${$value.longitude.value}`,
-                  'locationRadius': `${$value.locationRadius.value}`,
-                  'zoomLevel': `${$value.locationZoom.value}`,
-              });
+              };
+              if ($value.latitude.value !== '') {
+                  payload.latitude = `${$value.latitude.value}`;
+              }
+              if ($value.longitude.value !== '') {
+                  payload.longitude = `${$value.longitude.value}`;
+              }
+              if ($value.locationRadius.value !== '') {
+                  payload.locationRadius = `${$value.locationRadius.value}`;
+              }
+              if ($value.locationZoom.value !== '') {
+                  payload.zoomLevel = `${$value.locationZoom.value}`;
+              }
+              const raw = JSON.stringify(payload);
               update(raw);
             });
             const update = (raw) => {
