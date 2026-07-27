@@ -170,7 +170,6 @@ export class Accesses {
                     <th><span>Solicitante</span></th>
                     <th><span>Reconocido</span></th>
                     <th class="thead_centered"><span>Estado</span></th>
-                    <th><span>Confianza</span></th>
                     <th><span>Fecha</span></th>
                     <th><span>Coordenadas</span></th>
                 </tr></thead>
@@ -185,7 +184,6 @@ export class Accesses {
                 const fileInfo = access.photo;
                 const recognizedName = access.user?.fullName ?? 'No reconocido';
                 const requesterName = access.requesterUser?.fullName ?? '-';
-                const confidencePct = typeof access.confidence === 'number' ? `${(access.confidence * 100).toFixed(1)}%` : '-';
                 const recognizedAt = access.recognizedAt ? new Date(access.recognizedAt).toLocaleString() : '-';
                 const coords = (access.latitude != null && access.longitude != null) ? `${access.latitude}, ${access.longitude}` : '-';
 
@@ -219,10 +217,6 @@ export class Accesses {
                 }
                 statusCell.appendChild(statusTag);
                 row.appendChild(statusCell);
-
-                const confidenceCell = document.createElement('td');
-                confidenceCell.textContent = confidencePct;
-                row.appendChild(confidenceCell);
 
                 const dateCell = document.createElement('td');
                 dateCell.textContent = recognizedAt;
