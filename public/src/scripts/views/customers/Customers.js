@@ -483,7 +483,7 @@ export class Customers {
               <div class="material_input">
                 <input type="number"
                   id="entity-location-radius"
-                 autocomplete="none" min="1" step="any" class="input_filled" value="${data?.locationRadius ?? ''}">
+                 autocomplete="none" min="1" max="60" step="any" class="input_filled" value="${data?.locationRadius ?? 60}">
                 <label for="entity-location-radius">Radio de ubicación (metros)</label>
               </div>
               <input type="hidden" id="entity-location-zoom" value="${data?.zoomLevel ?? ''}">
@@ -632,8 +632,9 @@ export class Customers {
               locationZoom: document.getElementById('entity-location-zoom'),
           };
             updateButton.addEventListener('click', () => {
-              if ($value.locationEnabled.checked && !(parseFloat($value.locationRadius.value) > 0)) {
-                alert('El radio de ubicación debe ser un número positivo');
+              const locationRadiusValue = parseFloat($value.locationRadius.value);
+              if ($value.locationEnabled.checked && !(locationRadiusValue > 0 && locationRadiusValue <= 60)) {
+                alert('El radio de ubicación debe ser un número mayor a 0 y menor o igual a 60');
                 return;
               }
               let raw = JSON.stringify({
