@@ -140,8 +140,8 @@ export class Routines {
                           <i class="fa-solid fa-pen"></i>
                         </button>
 
-                        <button class="button" id="location-entity" data-entityId="${routine.id}">
-                          <i class="fa-solid fa-map-location"></i>
+                        <button class="button" id="schedule-entity" data-entityId="${routine.id}">
+                          <i class="fa-solid fa-clock"></i>
                         </button>
 
                         <button class="button" id="guard-entity" data-entityId="${routine.id}">
@@ -171,8 +171,8 @@ export class Routines {
                           <i class="fa-solid fa-pen"></i>
                         </button>
 
-                        <button class="button" id="location-entity" data-entityId="${routine.id}">
-                          <i class="fa-solid fa-map-location"></i>
+                        <button class="button" id="schedule-entity" data-entityId="${routine.id}">
+                          <i class="fa-solid fa-clock"></i>
                         </button>
 
                         <button class="button" id="guard-entity" data-entityId="${routine.id}">
@@ -199,7 +199,7 @@ export class Routines {
         this.export();
         this.export2();
         this.remove();
-        this.location();
+        this.schedules();
         this.assignGuard();
         this.edit(this.entityDialogContainer, data);
     }
@@ -1187,9 +1187,9 @@ export class Routines {
     });
   }
   
-    location() {
-      const locationRoutine = document.querySelectorAll('#location-entity');
-      locationRoutine.forEach((buttonKey) => {
+    schedules() {
+      const scheudleRoutine = document.querySelectorAll('#schedule-entity');
+      scheudleRoutine.forEach((buttonKey) => {
             buttonKey.addEventListener('click', async () => {
                 let entityId = buttonKey.dataset.entityid;
                 new Schedules().render(Config.offset, Config.currentPage, "", entityId);
