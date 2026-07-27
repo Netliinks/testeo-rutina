@@ -154,7 +154,7 @@ export class Accesses {
 
         container.innerHTML = '';
 
-        const requesterIds = [...new Set(accesses.map((access) => access.requesterUser?.id).filter(Boolean))];
+        const requesterIds = [...new Set(accesses.map((access) => access.requesterUser?.externalId).filter(Boolean))];
         const usersById = await this._fetchUsersByIds(requesterIds);
 
         const groups = this._groupByDate(accesses);
@@ -188,7 +188,7 @@ export class Accesses {
             for (const access of dayAccesses) {
                 const fileInfo = access.photo;
                 const recognizedName = access.user?.fullName ?? 'No reconocido';
-                const requesterUser = usersById[access.requesterUser?.id];
+                const requesterUser = usersById[access.requesterUser?.externalId];
                 const requesterName = requesterUser?.username ?? access.requesterUser?.fullName ?? '-';
                 const requesterCustomerName = requesterUser?.customer?.name ?? '-';
                 const confidencePct = typeof access.confidence === 'number' ? `${(access.confidence * 100).toFixed(1)}%` : '-';
