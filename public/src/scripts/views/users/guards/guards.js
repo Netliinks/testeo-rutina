@@ -1174,16 +1174,18 @@ export class Guards {
                             const fileInfo = access.photo;
                             const requesterName = access.requesterUser?.fullName ?? '-';
                             const recognizedName = access.user?.fullName ?? 'No reconocido';
+
+                            let photoUrl = null;
+
                             const cell = document.createElement('div');
-                            cell.style.cssText = 'position:relative;background:#f0f0f0;border-radius:4px;height:80px;display:flex;align-items:center;justify-content:center;';
-                            cell.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid #ccc;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span>';
+                            cell.style.cssText = 'position:relative;background:#f0f0f0;border-radius:4px;height:80px;overflow:hidden;';
                             grid.appendChild(cell);
-                            const url = fileInfo ? await getFaceFile(fileInfo.path, fileInfo.storageName) : null;
-                            cell.innerHTML = '';
-                            cell.style.cssText = 'position:relative;';
-                            const img = document.createElement('img');
-                            img.src = url ?? '';
-                            img.style.cssText = 'width:100%;height:80px;object-fit:cover;border-radius:4px;cursor:pointer;display:block;background:#ddd;';
+
+                            const photoWrapper = document.createElement('div');
+                            photoWrapper.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;';
+                            photoWrapper.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid #ccc;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span>';
+                            cell.appendChild(photoWrapper);
+
                             const statusBadge = document.createElement('span');
                             statusBadge.style.cssText = 'position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:1;';
                             if (access.correct === true) {
@@ -1199,11 +1201,14 @@ export class Guards {
                                 statusBadge.innerHTML = '<span style="display:inline-block;width:9px;height:9px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;"></span>';
                                 statusBadge.title = 'Procesando reconocimiento facial...';
                             }
-                            img.addEventListener('click', () => {
+                            cell.appendChild(statusBadge);
+
+                            const openOverlay = () => {
+                                if (!photoUrl) return;
                                 const overlay = document.createElement('div');
                                 overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;';
                                 const full = document.createElement('img');
-                                full.src = url ?? '';
+                                full.src = photoUrl;
                                 full.style.cssText = 'max-width:90vw;max-height:70vh;object-fit:contain;border-radius:6px;';
                                 overlay.appendChild(full);
 
@@ -1227,9 +1232,26 @@ export class Guards {
                                     if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
                                 });
                                 document.body.appendChild(overlay);
-                            });
-                            cell.appendChild(img);
-                            cell.appendChild(statusBadge);
+                            };
+
+                            if (!fileInfo) {
+                                photoWrapper.innerHTML = '<i class="fa-solid fa-image" style="color:#ccc;font-size:20px;" title="Sin foto"></i>';
+                                continue;
+                            }
+
+                            getFaceFile(fileInfo.path, fileInfo.storageName)
+                                .then((url) => {
+                                    photoUrl = url;
+                                    photoWrapper.innerHTML = '';
+                                    const img = document.createElement('img');
+                                    img.src = url ?? '';
+                                    img.style.cssText = 'width:100%;height:100%;object-fit:cover;cursor:pointer;display:block;background:#ddd;';
+                                    img.addEventListener('click', openOverlay);
+                                    photoWrapper.appendChild(img);
+                                })
+                                .catch(() => {
+                                    photoWrapper.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#e53935;font-size:20px;" title="Error al cargar la foto"></i>';
+                                });
                         }
                     }
                     pageInfo.textContent = `Página ${page + 1} / ${totalPages}`;
