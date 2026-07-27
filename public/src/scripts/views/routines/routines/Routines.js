@@ -1,6 +1,6 @@
 // @filename: Routines.ts
 import { registerEntity, getUserInfo, getEntityData, updateEntity, getFilterEntityData, getFilterEntityCount, deleteEntity, getFile } from "../../../endpoints.js";
-import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, getDetails, generateFileSimpleXls, sleep } from "../../../tools.js";
+import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, searchUniversalValue, searchUniversalValueComplex, generateFileSimpleXls, sleep } from "../../../tools.js";
 import { Config } from "../../../Configs.js";
 import { tableLayout } from "./Layout.js";
 import { tableLayoutTemplate } from "./Template.js";
@@ -485,7 +485,23 @@ export class Routines {
       remove.forEach((remove) => {
           const entityId = remove.dataset.entityid;
           // BOOKMARK: MODAL
-          remove.addEventListener('click', () => {
+          remove.addEventListener('click', async () => {
+              const checkRaw = JSON.stringify({
+                  "filter": {
+                      "conditions": [
+                          {
+                              "property": "routine.id",
+                              "operator": "=",
+                              "value": `${entityId}`
+                          }
+                      ]
+                  }
+              });
+              const count = await getFilterEntityCount("RoutineRelation", checkRaw);
+              if (count > 0) {
+                  alert("No se puede eliminar la rutina porque tiene asignaciones en la planificación.");
+                  return;
+              }
               this.dialogContainer.style.display = 'block';
               this.dialogContainer.innerHTML = `
                   <div class="dialog_content" id="dialog-content">
@@ -510,10 +526,10 @@ export class Routines {
               const cancelButton = document.getElementById('cancel');
               const dialogContent = document.getElementById('dialog-content');
               deleteButton.onclick = async() => {
-                  const locations = await getDetails('routine.id', entityId, 'RoutineSchedule');
+                  const locations = await searchUniversalValue('routine.id', '=', entityId, 'RoutineSchedule');
                   if(locations.length != 0 && locations != undefined){
                     for(let i=0; i<locations.length; i++){
-                      let raw = JSON.stringify({
+                      /*let raw = JSON.stringify({
                         "filter": {
                             "conditions": [
                                 {
@@ -525,15 +541,15 @@ export class Routines {
                         },
                         sort: "-createdDate",
                       });
-                      //let times = await getFilterEntityData("RoutineTime", raw);
-                      //for(let i=0; i<times.length; i++){
-                      //  deleteEntity('RoutineTime', times[i].id);
-                      //}
+                      let times = await getFilterEntityData("RoutineTime", raw);
+                      for(let i=0; i<times.length; i++){
+                        deleteEntity('RoutineTime', times[i].id);
+                      }*/
                       deleteEntity('RoutineSchedule', locations[i].id);
                     }
                   }
 
-                  const guards = await getDetails('routine.id', entityId, 'RoutineUser');
+                  const guards = await searchUniversalValue('routine.id', '=', entityId, 'RoutineUser');
                   if(guards.length != 0 && guards != undefined){
                     for(let i=0; i<guards.length; i++){
                       deleteEntity('RoutineUser', guards[i].id);
@@ -979,7 +995,7 @@ export class Routines {
                     }
                     else {
                         const data = await getEntityData('Routine', entityId);
-                        const users = await getDetails('routine.id', entityId, 'RoutineUser');
+                        const users = await searchUniversalValueComplex('routine.id', '=', entityId, 'RoutineUser');
                         message1.value = `0 / ${totalRegisters}`;
                         const pages = Math.ceil(totalRegisters / Config.limitExport);
                         let array = [];

@@ -637,7 +637,23 @@ export class Locations {
         const remove = document.querySelectorAll('#remove-entity');
         remove.forEach((remove) => {
             const entityId = remove.dataset.entityid;
-            remove.addEventListener('click', () => {
+            remove.addEventListener('click', async () => {
+                const checkRaw = JSON.stringify({
+                    "filter": {
+                        "conditions": [
+                            {
+                                "property": "qrPoint.id",
+                                "operator": "=",
+                                "value": `${entityId}`
+                            }
+                        ]
+                    }
+                });
+                const count = await getFilterEntityCount("RoutineRelation", checkRaw);
+                if (count > 0) {
+                    alert("No se puede eliminar la ubicación porque está asignada en una planificación de rutina.");
+                    return;
+                }
                 this.dialogContainer.style.display = 'flex';
                 this.dialogContainer.innerHTML = `
           <div class="dialog_content" id="dialog-content">

@@ -514,7 +514,23 @@ export class Schedules {
         const remove = document.querySelectorAll('#remove-entity');
         remove.forEach((remove) => {
             const entityId = remove.dataset.entityid;
-            remove.addEventListener('click', () => {
+            remove.addEventListener('click', async () => {
+                const checkRaw = JSON.stringify({
+                    "filter": {
+                        "conditions": [
+                            {
+                                "property": "routineSchedule.id",
+                                "operator": "=",
+                                "value": `${entityId}`
+                            }
+                        ]
+                    }
+                });
+                const count = await getFilterEntityCount("RoutineRelation", checkRaw);
+                if (count > 0) {
+                    alert("No se puede eliminar el horario porque está asignado en una planificación de rutina.");
+                    return;
+                }
                 this.dialogContainer.style.display = 'flex';
                 this.dialogContainer.innerHTML = `
           <div class="dialog_content" id="dialog-content">
