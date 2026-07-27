@@ -234,27 +234,37 @@ export class Accesses {
 
                 tbody.appendChild(row);
 
-                const url = fileInfo ? await getFaceFile(fileInfo.path, fileInfo.storageName) : null;
-                photoCell.innerHTML = '';
+                if (!fileInfo) {
+                    photoCell.innerHTML = '<i class="fa-solid fa-image" style="color:#ccc;font-size:20px;" title="Sin foto"></i>';
+                    continue;
+                }
 
-                const img = document.createElement('img');
-                img.src = url ?? '';
-                img.style.cssText = 'width:56px;height:48px;object-fit:cover;border-radius:4px;cursor:pointer;display:block;background:#ddd;';
-                img.addEventListener('click', () => {
-                    const overlay = document.createElement('div');
-                    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;';
-                    const full = document.createElement('img');
-                    full.src = url ?? '';
-                    full.style.cssText = 'max-width:90vw;max-height:80vh;object-fit:contain;border-radius:6px;';
-                    overlay.appendChild(full);
+                getFaceFile(fileInfo.path, fileInfo.storageName)
+                    .then((url) => {
+                        photoCell.innerHTML = '';
 
-                    overlay.addEventListener('click', () => overlay.remove());
-                    document.addEventListener('keydown', function onEsc(e) {
-                        if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
+                        const img = document.createElement('img');
+                        img.src = url ?? '';
+                        img.style.cssText = 'width:56px;height:48px;object-fit:cover;border-radius:4px;cursor:pointer;display:block;background:#ddd;';
+                        img.addEventListener('click', () => {
+                            const overlay = document.createElement('div');
+                            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;';
+                            const full = document.createElement('img');
+                            full.src = url ?? '';
+                            full.style.cssText = 'max-width:90vw;max-height:80vh;object-fit:contain;border-radius:6px;';
+                            overlay.appendChild(full);
+
+                            overlay.addEventListener('click', () => overlay.remove());
+                            document.addEventListener('keydown', function onEsc(e) {
+                                if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
+                            });
+                            document.body.appendChild(overlay);
+                        });
+                        photoCell.appendChild(img);
+                    })
+                    .catch(() => {
+                        photoCell.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#e53935;font-size:20px;" title="Error al cargar la foto"></i>';
                     });
-                    document.body.appendChild(overlay);
-                });
-                photoCell.appendChild(img);
             }
         }
 
