@@ -162,9 +162,22 @@ export class Accesses {
             heading.style.cssText = 'font-size:14px;color:#333;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #e0e0e0;';
             section.appendChild(heading);
 
-            const dayGrid = document.createElement('div');
-            dayGrid.style.cssText = 'display:grid;grid-template-columns:repeat(6,1fr);gap:12px;';
-            section.appendChild(dayGrid);
+            const table = document.createElement('table');
+            table.className = 'datatable_content';
+            table.innerHTML = `
+                <thead><tr>
+                    <th><span>Foto</span></th>
+                    <th><span>Solicitante</span></th>
+                    <th><span>Reconocido</span></th>
+                    <th class="thead_centered"><span>Estado</span></th>
+                    <th><span>Confianza</span></th>
+                    <th><span>Fecha</span></th>
+                    <th><span>Coordenadas</span></th>
+                </tr></thead>
+                <tbody></tbody>
+            `;
+            const tbody = table.querySelector('tbody');
+            section.appendChild(table);
 
             container.appendChild(section);
 
@@ -172,62 +185,68 @@ export class Accesses {
                 const fileInfo = access.photo;
                 const recognizedName = access.user?.fullName ?? 'No reconocido';
                 const requesterName = access.requesterUser?.fullName ?? '-';
-                const cell = document.createElement('div');
-                cell.style.cssText = 'position:relative;background:#f0f0f0;border-radius:4px;height:100px;display:flex;align-items:center;justify-content:center;';
-                cell.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid #ccc;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span>';
-                dayGrid.appendChild(cell);
+                const confidencePct = typeof access.confidence === 'number' ? `${(access.confidence * 100).toFixed(1)}%` : '-';
+                const recognizedAt = access.recognizedAt ? new Date(access.recognizedAt).toLocaleString() : '-';
+                const coords = (access.latitude != null && access.longitude != null) ? `${access.latitude}, ${access.longitude}` : '-';
+
+                const row = document.createElement('tr');
+
+                const photoCell = document.createElement('td');
+                photoCell.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid #ccc;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span>';
+                row.appendChild(photoCell);
+
+                const requesterCell = document.createElement('td');
+                requesterCell.textContent = requesterName;
+                row.appendChild(requesterCell);
+
+                const recognizedCell = document.createElement('td');
+                recognizedCell.textContent = recognizedName;
+                row.appendChild(recognizedCell);
+
+                const statusCell = document.createElement('td');
+                statusCell.className = 'tag';
+                const statusTag = document.createElement('span');
+                if (access.correct === true) {
+                    statusTag.classList.add('tag_green');
+                    statusTag.textContent = 'Correcto';
+                } else if (access.correct === false) {
+                    statusTag.classList.add('tag_red');
+                    statusTag.textContent = 'Incorrecto';
+                    statusTag.title = access.reason ?? '';
+                } else {
+                    statusTag.classList.add('tag_yellow');
+                    statusTag.textContent = 'Procesando';
+                }
+                statusCell.appendChild(statusTag);
+                row.appendChild(statusCell);
+
+                const confidenceCell = document.createElement('td');
+                confidenceCell.textContent = confidencePct;
+                row.appendChild(confidenceCell);
+
+                const dateCell = document.createElement('td');
+                dateCell.textContent = recognizedAt;
+                row.appendChild(dateCell);
+
+                const coordsCell = document.createElement('td');
+                coordsCell.textContent = coords;
+                row.appendChild(coordsCell);
+
+                tbody.appendChild(row);
 
                 const url = fileInfo ? await getFaceFile(fileInfo.path, fileInfo.storageName) : null;
-                cell.innerHTML = '';
-                cell.style.cssText = 'position:relative;display:flex;flex-direction:column;background:#f0f0f0;border-radius:4px;overflow:hidden;';
+                photoCell.innerHTML = '';
 
                 const img = document.createElement('img');
                 img.src = url ?? '';
-                img.style.cssText = 'width:100%;height:90px;object-fit:cover;cursor:pointer;display:block;background:#ddd;';
-
-                const caption = document.createElement('div');
-                caption.textContent = recognizedName;
-                caption.title = recognizedName;
-                caption.style.cssText = 'font-size:11px;color:#555;padding:4px 6px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-
-                const statusBadge = document.createElement('span');
-                statusBadge.style.cssText = 'position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:1;';
-                if (access.correct === true) {
-                    statusBadge.style.background = '#43a047';
-                    statusBadge.innerHTML = '<i class="fa-solid fa-check" style="color:#fff;font-size:9px;"></i>';
-                    statusBadge.title = 'Acceso correcto';
-                } else if (access.correct === false) {
-                    statusBadge.style.background = '#e53935';
-                    statusBadge.innerHTML = '<i class="fa-solid fa-xmark" style="color:#fff;font-size:9px;"></i>';
-                    statusBadge.title = access.reason ? `Acceso incorrecto: ${access.reason}` : 'Acceso incorrecto';
-                } else {
-                    statusBadge.style.background = 'rgba(0,0,0,0.5)';
-                    statusBadge.innerHTML = '<span style="display:inline-block;width:9px;height:9px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;"></span>';
-                    statusBadge.title = 'Procesando reconocimiento facial...';
-                }
-
+                img.style.cssText = 'width:56px;height:48px;object-fit:cover;border-radius:4px;cursor:pointer;display:block;background:#ddd;';
                 img.addEventListener('click', () => {
                     const overlay = document.createElement('div');
                     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;';
                     const full = document.createElement('img');
                     full.src = url ?? '';
-                    full.style.cssText = 'max-width:90vw;max-height:70vh;object-fit:contain;border-radius:6px;';
+                    full.style.cssText = 'max-width:90vw;max-height:80vh;object-fit:contain;border-radius:6px;';
                     overlay.appendChild(full);
-
-                    const details = document.createElement('div');
-                    details.style.cssText = 'margin-top:12px;padding:10px 20px;background:rgba(255,255,255,0.1);color:#fff;border-radius:6px;font-size:13px;text-align:left;max-width:90vw;line-height:1.6;';
-                    const confidencePct = typeof access.confidence === 'number' ? `${(access.confidence * 100).toFixed(1)}%` : '-';
-                    const recognizedAt = access.recognizedAt ? new Date(access.recognizedAt).toLocaleString() : '-';
-                    const coords = (access.latitude != null && access.longitude != null) ? `${access.latitude}, ${access.longitude}` : '-';
-                    details.innerHTML = `
-                        <div><strong>Solicitante:</strong> ${requesterName}</div>
-                        <div><strong>Reconocido:</strong> ${recognizedName}</div>
-                        <div><strong>Estado:</strong> ${statusBadge.title}</div>
-                        <div><strong>Confianza:</strong> ${confidencePct}</div>
-                        <div><strong>Fecha:</strong> ${recognizedAt}</div>
-                        <div><strong>Coordenadas:</strong> ${coords}</div>
-                    `;
-                    overlay.appendChild(details);
 
                     overlay.addEventListener('click', () => overlay.remove());
                     document.addEventListener('keydown', function onEsc(e) {
@@ -235,10 +254,7 @@ export class Accesses {
                     });
                     document.body.appendChild(overlay);
                 });
-
-                cell.appendChild(img);
-                cell.appendChild(caption);
-                cell.appendChild(statusBadge);
+                photoCell.appendChild(img);
             }
         }
 
