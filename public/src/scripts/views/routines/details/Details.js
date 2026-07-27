@@ -289,7 +289,7 @@ export class RoutineRegisters {
         this.siebarDialogContainer = document.getElementById('entity-editor-container');
         this.appContainer = document.getElementById('datatable-container');
         this.render = async (offset, actualPage, search, check, statusSearch) => {
-            Config.currentScreen = "RoutineRegisters";
+            Config.currentScreen = "RoutineMarcations";
             clearTimeout(Config.timeOut);
             Config.timeOut = null;
             const previousOffset = infoPage.offset;
