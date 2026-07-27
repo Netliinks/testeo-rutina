@@ -70,14 +70,7 @@ export const exportRoutineDetailPdf = (ar, start, end) => {
         var pdfInMM = 160; //210;  // width of A4 in mm
         var paragraph = doc.splitTextToSize(register.usuario, (pdfInMM - lMargin - rMargin));
         doc.text(lMargin, row, paragraph);
-        rowAtt.usuario = calculateRow(register.usuario.length,"usuario");
-
-        lMargin = 160; //left margin in mm
-        rMargin = 5; //right margin in mm
-        pdfInMM = 210; //210;  // width of A4 in mm
-        paragraph = doc.splitTextToSize(register.observacion, (pdfInMM - lMargin - rMargin));
-        doc.text(lMargin, row, paragraph);
-        rowAtt.observacion = calculateRow(register.observacion.length,"observacion");
+        rowAtt.observacion = calculateRow(infoObs.length, "observacion");
 
         row += Math.max(rowAtt.rutina, rowAtt.ubicacion, rowAtt.usuario, rowAtt.observacion);
         if(register.imagen != ''){
@@ -124,17 +117,21 @@ export const exportRoutineDetailCsv = (ar, start, end) => {
         // @ts-ignore
         //if (noteCreationDate >= start && noteCreationDate <= end) {
             let obj = {
-                "Empresa": `${register.customer?.name.split("\n").join("(salto)")}`,
+                "Empresa": `${register.routineRelation?.customer?.name.split("\n").join("(salto)")}`,
                 "Fecha": `${register.creationDate}`,
                 "Hora": `${register.creationTime}`,
                 "Estado": `${register?.routineState?.name ?? ''}`,
-                "Rutina": `${register?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                "Ubicación": `${register?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Rutina": `${register.routineRelation?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Ubicación": `${register.routineRelation?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
                 "Nombre": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
                 "Usuario": `${register.user?.username ?? ''}`,
-                "Coordenadas (Lat, Long)": `${register?.cords ?? ''}`,
-                "Fecha desde:": `${register?.targetDate ?? ''} ${register?.targetTime ?? ''}`,
-                "Fecha hasta:": `${register?.targetDate2 ?? ''} ${register?.targetTime2 ?? ''}`,
+                "Latitud": `${register?.latitude ?? ''}`,
+                "Longitud": `${register?.longitude ?? ''}`,
+                "Fecha desde": `${register?.targetDate ?? ''} ${register?.targetTime ?? ''}`,
+                "Fecha hasta": `${register?.targetDate2 ?? ''} ${register?.targetTime2 ?? ''}`,
+                "Validado por": `${register?.consoleUser ?? ''}`,
+                "Fecha Val.": `${register?.consoleDate ?? ''}`,
+                "Hora Val.": `${register?.consoleTime ?? ''}`,
                 "Observación": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
             };
             rows.push(obj);
@@ -149,17 +146,21 @@ export const exportRoutineDetailXls = (ar, start, end) => {
         // @ts-ignore
         //if (noteCreationDate >= start && noteCreationDate <= end) {
             let obj = {
-                "Empresa": `${register.customer?.name.split("\n").join("(salto)")}`,
+                "Empresa": `${register.routineRelation?.customer?.name.split("\n").join("(salto)")}`,
                 "Fecha": `${register.creationDate}`,
                 "Hora": `${register.creationTime}`,
                 "Estado": `${register?.routineState?.name ?? ''}`,
-                "Rutina": `${register?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                "Ubicación": `${register?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Rutina": `${register.routineRelation?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Ubicación": `${register.routineRelation?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
                 "Nombre": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
                 "Usuario": `${register.user?.username ?? ''}`,
-                "Coordenadas (Lat, Long)": `${register?.cords ?? ''}`,
-                "Fecha desde:": `${register?.targetDate ?? ''} ${register?.targetTime ?? ''}`,
-                "Fecha hasta:": `${register?.targetDate2 ?? ''} ${register?.targetTime2 ?? ''}`,
+                "Latitud": `${register?.latitude ?? ''}`,
+                "Longitud": `${register?.longitude ?? ''}`,
+                "Fecha desde": `${register?.targetDate ?? ''} ${register?.targetTime ?? ''}`,
+                "Fecha hasta": `${register?.targetDate2 ?? ''} ${register?.targetTime2 ?? ''}`,
+                "Validado por": `${register?.consoleUser ?? ''}`,
+                "Fecha Val.": `${register?.consoleDate ?? ''}`,
+                "Hora Val.": `${register?.consoleTime ?? ''}`,
                 "Observación": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
             };
             rows.push(obj);

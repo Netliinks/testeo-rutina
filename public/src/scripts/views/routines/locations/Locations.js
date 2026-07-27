@@ -463,11 +463,6 @@ export class Locations {
                     <option value="60">60</option>
                 </select>
               </div>
-              <div style="display:flex;justify-content:center">
-                    <img alt="Código QR ${data?.name.trim() ?? ''}" id="qrcode">
-                    <br>
-                    <button id="btnDescargar">Descargar</button>
-              </div>
         </div>
         <!-- END EDITOR BODY -->
         <div class="entity_editor_footer">
@@ -481,28 +476,8 @@ export class Locations {
             document.getElementById("entity-distance").value = data.distance;
           }
           this.close();
-          const qr = document.getElementById("qrcode");
-            // @ts-ignore
-            new QRious({
-                element: qr,
-                value: data.id,
-                size: 250,
-                backgroundAlpha: 1,
-                foreground: "#1D4C82FF",
-                level: "H", // Puede ser L,M,Q y H (L es el de menor nivel, H el mayor)
-            });
-            download(qr, data);
           UUpdate(entityID, data);
       };
-      const download = (qr, data) => {
-        const btnDescargar = document.getElementById('btnDescargar');
-        btnDescargar.addEventListener('click', () => {
-            const enlace = document.createElement("a");
-            enlace.href = qr.src;
-            enlace.download = `Código QR ${data?.name.trim() ?? ''}.png`;
-            enlace.click();
-        });
-    };
       const UUpdate = async (entityId, data) => {
           const updateButton = document.getElementById('update-changes');
           const $value = {

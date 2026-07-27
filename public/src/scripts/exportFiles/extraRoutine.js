@@ -7,7 +7,6 @@ export const exportRoutinePdf = async (ar, start, end) => {
     // @ts-ignore
     var doc = new jsPDF()
     let listImages = []
-    const listRoutines = ['-2.1564602,-79.8936213','-2.1549851,-79.8949893','-2.1520254,-79.8977429','-2.1496744,-79.9004169','-2.1482098,-79.9032946','-2.1476567,-79.906736','-2.1469948,-79.9113936','-2.1455394,-79.914659'];
     doc.addImage("./public/src/assets/pictures/header-routine.png", "PNG", 3, 3, 203, 25);
     //doc.setDrawColor(0, 0, 128);
     doc.setFont(undefined, 'bold')
@@ -40,15 +39,10 @@ export const exportRoutinePdf = async (ar, start, end) => {
     let pagina = 1;
     doc.setTextColor(0, 0, 128);
     doc.text(10, 290, `Página ${pagina}`);
-    let index = 0;
     let row = 61;
     //observaciones
     for(let i = 0; i < ar.length; i++){
         let detail = ar[i];
-        i == 0 ? null : index++;
-        if(index >= listRoutines.length){
-          index = 0;
-        }
         if(detail?.imagen !== ''){
           listImages.push(detail.imagen);
         }
@@ -74,7 +68,7 @@ export const exportRoutinePdf = async (ar, start, end) => {
         doc.text(43, row+7, "CORDS");
         doc.setTextColor(0,0,0)
         doc.setFont(undefined, 'normal')
-        doc.text(57, row+7, listRoutines[index]);
+        doc.text(57, row+7, detail.cords);
         doc.setFillColor(1,33,133);
         doc.rect(112,row,18,10,'F');
         doc.setTextColor(255,255,255);

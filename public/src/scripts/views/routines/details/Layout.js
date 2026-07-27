@@ -106,17 +106,17 @@ export const UIRightSidebar = `
         </div>
         <br>
         <div class="input_detail">
-            <label for="register-schedule"><i class="fa-solid fa-map-location"></i></label>
+            <label for="register-schedule"><i class="fa-solid fa-clock"></i></label>
             <input type="text" id="register-schedule" class="input_filled" readonly>
         </div>
         <br>
         <div class="input_detail">
-            <label for="register-location-lat"><i class="fa-solid fa-location-dot"></i></label>
+            <label for="register-location-lat"><i class="fa-solid fa-location-crosshairs"></i></label>
             <input type="text" id="register-location-lat" class="input_filled" readonly>
         </div>
         <br>
         <div class="input_detail">
-            <label for="register-location-long"><i class="fa-solid fa-location-dot"></i></label>
+            <label for="register-location-long"><i class="fa-solid fa-location-crosshairs"></i></label>
             <input type="text" id="register-location-long" class="input_filled" readonly>
         </div>
         <br>

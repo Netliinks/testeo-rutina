@@ -690,11 +690,6 @@ export class RoutineRegisters {
                                 </label>
                             </div>
 
-                            <div class="input_checkbox">
-                                <label for="exportPdf">
-                                    <input type="radio" class="checkbox" id="exportPdf" name="exportOption" value="pdf" /> PDF
-                                </label>
-                            </div>
 
                         </div>
                         <!-- END EDITOR BODY -->
@@ -704,6 +699,12 @@ export class RoutineRegisters {
                         </div>
                         </div>
                     `;
+                    /*
+                    <div class="input_checkbox">
+                                <label for="exportPdf">
+                                    <input type="radio" class="checkbox" id="exportPdf" name="exportOption" value="pdf" /> PDF
+                                </label>
+                            </div>*/
                     inputObserver();
                     this.selectCustomer();
                     let fecha = new Date(); //Fecha actual
@@ -866,7 +867,7 @@ export class RoutineRegisters {
                                                 // @ts-ignore
                                                 await exportRoutineDetailCsv(registers, _values.start.value, _values.end.value);
                                             }
-                                            else if (ele.value == "pdf") {
+                                            /*else if (ele.value == "pdf") {
                                                 let rows = [];
                                                 for (let i = 0; i < registers.length; i++) {
                                                     let register = registers[i];
@@ -882,8 +883,12 @@ export class RoutineRegisters {
                                                             "fecha": `${register.creationDate}`,
                                                             "hora": `${register.creationTime}`,
                                                             "estado": `${register?.routineState?.name ?? ''}`,
-                                                            "cords": `${register?.latitude ?? ''}, ${register?.longitude ?? ''}`,
+                                                            "latitud": `${register?.latitude ?? ''}`,
+                                                            "longitud": `${register?.longitude ?? ''}`,
                                                             "usuario": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
+                                                            "validador": `${register?.consoleUser ?? ''}`,
+                                                            "fecha_val": `${register?.consoleDate ?? ''}`,
+                                                            "hora_val": `${register?.consoleTime ?? ''}`,
                                                             "observacion": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
                                                             "imagen": `${image}`
                                                         };
@@ -892,7 +897,7 @@ export class RoutineRegisters {
                                                 }
                                                 // @ts-ignore
                                                 await exportRoutineDetailPdf(rows, _values.start.value, _values.end.value);
-                                            }
+                                            }*/
                                             const _dialog = document.getElementById('dialog-content');
                                             new CloseDialog().x(_dialog);
                                         }

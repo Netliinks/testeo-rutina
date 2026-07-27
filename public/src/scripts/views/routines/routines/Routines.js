@@ -701,12 +701,12 @@ export class Routines {
                           "filter": {
                               "conditions": [
                                   {
-                                      "property": `customer.id`,
+                                      "property": `routineRelation.customer.id`,
                                       "operator": "=",
                                       "value": `${customerId}`
                                   },
                                   {
-                                      "property": "routine.id",
+                                      "property": "routineRelation.routine.id",
                                       "operator": `=`,
                                       "value": `${entityId}`
                                   },
@@ -735,7 +735,7 @@ export class Routines {
                       return rawExport;
                   }
                   let rawExport = rawToExport(0);
-                  const totalRegisters = await getFilterEntityCount("RoutineRegister", rawExport);
+                  const totalRegisters = await getFilterEntityCount("RoutineMarcation", rawExport);
                   if(totalRegisters === undefined){
                       onPressed = false;
                       const _dialog = document.getElementById('dialog-content');
@@ -755,7 +755,7 @@ export class Routines {
                       for(let i = 0; i < pages; i++){
                           if(onPressed){
                               rawExport = rawToExport(offset);
-                              array[i] = await getFilterEntityData("RoutineRegister", rawExport); //await getEvents();
+                              array[i] = await getFilterEntityData("RoutineMarcation", rawExport); //await getEvents();
                               for(let y=0; y<array[i].length; y++){
                                   registers.push(array[i][y]);
                               }
@@ -775,13 +775,13 @@ export class Routines {
                                 image = await getFile(register.attachment);
                             }
                             let obj = {
-                                "rutina": `${register?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                                "ubicacion": `${register?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                                "rutina": `${register?.routineRelation?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                                "ubicacion": `${register?.routineRelation?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
                                 "fecha": `${register.creationDate}`,
                                 "hora": `${register.creationTime}`,
                                 "estado": `${register?.routineState?.name ?? ''}`,
-                                "cords": `${register?.cords ?? ''}`,
-                                "cords2": `${register?.routineSchedule?.cords ?? ''}`,
+                                "cords": `${register?.latitude ?? ''}, ${register?.longitude ?? ''}`,
+                                "cords2": `${register?.routineRelation?.routineSchedule?.cords ?? ''}`,
                                 "usuario": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
                                 "observacion": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
                                 "imagen": `${image}`
@@ -945,12 +945,12 @@ export class Routines {
                             "filter": {
                                 "conditions": [
                                     {
-                                        "property": `customer.id`,
+                                        "property": `routineRelation.customer.id`,
                                         "operator": "=",
                                         "value": `${customerId}`
                                     },
                                     {
-                                        "property": "routine.id",
+                                        "property": "routineRelation.routine.id",
                                         "operator": `=`,
                                         "value": `${entityId}`
                                     },
@@ -980,7 +980,7 @@ export class Routines {
                         return rawExport;
                     };
                     let rawExport = rawToExport(0);
-                    const totalRegisters = await getFilterEntityCount("RoutineRegister", rawExport);
+                    const totalRegisters = await getFilterEntityCount("RoutineMarcation", rawExport);
                     if (totalRegisters === undefined) {
                         onPressed = false;
                         const _dialog = document.getElementById('dialog-content');
@@ -1004,7 +1004,7 @@ export class Routines {
                         for (let i = 0; i < pages; i++) {
                             if (onPressed) {
                                 rawExport = rawToExport(offset);
-                                array[i] = await getFilterEntityData("RoutineRegister", rawExport); //await getEvents();
+                                array[i] = await getFilterEntityData("RoutineMarcation", rawExport); //await getEvents();
                                 for (let y = 0; y < array[i].length; y++) {
                                     registers.push(array[i][y]);
                                 }
@@ -1027,8 +1027,8 @@ export class Routines {
                                 //"code": `${data?.customer?.docRoutineCode ?? ''}`,
                                 //"version": `${data?.customer?.docRoutineVersion ?? ''}`,
                                 //"date": `${data?.customer?.docRoutineDateApproval ?? ''}`,
-                                "rutina": `${register?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                                "cliente": `${register?.customer?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                                "rutina": `${register?.routineRelation?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                                "cliente": `${register?.routineRelation?.customer?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
                                 //"status": `${data?.routineState?.name ?? ''}`,
                                 "creado": `${data?.creationDate ?? ''} ${data?.creationTime ?? ''}`,
                                 "creadopor": `${data?.user?.firstName ?? ''} ${data?.user?.lastName ?? ''}`,
