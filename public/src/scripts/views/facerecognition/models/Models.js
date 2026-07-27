@@ -1,5 +1,5 @@
 import { getModels, requestModelTrain } from "../../../endpoints.js";
-import { drawTagsIntoTables } from "../../../tools.js";
+import { drawTagsIntoTables, pageNumbers, fillBtnPagination } from "../../../tools.js";
 import { Config } from "../../../Configs.js";
 
 const PAGE_SIZE = 10;
@@ -26,6 +26,58 @@ export class Models {
             if (!document.getElementById('datatable-body')) return;
             await this.loadModels(this.currentPage);
         }, POLL_INTERVAL);
+    }
+
+    _renderPagination(page, totalPages) {
+        const pagination = document.getElementById('pagination-container');
+        pagination.innerHTML = '';
+
+        const buttonsWrapper = document.createElement('div');
+        buttonsWrapper.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+
+        const currentPage = page + 1;
+
+        const setupButton = (p) => {
+            const button = document.createElement('button');
+            button.classList.add('pagination_button');
+            button.setAttribute('name', 'pagination-button');
+            button.setAttribute('id', 'btnPag' + p);
+            button.innerText = String(p);
+            button.addEventListener('click', () => {
+                if (p !== currentPage) this.loadModels(this.currentPage = p - 1);
+            });
+            return button;
+        };
+
+        if (totalPages <= Config.maxLimitPage) {
+            for (let p = 1; p <= totalPages; p++) {
+                buttonsWrapper.appendChild(setupButton(p));
+            }
+        } else {
+            const prevButton = document.createElement('button');
+            prevButton.classList.add('pagination_button');
+            prevButton.innerText = '<<';
+            prevButton.addEventListener('click', () => {
+                if (this.currentPage > 0) this.loadModels(--this.currentPage);
+            });
+            buttonsWrapper.appendChild(prevButton);
+
+            const pages = pageNumbers(totalPages, Config.maxLimitPage, currentPage);
+            for (const p of pages) {
+                if (p > 0 && p <= totalPages) buttonsWrapper.appendChild(setupButton(p));
+            }
+
+            const nextButton = document.createElement('button');
+            nextButton.classList.add('pagination_button');
+            nextButton.innerText = '>>';
+            nextButton.addEventListener('click', () => {
+                if (this.currentPage < totalPages - 1) this.loadModels(++this.currentPage);
+            });
+            buttonsWrapper.appendChild(nextButton);
+        }
+
+        pagination.appendChild(buttonsWrapper);
+        fillBtnPagination(currentPage, Config.colorPagination);
     }
 
     async render() {
@@ -110,18 +162,7 @@ export class Models {
 
         drawTagsIntoTables();
 
-        pagination.innerHTML = `
-            <button class="datatable_button${page === 0 ? ' disabled' : ''}" id="models-prev" ${page === 0 ? 'disabled' : ''}>&#8249;</button>
-            <span style="padding:0 12px;font-size:13px;">${page + 1} / ${totalPages}</span>
-            <button class="datatable_button${page >= totalPages - 1 ? ' disabled' : ''}" id="models-next" ${page >= totalPages - 1 ? 'disabled' : ''}>&#8250;</button>
-        `;
-
-        document.getElementById('models-prev')?.addEventListener('click', () => {
-            if (this.currentPage > 0) this.loadModels(--this.currentPage);
-        });
-        document.getElementById('models-next')?.addEventListener('click', () => {
-            if (this.currentPage < totalPages - 1) this.loadModels(++this.currentPage);
-        });
+        this._renderPagination(page, totalPages);
 
         const hasProcessing = models.some(m => !TERMINAL_STATES.has(m.modelState));
         if (hasProcessing) {

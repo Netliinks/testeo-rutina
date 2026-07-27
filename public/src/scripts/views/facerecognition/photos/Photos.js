@@ -1,4 +1,6 @@
 import { getAllGuardFailedPhotos, getFaceFile, deleteGuardPhotoById, getFilterEntityData } from "../../../endpoints.js";
+import { pageNumbers, fillBtnPagination } from "../../../tools.js";
+import { Config } from "../../../Configs.js";
 
 const PAGE_SIZE = 12;
 const POLL_INTERVAL = 5000;
@@ -23,6 +25,58 @@ export class Photos {
             if (!document.getElementById('photos-grid')) return;
             await this.loadPhotos(this.currentPage);
         }, POLL_INTERVAL);
+    }
+
+    _renderPagination(page, totalPages) {
+        const pagination = document.getElementById('pagination-container');
+        pagination.innerHTML = '';
+
+        const buttonsWrapper = document.createElement('div');
+        buttonsWrapper.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+
+        const currentPage = page + 1;
+
+        const setupButton = (p) => {
+            const button = document.createElement('button');
+            button.classList.add('pagination_button');
+            button.setAttribute('name', 'pagination-button');
+            button.setAttribute('id', 'btnPag' + p);
+            button.innerText = String(p);
+            button.addEventListener('click', () => {
+                if (p !== currentPage) this.loadPhotos(this.currentPage = p - 1);
+            });
+            return button;
+        };
+
+        if (totalPages <= Config.maxLimitPage) {
+            for (let p = 1; p <= totalPages; p++) {
+                buttonsWrapper.appendChild(setupButton(p));
+            }
+        } else {
+            const prevButton = document.createElement('button');
+            prevButton.classList.add('pagination_button');
+            prevButton.innerText = '<<';
+            prevButton.addEventListener('click', () => {
+                if (this.currentPage > 0) this.loadPhotos(--this.currentPage);
+            });
+            buttonsWrapper.appendChild(prevButton);
+
+            const pages = pageNumbers(totalPages, Config.maxLimitPage, currentPage);
+            for (const p of pages) {
+                if (p > 0 && p <= totalPages) buttonsWrapper.appendChild(setupButton(p));
+            }
+
+            const nextButton = document.createElement('button');
+            nextButton.classList.add('pagination_button');
+            nextButton.innerText = '>>';
+            nextButton.addEventListener('click', () => {
+                if (this.currentPage < totalPages - 1) this.loadPhotos(++this.currentPage);
+            });
+            buttonsWrapper.appendChild(nextButton);
+        }
+
+        pagination.appendChild(buttonsWrapper);
+        fillBtnPagination(currentPage, Config.colorPagination);
     }
 
     async render() {
@@ -188,18 +242,7 @@ export class Photos {
             cell.appendChild(statusBadge);
         }
 
-        pagination.innerHTML = `
-            <button class="datatable_button${page === 0 ? ' disabled' : ''}" id="photos-prev" ${page === 0 ? 'disabled' : ''}>&#8249;</button>
-            <span style="padding:0 12px;font-size:13px;">${page + 1} / ${totalPages}</span>
-            <button class="datatable_button${page >= totalPages - 1 ? ' disabled' : ''}" id="photos-next" ${page >= totalPages - 1 ? 'disabled' : ''}>&#8250;</button>
-        `;
-
-        document.getElementById('photos-prev')?.addEventListener('click', () => {
-            if (this.currentPage > 0) this.loadPhotos(--this.currentPage);
-        });
-        document.getElementById('photos-next')?.addEventListener('click', () => {
-            if (this.currentPage < totalPages - 1) this.loadPhotos(++this.currentPage);
-        });
+        this._renderPagination(page, totalPages);
 
         const hasPendingEncoding = photos.some((photo) => !photo.encodingState);
         if (hasPendingEncoding) {
