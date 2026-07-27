@@ -184,10 +184,15 @@ export class Accesses {
                 const fileInfo = access.photo;
                 const recognizedName = access.user?.fullName ?? 'No reconocido';
                 const requesterName = access.requesterUser?.fullName ?? '-';
+                const confidencePct = typeof access.confidence === 'number' ? `${(access.confidence * 100).toFixed(1)}%` : '-';
                 const recognizedAt = access.recognizedAt ? new Date(access.recognizedAt).toLocaleString() : '-';
                 const coords = (access.latitude != null && access.longitude != null) ? `${access.latitude}, ${access.longitude}` : '-';
 
+                let photoUrl = null;
+                let photoFailed = false;
+
                 const row = document.createElement('tr');
+                row.style.cursor = 'pointer';
 
                 const photoCell = document.createElement('td');
                 photoCell.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid #ccc;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span>';
@@ -226,6 +231,55 @@ export class Accesses {
                 coordsCell.textContent = coords;
                 row.appendChild(coordsCell);
 
+                row.addEventListener('click', () => {
+                    const overlay = document.createElement('div');
+                    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;overflow:auto;padding:24px;';
+
+                    if (photoUrl) {
+                        const full = document.createElement('img');
+                        full.src = photoUrl;
+                        full.style.cssText = 'max-width:90vw;max-height:60vh;object-fit:contain;border-radius:6px;';
+                        overlay.appendChild(full);
+                    } else {
+                        const noPhoto = document.createElement('div');
+                        noPhoto.textContent = photoFailed ? 'Error al cargar la foto' : 'Sin foto';
+                        noPhoto.style.cssText = 'color:#ccc;font-size:14px;';
+                        overlay.appendChild(noPhoto);
+                    }
+
+                    const details = document.createElement('div');
+                    details.style.cssText = 'margin-top:12px;padding:10px 20px;background:rgba(255,255,255,0.1);color:#fff;border-radius:6px;font-size:13px;text-align:left;max-width:90vw;line-height:1.6;';
+                    details.innerHTML = `
+                        <div><strong>Solicitante:</strong> ${requesterName}</div>
+                        <div><strong>Reconocido:</strong> ${recognizedName}</div>
+                        <div><strong>Estado:</strong> ${statusTag.textContent}</div>
+                        <div><strong>Confianza:</strong> ${confidencePct}</div>
+                        <div><strong>Fecha:</strong> ${recognizedAt}</div>
+                        <div><strong>Coordenadas:</strong> ${coords}</div>
+                    `;
+                    overlay.appendChild(details);
+
+                    if (access.latitude != null && access.longitude != null) {
+                        const mapButton = document.createElement('button');
+                        mapButton.className = 'btn btn_primary';
+                        mapButton.style.cssText = 'margin-top:12px;';
+                        mapButton.textContent = 'Abrir en mapa';
+                        mapButton.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            window.open(`https://www.google.com/maps/search/?api=1&query=${access.latitude},${access.longitude}`, '_blank', 'noopener');
+                        });
+                        overlay.appendChild(mapButton);
+                    }
+
+                    overlay.addEventListener('click', (e) => {
+                        if (e.target === overlay) overlay.remove();
+                    });
+                    document.addEventListener('keydown', function onEsc(e) {
+                        if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
+                    });
+                    document.body.appendChild(overlay);
+                });
+
                 tbody.appendChild(row);
 
                 if (!fileInfo) {
@@ -235,28 +289,16 @@ export class Accesses {
 
                 getFaceFile(fileInfo.path, fileInfo.storageName)
                     .then((url) => {
+                        photoUrl = url ?? null;
                         photoCell.innerHTML = '';
 
                         const img = document.createElement('img');
                         img.src = url ?? '';
-                        img.style.cssText = 'width:56px;height:48px;object-fit:cover;border-radius:4px;cursor:pointer;display:block;background:#ddd;';
-                        img.addEventListener('click', () => {
-                            const overlay = document.createElement('div');
-                            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;';
-                            const full = document.createElement('img');
-                            full.src = url ?? '';
-                            full.style.cssText = 'max-width:90vw;max-height:80vh;object-fit:contain;border-radius:6px;';
-                            overlay.appendChild(full);
-
-                            overlay.addEventListener('click', () => overlay.remove());
-                            document.addEventListener('keydown', function onEsc(e) {
-                                if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
-                            });
-                            document.body.appendChild(overlay);
-                        });
+                        img.style.cssText = 'width:56px;height:48px;object-fit:cover;border-radius:4px;display:block;background:#ddd;';
                         photoCell.appendChild(img);
                     })
                     .catch(() => {
+                        photoFailed = true;
                         photoCell.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#e53935;font-size:20px;" title="Error al cargar la foto"></i>';
                     });
             }
