@@ -5,12 +5,18 @@
 //
 export const UITableSkeletonTemplate = `
 <tr>
-    <td>Cargando</td>
-    <td>Cargando</td>
-    <td>Cargando</td>
+    <td><div style="background-color: #eee; height: 10px; width: 100%; border-radius: 10px;"></div></td>
+    <td><div style="background-color: #eee; height: 10px; width: 100%; border-radius: 10px;"></div></td>
+    <td><div style="background-color: #eee; height: 10px; width: 100%; border-radius: 10px;"></div></td>
+    <td><div style="background-color: #eee; height: 10px; width: 100%; border-radius: 10px;"></div></td>
+    <td><div style="background-color: #eee; height: 10px; width: 100%; border-radius: 10px;"></div></td>
+    <td><div style="background-color: #eee; height: 10px; width: 100%; border-radius: 10px;"></div></td>
+    <td><div style="background-color: #eee; height: 10px; width: 100%; border-radius: 10px;"></div></td>
+    <td><div style="background-color: #eee; height: 10px; width: 100%; border-radius: 10px;"></div></td>
+    <td></td>
     <td class="entity_options">
-        <button class="button" id="convert-toSuperuser">
-            <i data-feather="shield" class="table_icon"></i>
+        <button class="button" style="background-color: #eee; border: none; color: #eee;">
+            <i class="fa-solid fa-magnifying-glass"></i>
         </button>
     </td>
 </tr>`;
