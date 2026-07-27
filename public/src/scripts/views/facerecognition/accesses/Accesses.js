@@ -2,7 +2,6 @@ import { getAllAccesses, getFaceFile } from "../../../endpoints.js";
 import { pageNumbers, fillBtnPagination } from "../../../tools.js";
 import { Config } from "../../../Configs.js";
 
-const PAGE_SIZE_OPTIONS = [6, 12, 24, 48];
 const DEFAULT_PAGE_SIZE = 12;
 const POLL_INTERVAL = 5000;
 
@@ -61,29 +60,6 @@ export class Accesses {
     _renderPagination(page, totalPages) {
         const pagination = document.getElementById('pagination-container');
         pagination.innerHTML = '';
-
-        const sizeWrapper = document.createElement('div');
-        sizeWrapper.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:#555;margin-bottom:10px;';
-        const sizeLabel = document.createElement('label');
-        sizeLabel.textContent = 'Mostrar';
-        sizeLabel.setAttribute('for', 'accesses-page-size');
-        const sizeSelect = document.createElement('select');
-        sizeSelect.id = 'accesses-page-size';
-        sizeSelect.style.cssText = 'font-size:12px;padding:2px 6px;border-radius:4px;border:1px solid #ccc;';
-        PAGE_SIZE_OPTIONS.forEach((size) => {
-            const opt = document.createElement('option');
-            opt.value = String(size);
-            opt.textContent = String(size);
-            if (size === this.pageSize) opt.selected = true;
-            sizeSelect.appendChild(opt);
-        });
-        sizeSelect.addEventListener('change', () => {
-            this.pageSize = Number(sizeSelect.value);
-            this.loadAccesses(this.currentPage = 0);
-        });
-        sizeWrapper.appendChild(sizeLabel);
-        sizeWrapper.appendChild(sizeSelect);
-        pagination.appendChild(sizeWrapper);
 
         const buttonsWrapper = document.createElement('div');
         buttonsWrapper.style.cssText = 'display:flex;align-items:center;justify-content:center;';
