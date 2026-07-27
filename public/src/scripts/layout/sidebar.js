@@ -28,6 +28,7 @@ import { Routines } from "../views/routines/routines/Routines.js";
 import { RoutineRegisters } from "../views/routines/details/Details.js";
 import { CredentialsView } from "../views/credentials/credentials.js";
 import { Audits } from "../views/audit/audit.js";
+import { Locations } from "../views/locations/Locations.js";
 export class Sidebar {
   constructor() {
       this.sidebarContainer = document.getElementById('app-sidebar');
@@ -238,6 +239,12 @@ export class Sidebar {
                   </span>
                 </div>
 
+                <div class="sidebar_subitem" id="render-routineLocations">
+                  <span class="sidebar_subitem_label">
+                    <i class="fa-regular fa-location-crosshairs"></i> <div class="label">Ubicaciones</div>
+                  </span>
+                </div>
+
                 <div class="sidebar_subitem" id="render-routineDetails">
                   <span class="sidebar_subitem_label">
                     <i class="fa-regular fa-clipboard-list"></i> <div class="label">Registros</div>
@@ -395,6 +402,12 @@ renders() {
       clearTimeout(Config.timeOut);
       Config.currentScreen = null;
       new RoutineRegisters().render(Config.offset, Config.currentPage, "", false, "Todos");
+    });
+
+    document.getElementById('render-routineLocations')?.addEventListener('click', () => {
+      clearTimeout(Config.timeOut);
+      Config.currentScreen = null;
+      new Locations().render(Config.offset, Config.currentPage, "");
     });
 
     document.getElementById('render-credentials')?.addEventListener('click', () => {

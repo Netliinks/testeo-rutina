@@ -127,7 +127,7 @@ export class Schedules {
     }
 
     load(table, currentPage, data) {
-        createRoutines('INS', routine.id, null);
+        //createRoutines('INS', routine.id, null);
         table.innerHTML = '';
         currentPage--;
         let start = tableRows * currentPage;
@@ -157,9 +157,6 @@ export class Schedules {
           <td>${schedule?.weekDay ?? ''}</td>
           <td>${schedule?.weekCheck ? 'Sí' : 'No'}</td>
           <td class="entity_options">
-          <button class="button" id="view-entity" data-entityId="${schedule.id}">
-            <i class="fa-solid fa-clipboard-list"></i>
-          </button>
           <button class="button" id="edit-entity" data-entityId="${schedule.id}">
             <i class="fa-solid fa-pen"></i>
           </button>
@@ -173,7 +170,7 @@ export class Schedules {
         }
         this.register();
         this.edit(this.entityDialogContainer, data);
-        this.selectModal();
+        //this.selectModal();
         this.remove();
 
     }
@@ -547,7 +544,7 @@ export class Schedules {
                 const cancelButton = document.getElementById('cancel');
                 const dialogContent = document.getElementById('dialog-content');
                 deleteButton.onclick = async () => {
-                    createRoutines('DLT', null, entityId);
+                    //createRoutines('DLT', null, entityId);
                     deleteEntity('RoutineSchedule', entityId)
                         .then(res => new Schedules().render(infoPage.offset, infoPage.currentPage, infoPage.search, routine.id));
                     new CloseDialog().x(dialogContent);
@@ -558,7 +555,7 @@ export class Schedules {
             });
         });
     }
-    selectModal() {
+    /*selectModal() {
       // register entity
       const view = document.querySelectorAll('#view-entity');
       view.forEach((element) => {
@@ -658,7 +655,7 @@ export class Schedules {
         };
     }
 
-  }
+  }*/
     close() {
         const closeButton = document.getElementById('close');
         const editor = document.getElementById('entity-editor-container');
@@ -668,7 +665,7 @@ export class Schedules {
         });
     }
 }
-const agregarCero = (valor) => {
+/*const agregarCero = (valor) => {
   valor < 10 ? valor = "0"+valor : valor;
   return valor;
 }
@@ -852,4 +849,4 @@ const createRoutines = async (mode, routineId, scheduleId) => {
       deleteTimes(times);
     }
   }
-};
+};*/

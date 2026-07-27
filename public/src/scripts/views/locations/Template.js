@@ -6,7 +6,7 @@
 export const tableLayoutTemplate = `
     <tr>
         <td>Cargando</td>
-        <th colspan="2"></th>
+        <td>Cargando</td>
         <td>Cargando</td>
         <td>Cargando</td>
         <td class="entity_options">

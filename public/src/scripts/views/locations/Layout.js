@@ -8,7 +8,6 @@ export const tableLayout = `
     <div class="datatable_header">
       <div class="datatable_title" id="datatable-title">
         <h1>Ubicaciones</h1>
-        <h2 id="datatable_subtitle" style="color:blue;">Cargando...</h2>
       </div>
       <div class="datatable_tools" id="datatable-tools">
         <input type="search"
@@ -30,19 +29,16 @@ export const tableLayout = `
     <table class="datatable_content">
       <thead><tr>
         <th><span data-type="name">
-          Ubicaciones <i class="fa-regular fa-filter"></i>
+          Ubicación <i class="fa-regular fa-filter"></i>
         </span></th>
-        <th><span data-type="cords">
-          Coordenadas <i class="fa-regular fa-filter"></i>
+        <th><span data-type="latitude">
+          Latitud <i class="fa-regular fa-filter"></i>
         </span></th>
-        <th><span data-type="time">
-          Tiempo <i class="fa-regular fa-filter"></i>
+        <th><span data-type="longitude">
+          Longitud <i class="fa-regular fa-filter"></i>
         </span></th>
-        <th><span data-type="frequency">
-          Frecuencia (min) <i class="fa-regular fa-filter"></i>
-        </span></th>
-        <th><span data-type="distamce">
-          Distancia (mtrs) <i class="fa-regular fa-filter"></i>
+        <th><span data-type="distance">
+          Distancia <i class="fa-regular fa-filter"></i>
         </span></th>
         <th class="header_filled"></th>
       </tr></thead>
