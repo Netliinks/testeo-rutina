@@ -109,29 +109,29 @@ export class Accesses {
         fillBtnPagination(currentPage, Config.colorPagination);
     }
 
-    async _fetchUsersByExternalIds(externalIds) {
-        if (!externalIds.length) return {};
+    async _fetchUsersByIds(ids) {
+        if (!ids.length) return {};
         const raw = JSON.stringify({
             filter: {
                 conditions: [
                     {
-                        property: 'externalId',
+                        property: 'id',
                         operator: 'in',
-                        value: externalIds
+                        value: ids
                     }
                 ]
             },
-            limit: externalIds.length,
+            limit: ids.length,
             offset: 0,
             fetchPlan: 'full'
         });
         const result = await getFilterEntityData('User', raw);
         const users = Array.isArray(result) ? result : (result?.content ?? []);
-        const usersByExternalId = {};
+        const usersById = {};
         users.forEach((user) => {
-            usersByExternalId[user.externalId] = user;
+            usersById[user.id] = user;
         });
-        return usersByExternalId;
+        return usersById;
     }
 
     async loadAccesses(page) {
@@ -154,8 +154,8 @@ export class Accesses {
 
         container.innerHTML = '';
 
-        const requesterExternalIds = [...new Set(accesses.map((access) => access.requesterUser?.externalId).filter(Boolean))];
-        const usersByExternalId = await this._fetchUsersByExternalIds(requesterExternalIds);
+        const requesterIds = [...new Set(accesses.map((access) => access.requesterUser?.id).filter(Boolean))];
+        const usersById = await this._fetchUsersByIds(requesterIds);
 
         const groups = this._groupByDate(accesses);
         for (const [dateKey, dayAccesses] of groups) {
@@ -187,7 +187,7 @@ export class Accesses {
             for (const access of dayAccesses) {
                 const fileInfo = access.photo;
                 const recognizedName = access.user?.fullName ?? 'No reconocido';
-                const requesterUser = usersByExternalId[access.requesterUser?.externalId];
+                const requesterUser = usersById[access.requesterUser?.id];
                 const requesterName = requesterUser?.username ?? access.requesterUser?.fullName ?? '-';
                 const confidencePct = typeof access.confidence === 'number' ? `${(access.confidence * 100).toFixed(1)}%` : '-';
                 const recognizedAt = access.recognizedAt ? new Date(access.recognizedAt).toLocaleString() : '-';
