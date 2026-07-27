@@ -150,13 +150,17 @@ export class Photos {
             const fileInfo = photo.photo;
             const guard = guardsById[photo.guardExternalId];
             const guardName = guard ? `${guard.firstName ?? ''} ${guard.lastName ?? ''}`.trim() : photo.guardExternalId;
+
+            let photoUrl = null;
+
             const cell = document.createElement('div');
-            cell.style.cssText = 'position:relative;background:#f0f0f0;border-radius:4px;height:100px;display:flex;align-items:center;justify-content:center;';
-            cell.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid #ccc;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span>';
-            grid.appendChild(cell);
-            const url = await getFaceFile(fileInfo.path, fileInfo.storageName);
-            cell.innerHTML = '';
             cell.style.cssText = 'position:relative;display:flex;flex-direction:column;background:#f0f0f0;border-radius:4px;overflow:hidden;';
+            grid.appendChild(cell);
+
+            const photoWrapper = document.createElement('div');
+            photoWrapper.style.cssText = 'width:100%;height:90px;display:flex;align-items:center;justify-content:center;background:#f0f0f0;';
+            photoWrapper.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid #ccc;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span>';
+            cell.appendChild(photoWrapper);
 
             const xBtn = document.createElement('button');
             xBtn.textContent = '×';
@@ -168,10 +172,6 @@ export class Photos {
                 await deleteGuardPhotoById(photoId);
                 this.loadPhotos(this.currentPage);
             });
-
-            const img = document.createElement('img');
-            img.src = url;
-            img.style.cssText = 'width:100%;height:90px;object-fit:cover;cursor:pointer;display:block;';
 
             const caption = document.createElement('div');
             caption.textContent = guardName || '-';
@@ -198,11 +198,12 @@ export class Photos {
                 statusBadge.title = 'Estado de reconocimiento facial desconocido';
             }
 
-            img.addEventListener('click', () => {
+            const openOverlay = () => {
+                if (!photoUrl) return;
                 const overlay = document.createElement('div');
                 overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;';
                 const full = document.createElement('img');
-                full.src = url;
+                full.src = photoUrl;
                 full.style.cssText = 'max-width:90vw;max-height:80vh;object-fit:contain;border-radius:6px;';
                 const deleteBtn = document.createElement('button');
                 deleteBtn.textContent = 'Eliminar foto';
@@ -234,9 +235,22 @@ export class Photos {
                     if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
                 });
                 document.body.appendChild(overlay);
-            });
+            };
 
-            cell.appendChild(img);
+            getFaceFile(fileInfo.path, fileInfo.storageName)
+                .then((url) => {
+                    photoUrl = url;
+                    photoWrapper.innerHTML = '';
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.style.cssText = 'width:100%;height:100%;object-fit:cover;cursor:pointer;display:block;';
+                    img.addEventListener('click', openOverlay);
+                    photoWrapper.appendChild(img);
+                })
+                .catch(() => {
+                    photoWrapper.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#e53935;font-size:20px;" title="Error al cargar la foto"></i>';
+                });
+
             cell.appendChild(caption);
             cell.appendChild(xBtn);
             cell.appendChild(statusBadge);
