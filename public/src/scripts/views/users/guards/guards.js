@@ -987,13 +987,18 @@ export class Guards {
                         for (const photo of photos) {
                             const photoId = photo.id;
                             const fileInfo = photo.photo;
+
+                            let photoUrl = null;
+
                             const cell = document.createElement('div');
-                            cell.style.cssText = 'position:relative;background:#f0f0f0;border-radius:4px;height:80px;display:flex;align-items:center;justify-content:center;';
-                            cell.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid #ccc;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span>';
+                            cell.style.cssText = 'position:relative;background:#f0f0f0;border-radius:4px;height:80px;overflow:hidden;';
                             grid.appendChild(cell);
-                            const url = await getFaceFile(fileInfo.path, fileInfo.storageName);
-                            cell.innerHTML = '';
-                            cell.style.cssText = 'position:relative;';
+
+                            const photoWrapper = document.createElement('div');
+                            photoWrapper.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;';
+                            photoWrapper.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2px solid #ccc;border-top-color:#6F7ADD;border-radius:50%;animation:spin .7s linear infinite;"></span>';
+                            cell.appendChild(photoWrapper);
+
                             const xBtn = document.createElement('button');
                             xBtn.textContent = '×';
                             xBtn.style.cssText = 'position:absolute;top:3px;right:3px;width:18px;height:18px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1;padding:0;';
@@ -1004,9 +1009,8 @@ export class Guards {
                                 await deleteGuardPhotoById(photoId);
                                 renderPhotoGrid(photosCurrentPage);
                             });
-                            const img = document.createElement('img');
-                            img.src = url;
-                            img.style.cssText = 'width:100%;height:80px;object-fit:cover;border-radius:4px;cursor:pointer;display:block;';
+                            cell.appendChild(xBtn);
+
                             const statusBadge = document.createElement('span');
                             statusBadge.style.cssText = 'position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:1;';
                             if (photo.encodingState === 'OK') {
@@ -1026,11 +1030,14 @@ export class Guards {
                                 statusBadge.innerHTML = '<i class="fa-solid fa-question" style="color:#fff;font-size:9px;"></i>';
                                 statusBadge.title = 'Estado de reconocimiento facial desconocido';
                             }
-                            img.addEventListener('click', () => {
+                            cell.appendChild(statusBadge);
+
+                            const openOverlay = () => {
+                                if (!photoUrl) return;
                                 const overlay = document.createElement('div');
                                 overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;';
                                 const full = document.createElement('img');
-                                full.src = url;
+                                full.src = photoUrl;
                                 full.style.cssText = 'max-width:90vw;max-height:80vh;object-fit:contain;border-radius:6px;';
                                 const deleteBtn = document.createElement('button');
                                 deleteBtn.textContent = 'Eliminar foto';
@@ -1062,10 +1069,21 @@ export class Guards {
                                     if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
                                 });
                                 document.body.appendChild(overlay);
-                            });
-                            cell.appendChild(img);
-                            cell.appendChild(xBtn);
-                            cell.appendChild(statusBadge);
+                            };
+
+                            getFaceFile(fileInfo.path, fileInfo.storageName)
+                                .then((url) => {
+                                    photoUrl = url;
+                                    photoWrapper.innerHTML = '';
+                                    const img = document.createElement('img');
+                                    img.src = url;
+                                    img.style.cssText = 'width:100%;height:100%;object-fit:cover;cursor:pointer;display:block;';
+                                    img.addEventListener('click', openOverlay);
+                                    photoWrapper.appendChild(img);
+                                })
+                                .catch(() => {
+                                    photoWrapper.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#e53935;font-size:20px;" title="Error al cargar la foto"></i>';
+                                });
                         }
                     }
                     pageInfo.textContent = `Página ${page + 1} / ${totalPages}`;
