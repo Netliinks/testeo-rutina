@@ -136,27 +136,27 @@ export class Routines {
                     <td>${routine?.isActive ? 'Sí' : 'No'}</dt>
                     <td>${routine?.checkLocation ? 'Sí' : 'No'}</dt>
                     <td class="entity_options">
-                        <button class="button" id="edit-entity" data-entityId="${routine.id}">
+                        <button class="button" id="edit-entity" data-entityId="${routine.id}" title="Editar">
                           <i class="fa-solid fa-pen"></i>
                         </button>
 
-                        <button class="button" id="schedule-entity" data-entityId="${routine.id}">
+                        <button class="button" id="schedule-entity" data-entityId="${routine.id}" title="Configurar horarios">
                           <i class="fa-solid fa-clock"></i>
                         </button>
 
-                        <button class="button" id="guard-entity" data-entityId="${routine.id}">
+                        <button class="button" id="guard-entity" data-entityId="${routine.id}" title="Asignar guardias">
                           <i class="fa-solid fa-user-police"></i>
                         </button>
 
-                        <button class="button" id="export-entity" data-entityId="${routine.id}">
+                        <button class="button" id="export-entity" data-entityId="${routine.id}" title="Exportar registros">
                           <i class="fa-solid fa-file-pdf"></i>
                         </button>
 
-                        <button class="button" id="export2-entity" data-entityId="${routine.id}">
+                        <button class="button" id="export2-entity" data-entityId="${routine.id}" title="Exportar detalles">
                           <i class="fa-solid fa-file-pdf"></i>
                         </button>
 
-                      <button class="button" id="remove-entity" data-entityId="${routine.id}">
+                      <button class="button" id="remove-entity" data-entityId="${routine.id}" title="Eliminar">
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </dt>
@@ -167,23 +167,23 @@ export class Routines {
                     <td>${routine?.isActive ? 'Sí' : 'No'}</dt>
                     <td>${routine?.checkLocation ? 'Sí' : 'No'}</dt>
                     <td class="entity_options">
-                        <button class="button" id="edit-entity" data-entityId="${routine.id}">
+                        <button class="button" id="edit-entity" data-entityId="${routine.id}" title="Editar">
                           <i class="fa-solid fa-pen"></i>
                         </button>
 
-                        <button class="button" id="schedule-entity" data-entityId="${routine.id}">
+                        <button class="button" id="schedule-entity" data-entityId="${routine.id}" title="Configurar horarios">
                           <i class="fa-solid fa-clock"></i>
                         </button>
 
-                        <button class="button" id="guard-entity" data-entityId="${routine.id}">
+                        <button class="button" id="guard-entity" data-entityId="${routine.id}" title="Asignar guardias">
                           <i class="fa-solid fa-user-police"></i>
                         </button>
 
-                        <button class="button" id="export2-entity" data-entityId="${routine.id}">
+                        <button class="button" id="export2-entity" data-entityId="${routine.id}" title="Exportar detalles">
                           <i class="fa-solid fa-file-pdf"></i>
                         </button>
 
-                      <button class="button" id="remove-entity" data-entityId="${routine.id}">
+                      <button class="button" id="remove-entity" data-entityId="${routine.id}" title="Eliminar">
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </dt>
