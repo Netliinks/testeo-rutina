@@ -172,6 +172,7 @@ export class Accesses {
                 <thead><tr>
                     <th><span>Foto</span></th>
                     <th><span>Solicitante</span></th>
+                    <th><span>Empresa</span></th>
                     <th><span>Reconocido</span></th>
                     <th class="thead_centered"><span>Estado</span></th>
                     <th><span>Fecha</span></th>
@@ -189,6 +190,7 @@ export class Accesses {
                 const recognizedName = access.user?.fullName ?? 'No reconocido';
                 const requesterUser = usersById[access.requesterUser?.id];
                 const requesterName = requesterUser?.username ?? access.requesterUser?.fullName ?? '-';
+                const requesterCustomerName = requesterUser?.customer?.name ?? '-';
                 const confidencePct = typeof access.confidence === 'number' ? `${(access.confidence * 100).toFixed(1)}%` : '-';
                 const recognizedAt = access.recognizedAt ? new Date(access.recognizedAt).toLocaleString() : '-';
                 const coords = (access.latitude != null && access.longitude != null) ? `${access.latitude}, ${access.longitude}` : '-';
@@ -206,6 +208,10 @@ export class Accesses {
                 const requesterCell = document.createElement('td');
                 requesterCell.textContent = requesterName;
                 row.appendChild(requesterCell);
+
+                const requesterCustomerCell = document.createElement('td');
+                requesterCustomerCell.textContent = requesterCustomerName;
+                row.appendChild(requesterCustomerCell);
 
                 const recognizedCell = document.createElement('td');
                 recognizedCell.textContent = recognizedName;
@@ -256,6 +262,7 @@ export class Accesses {
                     details.style.cssText = 'margin-top:12px;padding:10px 20px;background:rgba(255,255,255,0.1);color:#fff;border-radius:6px;font-size:13px;text-align:left;max-width:90vw;line-height:1.6;';
                     details.innerHTML = `
                         <div><strong>Solicitante:</strong> ${requesterName}</div>
+                        <div><strong>Empresa:</strong> ${requesterCustomerName}</div>
                         <div><strong>Reconocido:</strong> ${recognizedName}</div>
                         <div><strong>Estado:</strong> ${statusTag.textContent}</div>
                         <div><strong>Confianza:</strong> ${confidencePct}</div>
