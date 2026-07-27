@@ -290,6 +290,11 @@ export class Routines {
               <label for="entity-name">Nombre</label>
             </div>
 
+            <div class="form_input">
+                <label for="entity-description" class="form_label">Descripción:</label>
+                <textarea id="entity-description" class="input_textarea" rows="4"></textarea>
+            </div>
+
             <div class="input_checkbox">
                 <label><input type="checkbox" class="checkbox" id="entity-active" checked> Activo</label>
             </div>
@@ -314,11 +319,13 @@ export class Routines {
                 const businessData = await currentBusiness();
                 const inputsCollection = {
                     name: document.getElementById('entity-name'),
+                    description: document.getElementById('entity-description'),
                     active: document.getElementById('entity-active'),
                     checkLocation: document.getElementById('entity-checkLocation')
                 };
                 const raw = JSON.stringify({
-                    "name": `${inputsCollection.name.value}`,
+                    "name": `${inputsCollection.name.value.trim().toUpperCase()}`,
+                    "description": `${inputsCollection.description.value.trim()}`,
                     "business": {
                         "id": `${businessData.business.id}`},
                     "customer": {
@@ -379,6 +386,11 @@ export class Routines {
               <label for="entity-name">Nombre</label>
             </div>
 
+            <div class="form_input">
+                <label for="entity-description" class="form_label">Descripción:</label>
+                <textarea id="entity-description" class="input_textarea" rows="4">${data?.description ?? ''}</textarea>
+            </div>
+
             <div class="input_checkbox">
                 <label><input type="checkbox" class="checkbox" id="entity-active"> Activo</label>
             </div>
@@ -432,6 +444,7 @@ export class Routines {
             const $value = {
               // @ts-ignore
               name: document.getElementById('entity-name'),
+              description: document.getElementById('entity-description'),
               // @ts-ignore
               active: document.getElementById('entity-active'),
               checkLocation: document.getElementById('entity-checkLocation')
@@ -439,7 +452,8 @@ export class Routines {
             updateButton.addEventListener('click', () => {
               let raw = JSON.stringify({
                   // @ts-ignore
-                  "name": `${$value.name.value}`,
+                  "name": `${$value.name.value.trim().toUpperCase()}`,
+                  "description": `${$value.description.value.trim()}`,
                   "isActive": `${$value.active.checked ? true : false}`,
                   "checkLocation": `${$value.checkLocation.checked ? true : false}`
               });
@@ -511,10 +525,10 @@ export class Routines {
                         },
                         sort: "-createdDate",
                       });
-                      let times = await getFilterEntityData("RoutineTime", raw);
-                      for(let i=0; i<times.length; i++){
-                        deleteEntity('RoutineTime', times[i].id);
-                      }
+                      //let times = await getFilterEntityData("RoutineTime", raw);
+                      //for(let i=0; i<times.length; i++){
+                      //  deleteEntity('RoutineTime', times[i].id);
+                      //}
                       deleteEntity('RoutineSchedule', locations[i].id);
                     }
                   }

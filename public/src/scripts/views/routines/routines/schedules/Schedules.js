@@ -15,11 +15,6 @@ let infoPage = {
 };
 let dataPage;
 let routine;
-const currentBusiness = async() => {
-    const currentUser = await getUserInfo();
-    const userid = await getEntityData('User', `${currentUser.attributes.id}`);
-    return userid;
-  }
 const getSchedules = async (routineId) => {
     //nombre de la entidad
     /*const location = await getEntitiesData('Location');
@@ -319,7 +314,6 @@ export class Schedules {
             this.close();
             const registerButton = document.getElementById('register-entity');
             registerButton.addEventListener('click', async () => {
-                const businessData = await currentBusiness();
                 const weekDaySelected = Array.from(document.querySelectorAll('input[name="weekDay"]:checked')).map(cb => cb.value);
                 const inputsCollection = {
                     name: document.getElementById('entity-name'),
@@ -343,7 +337,7 @@ export class Schedules {
                     "weekCheck": inputsCollection.weekCheck.checked,
                     "weekDay": weekDaySelected.join(', '),
                     "business": {
-                        "id": `${businessData.business.id}`
+                        "id": `${Config.currentUser.business.id}`
                     },
                     "customer": {
                         "id": `${customerId}`

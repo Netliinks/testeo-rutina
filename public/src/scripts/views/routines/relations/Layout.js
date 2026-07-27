@@ -7,7 +7,7 @@ export const tableLayout = `
   <div class="datatable" id="datatable">
     <div class="datatable_header">
       <div class="datatable_title" id="datatable-title">
-        <h1>Ubicaciones</h1>
+        <h1>Asignación de Rutinas</h1>
       </div>
       <div class="datatable_tools" id="datatable-tools">
         <input type="search"
@@ -28,17 +28,17 @@ export const tableLayout = `
     </div>
     <table class="datatable_content">
       <thead><tr>
-        <th><span data-type="name">
-          Ubicación <i class="fa-regular fa-filter"></i>
+        <th><span data-type="routine">
+          Rutina <i class="fa-regular fa-filter"></i>
         </span></th>
-        <th><span data-type="latitude">
-          Latitud <i class="fa-regular fa-filter"></i>
+        <th><span data-type="schedule">
+          Horario <i class="fa-regular fa-filter"></i>
         </span></th>
-        <th><span data-type="longitude">
-          Longitud <i class="fa-regular fa-filter"></i>
+        <th><span data-type="qrPoint">
+          Punto QR <i class="fa-regular fa-filter"></i>
         </span></th>
-        <th><span data-type="distance">
-          Distancia <i class="fa-regular fa-filter"></i>
+        <th><span data-type="frequency">
+          Frecuencia <i class="fa-regular fa-filter"></i>
         </span></th>
         <th class="header_filled"></th>
       </tr></thead>
