@@ -75,6 +75,7 @@ const getRoutineRelations = async () => {
 
   infoPage.count = await getFilterEntityCount("RoutineRelation", raw);
   dataPage = await getFilterEntityData("RoutineRelation", raw);
+  console.log("dataPage", dataPage);
   return dataPage;
 };
 
@@ -353,7 +354,7 @@ export class RoutineRelations {
                 <div class="dashboard_datatable">
                   <table class="datatable_content margin_t_16">
                     <thead>
-                      <tr><th>Nombre</th><th>Rutina</th><th></th></tr>
+                      <tr><th>Rutina</th><th>Activo</th><th>Nombre</th><th>Horario</th><th>Activo</th><th>Medianoche</th><th></th></tr>
                     </thead>
                     <tbody id="datatable-modal-body"></tbody>
                   </table>
@@ -372,13 +373,17 @@ export class RoutineRelations {
       inputObserver();
       const tableBody = document.getElementById('datatable-modal-body');
       if (dataModal.length === 0) {
-        tableBody.innerHTML = '<tr><td>No hay datos</td><td></td><td></td></tr>';
+        tableBody.innerHTML = '<tr><td>No hay datos</td><td></td><td></td><td></td><td></td><td></td></tr>';
       } else {
         dataModal.forEach(item => {
           let row = document.createElement('tr');
           row.innerHTML = `
-            <td>${item.name}</td>
             <td>${item.routine?.name ?? ''}</td>
+            <td>${item.routine?.isActive ? 'Si' : 'No'}</td>
+            <td>${item.name}</td>
+            <td>${item.scheduleTime ?? ''} - ${item?.scheduleTimeEnd ?? ''}</td>
+            <td>${item?.isActive ? 'Si' : 'No'}</td>
+            <td>${item?.midnight ? 'Si' : 'No'}</td>
             <td class="entity_options">
               <button class="button" id="select-item" data-entityId="${item.id}" data-entityName="${item.name}" data-routineId="${item.routine?.id}">
                 <i class="fa-solid fa-check"></i>
