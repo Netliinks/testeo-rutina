@@ -189,7 +189,8 @@ export class Accesses {
                 const fileInfo = access.photo;
                 const recognizedName = access.user?.fullName ?? 'No reconocido';
                 const requesterUser = usersById[access.requesterUser?.externalId];
-                const requesterName = requesterUser?.username ?? access.requesterUser?.fullName ?? '-';
+                const requesterFullName = [requesterUser?.firstName, requesterUser?.lastName].filter(Boolean).join(' ').trim();
+                const requesterName = requesterFullName || requesterUser?.username || access.requesterUser?.fullName || '-';
                 const requesterCustomerName = requesterUser?.customer?.name ?? '-';
                 const confidencePct = typeof access.confidence === 'number' ? `${(access.confidence * 100).toFixed(1)}%` : '-';
                 const recognizedAt = access.recognizedAt ? new Date(access.recognizedAt).toLocaleString() : '-';
