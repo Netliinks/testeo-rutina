@@ -1,6 +1,6 @@
 set -e
 
-VERSION=0.0.9
+VERSION=0.0.10
 IMAGE=registry.gitlab.com/netliinks/stacks/face/netguard
 
 docker buildx build --platform linux/amd64 \
