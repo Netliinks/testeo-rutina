@@ -129,6 +129,8 @@ export class RoutineRelations {
         <td></td>
         <td></td>
         <td></td>
+        <td></td>
+        <td></td>
       `;
       table.appendChild(row);
     } else {
@@ -140,6 +142,8 @@ export class RoutineRelations {
           <td>${relation.routineSchedule?.name ?? ''}</td>
           <td>${relation.qrPoint?.name ?? ''}</td>
           <td>${relation?.frequency ?? 0}</td>
+          <td>${relation?.creationDate ?? ''}</td>
+          <td>${relation?.creationTime ?? ''}</td>
           <td class="entity_options">
             <button class="button" id="edit-entity" data-entityId="${relation.id}">
               <i class="fa-solid fa-pen"></i>
@@ -599,6 +603,21 @@ export class RoutineRelations {
                 <option value="60">60</option>
                 <option value="120">120</option>
               </select>
+            </div>
+            <br>
+            <div class="input_detail">
+                <label for="creation-date"><i class="fa-solid fa-calendar"></i></label>
+                <input type="date" id="creation-date" class="input_filled" value="${data.creationDate}" readonly>
+            </div>
+            <br>
+            <div class="input_detail">
+                <label for="creation-time"><i class="fa-solid fa-clock"></i></label>
+                <input type="time" id="creation-time" class="input_filled" value="${data.creationTime}" readonly>
+            </div>
+            <br>
+            <div class="input_detail">
+                <label for="log-user"><i class="fa-solid fa-user"></i></label>
+                <input type="text" id="log-user" class="input_filled" value="${data.createdBy}" readonly>
             </div>
             <div style="display:flex; flex-direction:column; align-items:center; margin-top:20px;">
               <img id="qrcode" style="margin-bottom:10px;">

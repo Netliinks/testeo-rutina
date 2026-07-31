@@ -132,9 +132,11 @@ export class Routines {
                 let row = document.createElement('tr');
                 if(routine.customer.id == "2dd22d6d-a61f-5a11-b9ad-b1afc0dc1603" || routine.customer.id == "c7afa17d-0544-7351-f50f-b5630a6a93c7"){
                   row.innerHTML += `
-                    <td>${routine?.name ?? ''}</dt>
-                    <td>${routine?.isActive ? 'Sí' : 'No'}</dt>
-                    <td>${routine?.checkLocation ? 'Sí' : 'No'}</dt>
+                    <td>${routine?.name ?? ''}</td>
+                    <td>${routine?.isActive ? 'Sí' : 'No'}</td>
+                    <td>${routine?.checkLocation ? 'Sí' : 'No'}</td>
+                    <td>${routine?.creationDate ?? ''}</td>
+                    <td>${routine?.creationTime ?? ''}</td>
                     <td class="entity_options">
                         <button class="button" id="edit-entity" data-entityId="${routine.id}" title="Editar">
                           <i class="fa-solid fa-pen"></i>
@@ -163,9 +165,11 @@ export class Routines {
                   `;
                 }else{
                   row.innerHTML += `
-                    <td>${routine?.name ?? ''}</dt>
-                    <td>${routine?.isActive ? 'Sí' : 'No'}</dt>
-                    <td>${routine?.checkLocation ? 'Sí' : 'No'}</dt>
+                    <td>${routine?.name ?? ''}</td>
+                    <td>${routine?.isActive ? 'Sí' : 'No'}</td>
+                    <td>${routine?.checkLocation ? 'Sí' : 'No'}</td>
+                    <td>${routine?.creationDate ?? ''}</td>
+                    <td>${routine?.creationTime ?? ''}</td>
                     <td class="entity_options">
                         <button class="button" id="edit-entity" data-entityId="${routine.id}" title="Editar">
                           <i class="fa-solid fa-pen"></i>

@@ -40,6 +40,12 @@ export const tableLayout = `
         <th><span data-type="distance">
           Distancia <i class="fa-regular fa-filter"></i>
         </span></th>
+        <th><span data-type="date">
+          Fecha C. <i class="fa-regular fa-filter"></i>
+        </span></th>
+        <th><span data-type="time">
+          Hora C. <i class="fa-regular fa-filter"></i>
+        </span></th>
         <th class="header_filled"></th>
       </tr></thead>
       <tbody id="datatable-body" class="datatable_body">

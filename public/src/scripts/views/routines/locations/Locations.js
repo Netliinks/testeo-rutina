@@ -133,6 +133,8 @@ export class Locations {
           <td>${location.latitude}</td>
           <td>${location.longitude}</td>
           <td>${location?.distance ?? 0}</td>
+          <td>${location?.creationDate ?? ''}</td>
+          <td>${location?.creationTime ?? ''}</td>
           <td class="entity_options">
           <button class="button" id="edit-entity" data-entityId="${location.id}">
             <i class="fa-solid fa-pen"></i>
@@ -462,6 +464,21 @@ export class Locations {
                     <option value="50">50</option>
                     <option value="60">60</option>
                 </select>
+              </div>
+              <br>
+              <div class="input_detail">
+                  <label for="creation-date"><i class="fa-solid fa-calendar"></i></label>
+                  <input type="date" id="creation-date" class="input_filled" value="${data.creationDate}" readonly>
+              </div>
+              <br>
+              <div class="input_detail">
+                  <label for="creation-time"><i class="fa-solid fa-clock"></i></label>
+                  <input type="time" id="creation-time" class="input_filled" value="${data.creationTime}" readonly>
+              </div>
+              <br>
+              <div class="input_detail">
+                  <label for="log-user"><i class="fa-solid fa-user"></i></label>
+                  <input type="text" id="log-user" class="input_filled" value="${data.createdBy}" readonly>
               </div>
         </div>
         <!-- END EDITOR BODY -->

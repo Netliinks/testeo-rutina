@@ -151,6 +151,8 @@ export class Schedules {
           <td>${schedule?.checkLocation ? 'Sí' : 'No'}</td>
           <td>${schedule?.weekDay ?? ''}</td>
           <td>${schedule?.weekCheck ? 'Sí' : 'No'}</td>
+          <td>${schedule?.creationDate ?? ''}</td>
+          <td>${schedule?.creationTime ?? ''}</td>
           <td class="entity_options">
           <button class="button" id="edit-entity" data-entityId="${schedule.id}">
             <i class="fa-solid fa-pen"></i>
@@ -440,6 +442,21 @@ export class Schedules {
                   <div class="input_checkbox"><label><input type="checkbox" name="weekDay" value="SABADO" ${data?.weekDay?.includes('SABADO') ? 'checked' : ''}> Sábado</label></div>
                   <div class="input_checkbox"><label><input type="checkbox" name="weekDay" value="DOMINGO" ${data?.weekDay?.includes('DOMINGO') ? 'checked' : ''}> Domingo</label></div>
                 </div>
+              </div>
+
+              <div class="input_detail">
+                  <label for="creation-date"><i class="fa-solid fa-calendar"></i></label>
+                  <input type="date" id="creation-date" class="input_filled" value="${data.creationDate}" readonly>
+              </div>
+              <br>
+              <div class="input_detail">
+                  <label for="creation-time"><i class="fa-solid fa-clock"></i></label>
+                  <input type="time" id="creation-time" class="input_filled" value="${data.creationTime}" readonly>
+              </div>
+              <br>
+              <div class="input_detail">
+                  <label for="log-user"><i class="fa-solid fa-user"></i></label>
+                  <input type="text" id="log-user" class="input_filled" value="${data.createdBy}" readonly>
               </div>
         </div>
         <!-- END EDITOR BODY -->
