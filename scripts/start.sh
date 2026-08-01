@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PORT=${PORT:-8000}
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)/public"
 ENV=""
 
 for arg in "$@"; do
