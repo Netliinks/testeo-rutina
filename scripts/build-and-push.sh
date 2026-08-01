@@ -1,7 +1,7 @@
 set -e
 
-VERSION=0.0.10
-IMAGE=registry.gitlab.com/netliinks/stacks/face/netguard
+VERSION=0.0.11
+IMAGE=registry.gitlab.com/netliinks/web/netguard/web
 
 docker buildx build --platform linux/amd64 \
   -t ${IMAGE}:${VERSION} \
