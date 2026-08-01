@@ -2,6 +2,16 @@
 
 Instructions for AI and human contributors using tools such as **Cursor** and **Claude** in this repository.
 
+## Git commits and branches: explicit user approval required
+
+**Never commit changes to git unless the user explicitly asks you to.** Make all code edits, then wait for the user to request a commit before running any `git commit` command. Proposing a commit message is fine; executing it is not.
+
+**Never create a git branch unless the user explicitly asks you to.** Do not run `git branch` or `git checkout -b` (or equivalent) on your own initiative, even in preparation for a commit or Merge Request.
+
+## Merge Requests: use the project template
+
+When creating a Merge Request (MR), always fill the description using the template at [`.gitlab/merge_request_templates/default.md`](.gitlab/merge_request_templates/default.md). Read that file, then replace every `<!-- … -->` comment with concrete, relevant content based on the actual changes. Do not leave placeholder comments in the final description.
+
 ## Commits: Conventional Commits (required)
 
 Every commit message **must** follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
