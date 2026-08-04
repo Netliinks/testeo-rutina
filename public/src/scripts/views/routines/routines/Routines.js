@@ -785,7 +785,7 @@ export class Routines {
                                 "hora": `${register.creationTime}`,
                                 "estado": `${register?.routineState?.name ?? ''}`,
                                 "cords": `${register?.latitude ?? ''}, ${register?.longitude ?? ''}`,
-                                "cords2": `${register?.routineRelation?.routineSchedule?.cords ?? ''}`,
+                                "cords2": `${register?.routineRelation?.qrPoint?.latitude ?? ''}, ${register?.routineRelation?.qrPoint?.longitude ?? ''}`,
                                 "usuario": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
                                 "observacion": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
                                 "imagen": `${image}`

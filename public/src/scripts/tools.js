@@ -645,7 +645,7 @@ export const getRoutinesTopBar =async(id)=> {
         "filter": {
             "conditions": [
                 {
-                    "property": "business.id",
+                    "property": "routineRelation.business.id",
                     "operator": "=",
                     "value": `${id}`
                 },
@@ -658,7 +658,7 @@ export const getRoutinesTopBar =async(id)=> {
         },
         sort: "-createdDate",
     });
-    return await getFilterEntityCount("RoutineRegister", raw);
+    return await getFilterEntityCount("RoutineMarcation", raw);
 
 }
 

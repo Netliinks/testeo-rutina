@@ -90,6 +90,11 @@ const GetRoutinesMarcations = async (forceReloadPage1 = false) => {
                         "value": `${infoPage.search.trim().toLowerCase()}`
                     },
                     {
+                        "property": "routineRelation.qrPoint.name",
+                        "operator": "contains",
+                        "value": `${infoPage.search.trim().toLowerCase()}`
+                    },
+                    {
                         "property": "routineRelation.customer.name",
                         "operator": "contains",
                         "value": `${infoPage.search.trim().toLowerCase()}`
@@ -150,7 +155,12 @@ const GetRoutinesMarcations = async (forceReloadPage1 = false) => {
                         "property": "routineRelation.routineSchedule.name",
                         "operator": "contains",
                         "value": `${infoPage.search.trim().toLowerCase()}`
-                    }
+                    },
+                     {
+                         "property": "routineRelation.qrPoint.name",
+                         "operator": "contains",
+                         "value": `${infoPage.search.trim().toLowerCase()}`
+                     }
                 ]
             });
         }
@@ -413,6 +423,7 @@ export class RoutineRegisters {
                     <td>${calculateLine(register?.routineRelation?.customer?.name, 40)}</td>
                     <td>${calculateLine(register?.routineRelation?.routine?.name, 40)}</td>
                     <td>${calculateLine(register?.routineRelation?.routineSchedule?.name, 40)}</td>
+                    <td>${calculateLine(register?.routineRelation?.qrPoint?.name, 40)}</td>
                     <td>${calculateLine(`${register?.user?.firstName ?? ''} ${register?.user?.lastName ?? ''}`, 40)}</td>
                     <td>${register?.user?.username ?? ''}</td>
                     <td class="tag"><span>${register?.routineState?.name ?? ''}</span></td>
@@ -522,6 +533,7 @@ export class RoutineRegisters {
                     content2: document.getElementById('register-content2'),
                     routine: document.getElementById('register-routine'),
                     schedule: document.getElementById('register-schedule'),
+                    locationName: document.getElementById('register-location-name'),
                     locationLat: document.getElementById('register-location-lat'),
                     locationLong: document.getElementById('register-location-long'),
                     author: document.getElementById('register-author'),
@@ -548,6 +560,7 @@ export class RoutineRegisters {
                 }
                 _details.routine.value = register?.routineRelation?.routine?.name ?? '';
                 _details.schedule.value = register?.routineRelation?.routineSchedule?.name ?? '';
+                _details.locationName.value = register?.routineRelation?.qrPoint?.name ?? '';
                 _details.locationLat.value = `Lat: ${register?.latitude ?? ''}`;
                 _details.locationLong.value = `Lng: ${register?.longitude ?? ''}`;
                 _details.author.value = register?.user?.username ?? ''

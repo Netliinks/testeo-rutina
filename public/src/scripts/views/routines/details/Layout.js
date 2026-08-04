@@ -35,6 +35,10 @@ export const UIContentLayout = `
             </span></th>
 
             <th><span data-type="ubication">
+            Horario <i class="fa-regular fa-filter"></i>
+            </span></th>
+
+            <th><span data-type="qrpoint">
             Ubicación <i class="fa-regular fa-filter"></i>
             </span></th>
 
@@ -108,6 +112,11 @@ export const UIRightSidebar = `
         <div class="input_detail">
             <label for="register-schedule"><i class="fa-solid fa-clock"></i></label>
             <input type="text" id="register-schedule" class="input_filled" readonly>
+        </div>
+        <br>
+        <div class="input_detail">
+            <label for="register-location-name"><i class="fa-solid fa-location-crosshairs"></i></label>
+            <input type="text" id="register-location-name" class="input_filled" readonly>
         </div>
         <br>
         <div class="input_detail">
