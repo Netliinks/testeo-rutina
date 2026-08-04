@@ -28,6 +28,9 @@ import { Routines } from "../views/routines/routines/Routines.js";
 import { RoutineRegisters } from "../views/routines/details/Details.js";
 import { CredentialsView } from "../views/credentials/credentials.js";
 import { Audits } from "../views/audit/audit.js";
+import { Models } from "../views/facerecognition/models/Models.js";
+import { Photos } from "../views/facerecognition/photos/Photos.js";
+import { Accesses } from "../views/facerecognition/accesses/Accesses.js";
 export class Sidebar {
   constructor() {
       this.sidebarContainer = document.getElementById('app-sidebar');
@@ -111,6 +114,38 @@ export class Sidebar {
                   </span>
                 </div>
 
+              </div>
+            </div>
+
+            <div class="sidebar_item">
+              <span class="sidebar_item_label">
+                <i class="fa-regular fa-face-viewfinder"></i> <div class="label">Reconocimiento Facial</div>
+              </span>
+
+              <div class="sidebar_subitems">
+                <div class="sidebar_subitem" id="render-fr-guards">
+                  <span class="sidebar_subitem_label">
+                    <i class="fa-regular fa-person-military-pointing"></i> <div class="label">Guardias</div>
+                  </span>
+                </div>
+
+                <div class="sidebar_subitem" id="render-fr-photos">
+                  <span class="sidebar_subitem_label">
+                    <i class="fa-regular fa-images"></i> <div class="label">Fotos</div>
+                  </span>
+                </div>
+
+                <div class="sidebar_subitem" id="render-fr-models">
+                  <span class="sidebar_subitem_label">
+                    <i class="fa-regular fa-cube"></i> <div class="label">Modelos</div>
+                  </span>
+                </div>
+
+                <div class="sidebar_subitem" id="render-fr-accesses">
+                  <span class="sidebar_subitem_label">
+                    <i class="fa-regular fa-door-open"></i> <div class="label">Accesos</div>
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -286,7 +321,7 @@ renders() {
     document.getElementById('render-guards')?.addEventListener('click', () => {
       clearTimeout(Config.timeOut);
       Config.currentScreen = null;
-        new Guards().render(Config.offset, Config.currentPage, "", 'THIS');
+        new Guards({ variant: 'default' }).render(Config.offset, Config.currentPage, "", 'THIS');
     });
     document.getElementById('render-clients')?.addEventListener('click', () => {
       clearTimeout(Config.timeOut);
@@ -407,6 +442,30 @@ renders() {
         clearTimeout(Config.timeOut);
         Config.currentScreen = null;
         new Audits().render(currentDateTime().date, currentDateTime().date);
+    });
+
+    document.getElementById('render-fr-guards')?.addEventListener('click', () => {
+        clearTimeout(Config.timeOut);
+        Config.currentScreen = null;
+        new Guards({ variant: 'photos' }).render(Config.offset, Config.currentPage, "", 'THIS');
+    });
+
+    document.getElementById('render-fr-photos')?.addEventListener('click', () => {
+        clearTimeout(Config.timeOut);
+        Config.currentScreen = null;
+        new Photos().render();
+    });
+
+    document.getElementById('render-fr-models')?.addEventListener('click', () => {
+        clearTimeout(Config.timeOut);
+        Config.currentScreen = null;
+        new Models().render();
+    });
+
+    document.getElementById('render-fr-accesses')?.addEventListener('click', () => {
+        clearTimeout(Config.timeOut);
+        Config.currentScreen = null;
+        new Accesses().render();
     });
   }
 }

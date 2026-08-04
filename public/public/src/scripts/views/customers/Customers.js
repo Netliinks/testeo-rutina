@@ -393,6 +393,7 @@ export class Customers {
                 RInterface('Customer', entityId);
             });
         });
+        let locationMapInstance = null;
         const RInterface = async (entities, entityID) => {
             const data = await getEntityData(entities, entityID);
             this.entityDialogContainer.innerHTML = '';
@@ -483,6 +484,37 @@ export class Customers {
               <label for="entity-required-routine">Requerido rutinas</label>
             </div>
 
+            <div class="input_checkbox">
+                <label><input type="checkbox" class="checkbox" id="entity-location-enabled"> Habilitar ubicación</label>
+            </div>
+
+            <div class="entity_map_field" id="entity-location-fields" style="display: none;">
+              <label class="entity_map_label">Ubicación</label>
+              <p class="entity_map_hint">Escribe la latitud y longitud o selecciona el punto en el mapa.</p>
+              <div class="entity_map_coords">
+                <div class="material_input">
+                  <input type="number"
+                    id="entity-latitude"
+                   autocomplete="none" step="any" class="input_filled" value="${data?.latitude ?? ''}">
+                  <label for="entity-latitude">Latitud</label>
+                </div>
+                <div class="material_input">
+                  <input type="number"
+                    id="entity-longitude"
+                   autocomplete="none" step="any" class="input_filled" value="${data?.longitude ?? ''}">
+                  <label for="entity-longitude">Longitud</label>
+                </div>
+              </div>
+              <div class="material_input">
+                <input type="number"
+                  id="entity-location-radius"
+                 autocomplete="none" min="1" max="60" step="any" class="input_filled" value="${data?.locationRadius ?? 60}">
+                <label for="entity-location-radius">Radio de ubicación (metros)</label>
+              </div>
+              <input type="hidden" id="entity-location-zoom" value="${data?.zoomLevel ?? ''}">
+              <div class="entity_map" id="entity-map"></div>
+            </div>
+
           </div>
           <!-- END EDITOR BODY -->
 
@@ -491,6 +523,10 @@ export class Customers {
           </div>
         </div>
       `;
+            if (locationMapInstance) {
+              locationMapInstance.remove();
+              locationMapInstance = null;
+            }
             const checkboxMarcation = document.getElementById('entity-marcation');
             if (data.permitMarcation === true) {
               checkboxMarcation?.setAttribute('checked', 'true');
@@ -515,8 +551,89 @@ export class Customers {
             licenseType.value = data?.licenseType ?? 'STANDARD';
             inputObserver();
             inputSelect('State', 'entity-state', data.state.name);
+            const checkboxLocationEnabled = document.getElementById('entity-location-enabled');
+            const locationFields = document.getElementById('entity-location-fields');
+            if (data?.locationEnabled === true) {
+              checkboxLocationEnabled?.setAttribute('checked', 'true');
+              locationFields.style.display = 'block';
+              initLocationMap(data);
+            }
+            checkboxLocationEnabled.addEventListener('change', () => {
+              if (checkboxLocationEnabled.checked) {
+                locationFields.style.display = 'block';
+                initLocationMap(data);
+              } else {
+                locationFields.style.display = 'none';
+              }
+            });
             this.close();
             UUpdate(entityID);
+        };
+        const initLocationMap = (data) => {
+            if (locationMapInstance) {
+                setTimeout(() => locationMapInstance.invalidateSize(), 200);
+                return;
+            }
+            const latInput = document.getElementById('entity-latitude');
+            const lngInput = document.getElementById('entity-longitude');
+            const zoomInput = document.getElementById('entity-location-zoom');
+            const defaultCenter = [-1.8312, -78.1834];
+            const defaultZoom = 6;
+            const savedZoomFallback = 15;
+            const savedLat = parseFloat(data?.latitude);
+            const savedLng = parseFloat(data?.longitude);
+            const hasSavedPosition = !isNaN(savedLat) && !isNaN(savedLng);
+            const initialCenter = hasSavedPosition ? [savedLat, savedLng] : defaultCenter;
+            const savedZoom = parseInt(zoomInput.value);
+            const initialZoom = hasSavedPosition ? (isNaN(savedZoom) ? savedZoomFallback : savedZoom) : defaultZoom;
+            const map = L.map('entity-map').setView(initialCenter, initialZoom);
+            locationMapInstance = map;
+            zoomInput.value = map.getZoom();
+            map.on('zoomend', () => {
+                zoomInput.value = map.getZoom();
+            });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19,
+            }).addTo(map);
+            let marker = hasSavedPosition ? L.marker(initialCenter, { draggable: true }).addTo(map) : null;
+            const setPosition = (lat, lng, recenter) => {
+                latInput.value = lat;
+                lngInput.value = lng;
+                latInput.classList.add('input_filled');
+                lngInput.classList.add('input_filled');
+                if (marker) {
+                    marker.setLatLng([lat, lng]);
+                } else {
+                    marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+                    marker.on('dragend', () => {
+                        const position = marker.getLatLng();
+                        setPosition(position.lat, position.lng, false);
+                    });
+                }
+                if (recenter) {
+                    map.setView([lat, lng], map.getZoom() < 15 ? 15 : map.getZoom());
+                }
+            };
+            if (marker) {
+                marker.on('dragend', () => {
+                    const position = marker.getLatLng();
+                    setPosition(position.lat, position.lng, false);
+                });
+            }
+            map.on('click', (e) => {
+                setPosition(e.latlng.lat, e.latlng.lng, false);
+            });
+            const onCoordsInput = () => {
+                const lat = parseFloat(latInput.value);
+                const lng = parseFloat(lngInput.value);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    setPosition(lat, lng, true);
+                }
+            };
+            latInput.addEventListener('change', onCoordsInput);
+            lngInput.addEventListener('change', onCoordsInput);
+            setTimeout(() => map.invalidateSize(), 200);
         };
         const UUpdate = async (entityId) => {
             const updateButton = document.getElementById('update-changes');
@@ -536,10 +653,20 @@ export class Customers {
               reqNroVehicle: document.getElementById('entity-required-vehicular'),
               reqNroReport: document.getElementById('entity-required-report'),
               reqNroRoutine: document.getElementById('entity-required-routine'),
+              locationEnabled: document.getElementById('entity-location-enabled'),
+              latitude: document.getElementById('entity-latitude'),
+              longitude: document.getElementById('entity-longitude'),
+              locationRadius: document.getElementById('entity-location-radius'),
+              locationZoom: document.getElementById('entity-location-zoom'),
               licenseType: document.getElementById('license-type'),
           };
             updateButton.addEventListener('click', () => {
-              let raw = JSON.stringify({
+              const locationRadiusValue = parseFloat($value.locationRadius.value);
+              if ($value.locationEnabled.checked && !(locationRadiusValue > 0 && locationRadiusValue <= 60)) {
+                alert('El radio de ubicación debe ser un número mayor a 0 y menor o igual a 60');
+                return;
+              }
+              const payload = {
                   // @ts-ignore
                   "ruc": `${$value.ruc.value}`,
                   "state": {
@@ -554,7 +681,21 @@ export class Customers {
                   'reqNroReport': `${$value.reqNroReport.value ?? 0}`,
                   'reqNroRoutine': `${$value.reqNroRoutine.value ?? 0}`,
                   'licenseType': `${$value.licenseType.value ?? 'STANDARD'}`,
-              });
+                  'locationEnabled': `${$value.locationEnabled.checked ? true : false}`,
+              };
+              if ($value.latitude.value !== '') {
+                  payload.latitude = `${$value.latitude.value}`;
+              }
+              if ($value.longitude.value !== '') {
+                  payload.longitude = `${$value.longitude.value}`;
+              }
+              if ($value.locationRadius.value !== '') {
+                  payload.locationRadius = `${$value.locationRadius.value}`;
+              }
+              if ($value.locationZoom.value !== '') {
+                  payload.zoomLevel = `${$value.locationZoom.value}`;
+              }
+              const raw = JSON.stringify(payload);
               update(raw);
             });
             const update = (raw) => {
