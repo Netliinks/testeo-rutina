@@ -303,6 +303,24 @@ export class RoutineRelations {
           "creationTime": currentDateTime().timeHHMMSS
         });
 
+        const checkRaw = JSON.stringify({
+          "filter": {
+            "conditions": [
+              { "property": "business.id", "operator": "=", "value": `${Config.currentUser.business.id}` },
+              { "property": "customer.id", "operator": "=", "value": `${customerId}` },
+              { "property": "routine.id", "operator": "=", "value": `${scheduleInput.dataset.routineid}` },
+              { "property": "routineSchedule.id", "operator": "=", "value": `${scheduleInput.dataset.optionid}` },
+              { "property": "qrPoint.id", "operator": "=", "value": `${qrPointInput.dataset.optionid}` }
+            ]
+          }
+        });
+
+        const count = await getFilterEntityCount("RoutineRelation", checkRaw);
+        if (count > 0) {
+          alert("Ya existe una relación con esos puntos para esta rutina y horario.");
+          return;
+        }
+
         await registerEntity(raw, 'RoutineRelation');
         setTimeout(() => {
           const container = document.getElementById('entity-editor-container');

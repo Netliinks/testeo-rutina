@@ -479,6 +479,25 @@ export const getDetails2 = async (param, value, param2, value2, table) => {
     return data
 }
 
+export const getDetailsSimple = async (param, operator, value, table) => {
+    const customerId = localStorage.getItem('customer_id');
+    let raw = JSON.stringify({
+        "filter": {
+            "conditions": [
+                {
+                    "property": `${param}`,
+                    "operator": `${operator}`,
+                    "value": `${value}`
+                },
+            ]
+        },
+        sort: "createdDate", 
+        //fetchPlan: 'full',
+    });
+    let data = await getFilterEntityData(`${table}`, raw);
+    return data
+}
+
 export const calculateGestionMarcation = (assistControl) => {
     let objDate = {}
     let arrayAssist= []

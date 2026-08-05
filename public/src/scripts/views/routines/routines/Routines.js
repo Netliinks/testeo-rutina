@@ -1,6 +1,6 @@
 // @filename: Routines.ts
 import { registerEntity, getUserInfo, getEntityData, updateEntity, getFilterEntityData, getFilterEntityCount, deleteEntity, getFile } from "../../../endpoints.js";
-import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, searchUniversalValue, searchUniversalValueComplex, generateFileSimpleXls, sleep } from "../../../tools.js";
+import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, getDetailsSimple, generateFileSimpleXls, sleep } from "../../../tools.js";
 import { Config } from "../../../Configs.js";
 import { tableLayout } from "./Layout.js";
 import { tableLayoutTemplate } from "./Template.js";
@@ -530,16 +530,16 @@ export class Routines {
               const cancelButton = document.getElementById('cancel');
               const dialogContent = document.getElementById('dialog-content');
               deleteButton.onclick = async() => {
-                  const locations = await searchUniversalValue('routine.id', '=', entityId, 'RoutineSchedule');
-                  if(locations.length != 0 && locations != undefined){
-                    for(let i=0; i<locations.length; i++){
+                  const schedules = await getDetailsSimple('routine.id', '=', entityId, 'RoutineSchedule');
+                  if(schedules.length != 0 && schedules != undefined){
+                    for(let i=0; i<schedules.length; i++){
                       /*let raw = JSON.stringify({
                         "filter": {
                             "conditions": [
                                 {
                                   "property": "routineSchedule.id",
                                   "operator": "=",
-                                  "value": `${locations[i].id}`
+                                  "value": `${schedules[i].id}`
                                 },
                             ],
                         },
@@ -549,11 +549,11 @@ export class Routines {
                       for(let i=0; i<times.length; i++){
                         deleteEntity('RoutineTime', times[i].id);
                       }*/
-                      deleteEntity('RoutineSchedule', locations[i].id);
+                      deleteEntity('RoutineSchedule', schedules[i].id);
                     }
                   }
 
-                  const guards = await searchUniversalValue('routine.id', '=', entityId, 'RoutineUser');
+                  const guards = await getDetailsSimple('routine.id', '=', entityId, 'RoutineUser');
                   if(guards.length != 0 && guards != undefined){
                     for(let i=0; i<guards.length; i++){
                       deleteEntity('RoutineUser', guards[i].id);
