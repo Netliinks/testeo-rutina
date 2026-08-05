@@ -271,6 +271,12 @@ const GetRoutinesMarcations = async (forceReloadPage1 = false) => {
         });
         infoPage.countNewRegister += addedCount;
         if (infoPage.offset == 0) {
+            dataPage.sort((a, b) => {
+                const dateA = `${a.creationDate}T${a.creationTime}`;
+                const dateB = `${b.creationDate}T${b.creationTime}`;
+                return dateB.localeCompare(dateA);
+            });
+
             // Limit dataPage size to tableRows when on page 1
             if (dataPage.length > tableRows) {
                 dataPage.splice(tableRows);
