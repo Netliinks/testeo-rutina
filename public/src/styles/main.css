@@ -832,6 +832,25 @@ table button:hover {
 .dialog_header, .dialog_message, .dialog_footer {
   padding: 12px;
 }
+.dialog_footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+.modal_pagination {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.modal_pagination .btn {
+  min-width: 38px;
+}
+.modal_pagination .btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
 .dialog_danger .dialog_header {
   color: #FFFFFF !important;
   background-color: #DB4545;
@@ -1322,6 +1341,37 @@ h1, h2, h3, h4, h5, h6 {
 }
 .material_input_select.select_active .input_options {
   display: block !important;
+}
+.entity_map_field {
+  margin-bottom: 30px;
+}
+.entity_map_field .entity_map_label {
+  display: block;
+  color: #706F8E;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.entity_map_field .entity_map_coords {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.entity_map_field .entity_map_coords .material_input {
+  margin-bottom: 0;
+}
+.entity_map_field .entity_map_hint {
+  color: #9a9ab0;
+  font-size: 11px;
+  margin: 0 0 8px 0;
+}
+.entity_map_field .entity_map {
+  width: 100%;
+  height: 220px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #E9EAEF;
 }
 
 .input_filled + label {
@@ -2021,4 +2071,8 @@ i {
 
 .audit-container {
   padding: 2px 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

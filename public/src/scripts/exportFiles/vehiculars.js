@@ -1,5 +1,6 @@
 //import {generateFile } from "../tools";
 import { vehicleToStimate } from "../tools.js";
+import { exportNetGuardStatisticalReport } from "./statisticalReport.js";
 
 export const exportVehicularPdf = (ar, start, end) => {
     // @ts-ignore
@@ -211,6 +212,18 @@ const generateFile = (ar, title, extension) => {
 };
 
 export const generarReportVehicularXls = async (conditions, vehiculars) => {
+    const statisticalRows = await vehicleToStimate(conditions, vehiculars);
+    return exportNetGuardStatisticalReport({
+        title: 'REPORTE DE INGRESO VEHICULAR',
+        filename: 'Cumplimiento_Vehicular.xlsx',
+        conditions,
+        rows: statisticalRows.map((user) => ({ customer: user.customer, user: `[${user.username}] ${user.name}`, required: user.requerido, completed: user.vehicles, compliance: user.cumplimiento })),
+        glossary: [
+            { term: 'Requeridos', definition: 'Cantidad de registros vehiculares esperados durante el período seleccionado.' },
+            { term: 'Realizados', definition: 'Cantidad de ingresos vehiculares registrados durante el período seleccionado.' },
+            { term: 'Cumplimiento', definition: 'Porcentaje calculado por NetGuard: realizados / requeridos.' }
+        ]
+    });
     // @ts-ignore
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Vehicular");

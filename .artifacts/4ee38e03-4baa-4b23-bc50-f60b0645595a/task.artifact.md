@@ -1,0 +1,3 @@
+- [x] Cambiar el criterio de ordenamiento en `GetRoutinesMarcations` (Details.js)
+- [x] Implementar re-ordenamiento en la lógica de actualización automática (Details.js)
+- [x] Verificar el orden cronológico en la tabla

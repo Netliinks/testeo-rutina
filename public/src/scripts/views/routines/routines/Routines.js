@@ -1,10 +1,10 @@
 // @filename: Routines.ts
-import { registerEntity, getUserInfo, getEntityData, updateEntity, getFilterEntityData, getFilterEntityCount, deleteEntity, getFile } from "../../../endpoints.js";
-import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, getDetailsSimple, generateFileSimpleXls, sleep } from "../../../tools.js";
+import { registerEntity, getUserInfo, getEntityData, updateEntity, getFilterEntityData, getFilterEntityCount, deleteEntity, getFile, sendMail2 } from "../../../endpoints.js";
+import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, getDetails, generateFileSimpleXls, sleep } from "../../../tools.js";
 import { Config } from "../../../Configs.js";
 import { tableLayout } from "./Layout.js";
 import { tableLayoutTemplate } from "./Template.js";
-import { Schedules } from "./schedules/Schedules.js";
+import { Locations } from "../routines/locations/Locations.js";
 import { RoutineUsers } from "../routines/users/Users.js";
 import { exportRoutinePdf, exportRoutinePdf2 } from "../../../exportFiles/extraRoutine.js";
 const tableRows = Config.tableRows;
@@ -16,11 +16,6 @@ let infoPage = {
   currentPage: currentPage,
   search: ""
 };
-const currentBusiness = async() => {
-  const currentUser = await getUserInfo();
-  const userid = await getEntityData('User', `${currentUser.attributes.id}`);
-  return userid;
-}
 
 const getRoutines = async () => {
     let raw = JSON.stringify({
@@ -132,62 +127,54 @@ export class Routines {
                 let row = document.createElement('tr');
                 if(routine.customer.id == "2dd22d6d-a61f-5a11-b9ad-b1afc0dc1603" || routine.customer.id == "c7afa17d-0544-7351-f50f-b5630a6a93c7"){
                   row.innerHTML += `
-                    <td>${routine?.name ?? ''}</td>
-                    <td>${routine?.isActive ? 'Sí' : 'No'}</td>
-                    <td>${routine?.checkLocation ? 'Sí' : 'No'}</td>
-                    <td>${routine?.creationDate ?? ''}</td>
-                    <td>${routine?.creationTime ?? ''}</td>
+                    <td>${routine?.name ?? ''}</dt>
+                    <td>${routine?.isActive ? 'Sí' : 'No'}</dt>
+                    <td>${routine?.checkLocation ? 'Sí' : 'No'}</dt>
                     <td class="entity_options">
-                        <button class="button" id="edit-entity" data-entityId="${routine.id}" title="Editar">
+                        <button class="button" id="edit-entity" data-entityId="${routine.id}">
                           <i class="fa-solid fa-pen"></i>
                         </button>
 
-                        <button class="button" id="schedule-entity" data-entityId="${routine.id}" title="Configurar horarios">
-                          <i class="fa-solid fa-clock"></i>
+                        <button class="button" id="location-entity" data-entityId="${routine.id}">
+                          <i class="fa-solid fa-map-location"></i>
                         </button>
 
-                        <button class="button" id="guard-entity" data-entityId="${routine.id}" title="Asignar guardias">
+                        <button class="button" id="guard-entity" data-entityId="${routine.id}">
                           <i class="fa-solid fa-user-police"></i>
                         </button>
 
-                        <button class="button" id="export-entity" data-entityId="${routine.id}" title="Exportar registros">
-                          <i class="fa-solid fa-file-pdf"></i>
-                        </button>
+                        <button class="button" id="export2-entity" data-entityId="${routine.id}" title="Exportar registros">
+                    <i class="fa-solid fa-file-export"></i>
+                </button>
 
-                        <button class="button" id="export2-entity" data-entityId="${routine.id}" title="Exportar detalles">
-                          <i class="fa-solid fa-file-pdf"></i>
-                        </button>
-
-                      <button class="button" id="remove-entity" data-entityId="${routine.id}" title="Eliminar">
+                      <button class="button" id="remove-entity" data-entityId="${routine.id}">
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </dt>
                   `;
                 }else{
                   row.innerHTML += `
-                    <td>${routine?.name ?? ''}</td>
-                    <td>${routine?.isActive ? 'Sí' : 'No'}</td>
-                    <td>${routine?.checkLocation ? 'Sí' : 'No'}</td>
-                    <td>${routine?.creationDate ?? ''}</td>
-                    <td>${routine?.creationTime ?? ''}</td>
+                    <td>${routine?.name ?? ''}</dt>
+                    <td>${routine?.isActive ? 'Sí' : 'No'}</dt>
+                    <td>${routine?.checkLocation ? 'Sí' : 'No'}</dt>
                     <td class="entity_options">
-                        <button class="button" id="edit-entity" data-entityId="${routine.id}" title="Editar">
+                        <button class="button" id="edit-entity" data-entityId="${routine.id}">
                           <i class="fa-solid fa-pen"></i>
                         </button>
 
-                        <button class="button" id="schedule-entity" data-entityId="${routine.id}" title="Configurar horarios">
-                          <i class="fa-solid fa-clock"></i>
+                        <button class="button" id="location-entity" data-entityId="${routine.id}">
+                          <i class="fa-solid fa-map-location"></i>
                         </button>
 
-                        <button class="button" id="guard-entity" data-entityId="${routine.id}" title="Asignar guardias">
+                        <button class="button" id="guard-entity" data-entityId="${routine.id}">
                           <i class="fa-solid fa-user-police"></i>
                         </button>
 
-                        <button class="button" id="export2-entity" data-entityId="${routine.id}" title="Exportar detalles">
+                        <button class="button" id="export2-entity" data-entityId="${routine.id}">
                           <i class="fa-solid fa-file-pdf"></i>
                         </button>
 
-                      <button class="button" id="remove-entity" data-entityId="${routine.id}" title="Eliminar">
+                      <button class="button" id="remove-entity" data-entityId="${routine.id}">
                         <i class="fa-solid fa-trash"></i>
                       </button>
                     </dt>
@@ -200,10 +187,9 @@ export class Routines {
         }
         this.register();
         this.ex();
-        this.export();
         this.export2();
         this.remove();
-        this.schedules();
+        this.location();
         this.assignGuard();
         this.edit(this.entityDialogContainer, data);
     }
@@ -294,11 +280,6 @@ export class Routines {
               <label for="entity-name">Nombre</label>
             </div>
 
-            <div class="form_input">
-                <label for="entity-description" class="form_label">Descripción:</label>
-                <textarea id="entity-description" class="input_textarea" rows="4"></textarea>
-            </div>
-
             <div class="input_checkbox">
                 <label><input type="checkbox" class="checkbox" id="entity-active" checked> Activo</label>
             </div>
@@ -320,18 +301,15 @@ export class Routines {
             this.close();
             const registerButton = document.getElementById('register-entity');
             registerButton.addEventListener('click', async() => {
-                const businessData = await currentBusiness();
                 const inputsCollection = {
                     name: document.getElementById('entity-name'),
-                    description: document.getElementById('entity-description'),
                     active: document.getElementById('entity-active'),
                     checkLocation: document.getElementById('entity-checkLocation')
                 };
                 const raw = JSON.stringify({
-                    "name": `${inputsCollection.name.value.trim().toUpperCase()}`,
-                    "description": `${inputsCollection.description.value.trim()}`,
+                    "name": `${inputsCollection.name.value}`,
                     "business": {
-                        "id": `${businessData.business.id}`},
+                        "id": `${Config.currentUser.business.id}`},
                     "customer": {
                       "id": `${customerId}`},
                     "isActive": `${inputsCollection.active.checked ? true : false}`,
@@ -390,11 +368,6 @@ export class Routines {
               <label for="entity-name">Nombre</label>
             </div>
 
-            <div class="form_input">
-                <label for="entity-description" class="form_label">Descripción:</label>
-                <textarea id="entity-description" class="input_textarea" rows="4">${data?.description ?? ''}</textarea>
-            </div>
-
             <div class="input_checkbox">
                 <label><input type="checkbox" class="checkbox" id="entity-active"> Activo</label>
             </div>
@@ -448,7 +421,6 @@ export class Routines {
             const $value = {
               // @ts-ignore
               name: document.getElementById('entity-name'),
-              description: document.getElementById('entity-description'),
               // @ts-ignore
               active: document.getElementById('entity-active'),
               checkLocation: document.getElementById('entity-checkLocation')
@@ -456,8 +428,7 @@ export class Routines {
             updateButton.addEventListener('click', () => {
               let raw = JSON.stringify({
                   // @ts-ignore
-                  "name": `${$value.name.value.trim().toUpperCase()}`,
-                  "description": `${$value.description.value.trim()}`,
+                  "name": `${$value.name.value}`,
                   "isActive": `${$value.active.checked ? true : false}`,
                   "checkLocation": `${$value.checkLocation.checked ? true : false}`
               });
@@ -489,23 +460,7 @@ export class Routines {
       remove.forEach((remove) => {
           const entityId = remove.dataset.entityid;
           // BOOKMARK: MODAL
-          remove.addEventListener('click', async () => {
-              const checkRaw = JSON.stringify({
-                  "filter": {
-                      "conditions": [
-                          {
-                              "property": "routine.id",
-                              "operator": "=",
-                              "value": `${entityId}`
-                          }
-                      ]
-                  }
-              });
-              const count = await getFilterEntityCount("RoutineRelation", checkRaw);
-              if (count > 0) {
-                  alert("No se puede eliminar la rutina porque tiene asignaciones en la planificación.");
-                  return;
-              }
+          remove.addEventListener('click', () => {
               this.dialogContainer.style.display = 'block';
               this.dialogContainer.innerHTML = `
                   <div class="dialog_content" id="dialog-content">
@@ -530,16 +485,16 @@ export class Routines {
               const cancelButton = document.getElementById('cancel');
               const dialogContent = document.getElementById('dialog-content');
               deleteButton.onclick = async() => {
-                  const schedules = await getDetailsSimple('routine.id', '=', entityId, 'RoutineSchedule');
-                  if(schedules.length != 0 && schedules != undefined){
-                    for(let i=0; i<schedules.length; i++){
-                      /*let raw = JSON.stringify({
+                  const locations = await getDetails('routine.id', entityId, 'RoutineSchedule');
+                  if(locations.length != 0 && locations != undefined){
+                    for(let i=0; i<locations.length; i++){
+                      let raw = JSON.stringify({
                         "filter": {
                             "conditions": [
                                 {
                                   "property": "routineSchedule.id",
                                   "operator": "=",
-                                  "value": `${schedules[i].id}`
+                                  "value": `${locations[i].id}`
                                 },
                             ],
                         },
@@ -548,12 +503,12 @@ export class Routines {
                       let times = await getFilterEntityData("RoutineTime", raw);
                       for(let i=0; i<times.length; i++){
                         deleteEntity('RoutineTime', times[i].id);
-                      }*/
-                      deleteEntity('RoutineSchedule', schedules[i].id);
+                      }
+                      deleteEntity('RoutineSchedule', locations[i].id);
                     }
                   }
 
-                  const guards = await getDetailsSimple('routine.id', '=', entityId, 'RoutineUser');
+                  const guards = await getDetails('routine.id', entityId, 'RoutineUser');
                   if(guards.length != 0 && guards != undefined){
                     for(let i=0; i<guards.length; i++){
                       deleteEntity('RoutineUser', guards[i].id);
@@ -573,240 +528,6 @@ export class Routines {
                   new CloseDialog().x(dialogContent);
               };
           });
-      });
-  }
-  export(){
-    const exportRegisters = document.querySelectorAll('#export-entity');
-      exportRegisters.forEach((exports) => {
-          const entityId = exports.dataset.entityid;
-          exports.addEventListener('click', () => {
-            this.entityDialogContainer.innerHTML = '';
-            this.entityDialogContainer.style.display = 'flex';
-            this.entityDialogContainer.innerHTML = `
-              <div class="entity_editor" id="entity-editor">
-              <div class="entity_editor_header">
-                  <div class="user_info">
-                  <div class="avatar"><i class="fa-regular fa-file-export"></i></div>
-                  <h1 class="entity_editor_title">Exportar<br><small>Datos</small></h1>
-                  </div>
-
-                  <button class="btn btn_close_editor" id="close"><i class="fa-solid fa-x"></i></button>
-              </div>
-
-              <!-- EDITOR BODY -->
-              <div class="entity_editor_body">
-                  <div class="material_input">
-                      <label for="status-export">Estados de rutina</label>
-                      <br>
-                      <br>
-                      <select name="status-export" id="status-export">
-                          <option value="Todos" selected>Todos</option>
-                          <option value="Marcadas">Marcadas</option>
-                          <option value="NoMarcadas">No Marcadas</option>
-                      </select>
-                  </div>
-                  <br>
-                  <br>
-                  <br>
-                  <div class="form_group">
-                      <div class="form_input">
-                          <label class="form_label" for="start-date">Desde:</label>
-                          <input type="date" class="input_date input_date-start" id="start-date" name="start-date">
-                      </div>
-      
-                      <div class="form_input">
-                          <label class="form_label" for="end-date">Hasta:</label>
-                          <input type="date" class="input_date input_date-end" id="end-date" name="end-date">
-                      </div>
-
-                  </div>
-
-              </div>
-              <!-- END EDITOR BODY -->
-
-              <div class="entity_editor_footer">
-                  <button class="btn btn_primary btn_widder" id="export-data">Listo</button>
-              </div>
-              </div>
-          `;
-          inputObserver();
-          let fecha = new Date(); //Fecha actual
-          let mes = fecha.getMonth()+1; //obteniendo mes
-          let dia = fecha.getDate(); //obteniendo dia
-          let anio = fecha.getFullYear(); //obteniendo año
-          if(dia<10)
-              dia='0'+dia; //agrega cero si el menor de 10
-          if(mes<10)
-              mes='0'+mes //agrega cero si el menor de 10
-
-          document.getElementById("start-date").value = anio+"-"+mes+"-"+dia;
-          document.getElementById("end-date").value = anio+"-"+mes+"-"+dia;
-          const _closeButton = document.getElementById('close');
-          const exportButton = document.getElementById('export-data');
-          const statusExport = document.getElementById('status-export');
-          let onPressed = false;
-          exportButton.addEventListener('click', async() => {
-              if(!onPressed){
-                  onPressed = true;
-                  this.dialogContainer.style.display = 'block';
-                  this.dialogContainer.innerHTML = `
-                  <div class="dialog_content" id="dialog-content">
-                      <div class="dialog">
-                          <div class="dialog_container padding_8">
-                              <div class="dialog_header">
-                                  <h2>Exportando...</h2>
-                              </div>
-
-                              <div class="dialog_message padding_8">
-                                  <div class="material_input">
-                                      <input type="text" id="export-total" class="input_filled" value="..." readonly>
-                                      <label for="export-total"><i class="fa-solid fa-cloud-arrow-down"></i>Obteniendo datos</label>
-                                  </div>
-
-                                  <div class="input_detail">
-                                      <label for="message-export"><i class="fa-solid fa-file-export"></i></label>
-                                      <p id="message-export" class="input_filled" readonly></p>
-                                  </div>
-                              </div>
-
-                              <div class="dialog_footer">
-                                  <button class="btn btn_primary" id="cancel">Cancelar</button>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-                  `;
-                  inputObserver();
-                  let status = false;
-                  let conditionStatus = '<>';
-                  if(statusExport.value == 'Marcadas'){
-                      status = true;
-                  }else if(statusExport.value == 'NoMarcadas'){
-                      status = true;
-                      conditionStatus = '=';
-                  }
-                  const message1 = document.getElementById("export-total");
-                  const message2 = document.getElementById("message-export");
-                  const _closeButton = document.getElementById('cancel');
-                  _closeButton.onclick = () => {
-                      onPressed = false;
-                      const _dialog = document.getElementById('dialog-content');
-                      new CloseDialog().x(_dialog);
-                  };
-                  const _values = {
-                      start: document.getElementById('start-date'),
-                      end: document.getElementById('end-date'),
-                  }
-                  //console.log(_values.start.value)
-                  //console.log(_values.end.value)
-                  //const headers = ['Título', 'Contenido', 'Autor', 'Fecha', 'Hora']
-                  let rawToExport=(offset)=>{
-                      let rawExport = JSON.stringify({
-                          "filter": {
-                              "conditions": [
-                                  {
-                                      "property": `routineRelation.customer.id`,
-                                      "operator": "=",
-                                      "value": `${customerId}`
-                                  },
-                                  {
-                                      "property": "routineRelation.routine.id",
-                                      "operator": `=`,
-                                      "value": `${entityId}`
-                                  },
-                                  {
-                                      "property": "creationDate",
-                                      "operator": ">=",
-                                      "value": `${_values.start.value}`
-                                  },
-                                  {
-                                      "property": "creationDate",
-                                      "operator": "<=",
-                                      "value": `${_values.end.value}`
-                                  },
-                                  {
-                                      "property": "routineState.name",
-                                      "operator": `${conditionStatus}`,
-                                      "value": `${status ? 'No cumplido' : ""}`
-                                  }
-                              ],
-                          },
-                          sort: `-createdDate`,
-                          limit: Config.limitExport,
-                          offset: offset,
-                          fetchPlan: 'full',
-                      });
-                      return rawExport;
-                  }
-                  let rawExport = rawToExport(0);
-                  const totalRegisters = await getFilterEntityCount("RoutineMarcation", rawExport);
-                  if(totalRegisters === undefined){
-                      onPressed = false;
-                      const _dialog = document.getElementById('dialog-content');
-                      new CloseDialog().x(_dialog);
-                      alert("Ocurrió un error al exportar");
-                  }else if(totalRegisters===0){
-                      onPressed = false;
-                      const _dialog = document.getElementById('dialog-content');
-                      new CloseDialog().x(_dialog);
-                      alert("No hay ningún registro");  
-                  }else {
-                      message1.value = `0 / ${totalRegisters}`;
-                      const pages = Math.ceil(totalRegisters / Config.limitExport);
-                      let array = [];
-                      let registers = [];
-                      let offset = 0;
-                      for(let i = 0; i < pages; i++){
-                          if(onPressed){
-                              rawExport = rawToExport(offset);
-                              array[i] = await getFilterEntityData("RoutineMarcation", rawExport); //await getEvents();
-                              for(let y=0; y<array[i].length; y++){
-                                  registers.push(array[i][y]);
-                              }
-                              message1.value = `${registers.length} / ${totalRegisters}`;
-                              offset = Config.limitExport + (offset);
-                              await sleep(Config.timeOutExport);
-                          }
-                      }
-                      message2.innerText = `Generando archivo pdf,\nesto puede tomar un momento.`;
-                      let rows = [];
-                      for (let i = 0; i < registers.length; i++) {
-                        let register = registers[i];
-                        // @ts-ignore
-                        //if (noteCreationDate >= _values.start.value && noteCreationDate <= _values.end.value) {
-                            let image = '';
-                            if (register.attachment !== undefined) {
-                                image = await getFile(register.attachment);
-                            }
-                            let obj = {
-                                "rutina": `${register?.routineRelation?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                                "ubicacion": `${register?.routineRelation?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                                "fecha": `${register.creationDate}`,
-                                "hora": `${register.creationTime}`,
-                                "estado": `${register?.routineState?.name ?? ''}`,
-                                "cords": `${register?.latitude ?? ''}, ${register?.longitude ?? ''}`,
-                                "cords2": `${register?.routineRelation?.qrPoint?.latitude ?? ''}, ${register?.routineRelation?.qrPoint?.longitude ?? ''}`,
-                                "usuario": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
-                                "observacion": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
-                                "imagen": `${image}`
-                            };
-                            rows.push(obj);
-                        //}
-                      }
-                      // @ts-ignore
-                      await exportRoutinePdf(rows, _values.start.value, _values.end.value);
-                      const _dialog = document.getElementById('dialog-content');
-                      new CloseDialog().x(_dialog);
-                      onPressed = false;
-                  }
-              }
-          });
-          _closeButton.onclick = () => {
-              onPressed = false;
-              const editor = document.getElementById('entity-editor-container');
-              new CloseDialog().x(editor);
-          };
-        });
       });
   }
   export2() {
@@ -834,14 +555,24 @@ export class Routines {
                     <br>
                     <br>
                     <select name="status-export" id="status-export">
-                        <option value="Todos" selected>Todos</option>
-                        <option value="Marcadas">Marcadas</option>
+                        <option value="Todos">Todos</option>
+                        <option value="Marcadas" selected>Marcadas</option>
                         <option value="NoMarcadas">No Marcadas</option>
                     </select>
                 </div>
                 <br>
-                <div class="input_checkbox">
-                <label><input type="checkbox" class="checkbox" id="entity-flip-image"> Girar Imágenes (hacia la derecha)</label>
+                <div class="material_input">
+                    <label for="export-format">Formato de archivo</label>
+                    <br>
+                    <br>
+                    <select name="export-format" id="export-format">
+                        <option value="pdf" selected>PDF (con imágenes)</option>
+                        <option value="excel">Excel / CSV (solo datos)</option>
+                    </select>
+                </div>
+                <br>
+                <div class="input_checkbox" id="flip-image-container">
+                <label><input type="checkbox" class="checkbox" id="entity-flip-image"> Girar Imágenes (PDF)</label>
                 </div>
                 <br>
                 <div class="form_group">
@@ -855,8 +586,20 @@ export class Routines {
                         <input type="date" class="input_date input_date-end" id="end-date" name="end-date">
                     </div>
 
-                </div> 
-            
+                </div>
+                <br>
+                <div class="form_group">
+                    <div class="form_input">
+                        <label class="form_label" for="start-time">Hora Inicio:</label>
+                        <input type="time" class="input_time" id="start-time" name="start-time">
+                    </div>
+
+                    <div class="form_input">
+                        <label class="form_label" for="end-time">Hora Fin:</label>
+                        <input type="time" class="input_time" id="end-time" name="end-time">
+                    </div>
+                </div>
+
                 <br>
                 <br>
 
@@ -883,37 +626,79 @@ export class Routines {
             document.getElementById("start-date").value = anio+"-"+mes+"-"+dia;
             // @ts-ignore
             document.getElementById("end-date").value = anio+"-"+mes+"-"+dia;
+
+            document.getElementById("start-time").value = "00:00";
+            document.getElementById("end-time").value = "23:59";
+
             const _closeButton = document.getElementById('close');
             const exportButton = document.getElementById('export-data');
             const statusExport = document.getElementById('status-export');
+            const exportFormat = document.getElementById('export-format');
             const flipImage = document.getElementById('entity-flip-image');
+
+            exportFormat.addEventListener('change', () => {
+                const flipContainer = document.getElementById('flip-image-container');
+                if (exportFormat.value === 'excel') {
+                    flipContainer.style.display = 'none';
+                } else {
+                    flipContainer.style.display = 'block';
+                }
+            });
+
             let onPressed = false;
             exportButton.addEventListener('click', async () => {
+                const startDate = document.getElementById('start-date').value;
+                const endDate = document.getElementById('end-date').value;
+                const startTime = document.getElementById('start-time').value;
+                const endTime = document.getElementById('end-time').value;
+
+                if (startDate > endDate) {
+                    alert('La fecha "Desde" no puede ser mayor que la fecha "Hasta"');
+                    return;
+                }
+                if (startDate === endDate && startTime > endTime) {
+                    alert('La hora de inicio no puede ser mayor que la hora de fin para el mismo día');
+                    return;
+                }
+
                 if (!onPressed) {
                     onPressed = true;
                     this.dialogContainer.style.display = 'block';
                     this.dialogContainer.innerHTML = `
                 <div class="dialog_content" id="dialog-content">
-                    <div class="dialog">
-                        <div class="dialog_container padding_8">
-                            <div class="dialog_header">
-                                <h2>Exportando...</h2>
+                    <div class="dialog" style="width: 450px; max-width: 90%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                        <div class="dialog_container padding_16">
+                            <div class="dialog_header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px;">
+                                <h2 style="margin: 0; color: #1e293b; font-size: 1.25rem;">Procesando Exportación</h2>
                             </div>
 
-                            <div class="dialog_message padding_8">
-                                <div class="material_input">
-                                    <input type="text" id="export-total" class="input_filled" value="..." readonly>
-                                    <label for="export-total"><i class="fa-solid fa-cloud-arrow-down"></i>Obteniendo datos</label>
+                            <div class="dialog_message">
+                                <div style="margin-bottom: 20px;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                        <span id="export-status-label" style="font-size: 13px; font-weight: 600; color: #64748b;">Iniciando...</span>
+                                        <span id="export-total" style="font-size: 12px; color: #94a3b8;">...</span>
+                                    </div>
+                                    <div id="progress-bar-container" style="background: #f1f5f9; border-radius: 10px; height: 8px; overflow: hidden; display: none; margin-bottom: 4px;">
+                                        <div id="progress-bar" style="background: #3b82f6; height: 100%; width: 0%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 10px;"></div>
+                                    </div>
+                                    <p id="message-export" style="margin: 4px 0 0 0; font-size: 13px; color: #334155; font-weight: 500;"></p>
                                 </div>
 
-                                <div class="input_detail">
-                                    <label for="message-export"><i class="fa-solid fa-file-export"></i></label>
-                                    <p id="message-export" class="input_filled" readonly></p>
+                                <div id="time-container" style="display: none; background: #eff6ff; padding: 8px 12px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #dbeafe;">
+                                    <p id="time-estimate" style="margin: 0; font-size: 12px; color: #1d4ed8; display: flex; align-items: center;">
+                                        <i class="fa-solid fa-hourglass-half" style="margin-right: 8px;"></i>
+                                        Calculando tiempo...
+                                    </p>
+                                </div>
+
+                                <div id="error-container" style="display: none;">
+                                    <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.025em;">Registros y Avisos:</p>
+                                    <div id="error-log" style="background: #fafafa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; max-height: 120px; overflow-y: scroll; font-size: 11.5px; line-height: 1.5; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;"></div>
                                 </div>
                             </div>
 
-                            <div class="dialog_footer">
-                                <button class="btn btn_primary" id="cancel">Cancelar</button>
+                            <div class="dialog_footer" style="margin-top: 20px; padding-top: 12px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end;">
+                                <button class="btn btn_secondary" id="cancel" style="border-radius: 6px; padding: 8px 16px;">Cancelar Proceso</button>
                             </div>
                         </div>
                     </div>
@@ -929,8 +714,15 @@ export class Routines {
                         status = true;
                         conditionStatus = '=';
                     }
-                    const message1 = document.getElementById("export-total");
-                    const message2 = document.getElementById("message-export");
+                    const messageTotal = document.getElementById("export-total");
+                    const messageExport = document.getElementById("message-export");
+                    const messageLabel = document.getElementById("export-status-label");
+                    const progressBarContainer = document.getElementById("progress-bar-container");
+                    const progressBar = document.getElementById("progress-bar");
+                    const timeContainer = document.getElementById("time-container");
+                    const timeEstimate = document.getElementById("time-estimate");
+                    const errorLog = document.getElementById("error-log");
+                    const errorContainer = document.getElementById("error-container");
                     const _closeButton = document.getElementById('cancel');
                     _closeButton.onclick = () => {
                         onPressed = false;
@@ -940,21 +732,40 @@ export class Routines {
                     const _values = {
                         start: document.getElementById('start-date'),
                         end: document.getElementById('end-date'),
+                        startTime: document.getElementById('start-time'),
+                        endTime: document.getElementById('end-time'),
                     };
-                    //console.log(_values.start.value)
-                    //console.log(_values.end.value)
-                    //const headers = ['Título', 'Contenido', 'Autor', 'Fecha', 'Hora']
+
+                    const timeConditions = [];
+                    if (_values.startTime.value <= _values.endTime.value) {
+                        timeConditions.push(
+                            { "property": "creationTime", "operator": ">=", "value": `${_values.startTime.value}:00` },
+                            { "property": "creationTime", "operator": "<=", "value": `${_values.endTime.value}:59` }
+                        );
+                    } else {
+                        timeConditions.push({
+                            "group": "OR",
+                            "conditions": [
+                                { "property": "creationTime", "operator": ">=", "value": `${_values.startTime.value}:00` },
+                                { "property": "creationTime", "operator": "<=", "value": `${_values.endTime.value}:59` }
+                            ]
+                        });
+                    }
+
+                    const checkEmail = { checked: false };
+                    const checkAllCustomers = { checked: false };
+
                     let rawToExport = (offset) => {
                         let rawExport = JSON.stringify({
                             "filter": {
                                 "conditions": [
                                     {
-                                        "property": `routineRelation.customer.id`,
+                                        "property": `customer.id`,
                                         "operator": "=",
                                         "value": `${customerId}`
                                     },
                                     {
-                                        "property": "routineRelation.routine.id",
+                                        "property": "routine.id",
                                         "operator": `=`,
                                         "value": `${entityId}`
                                     },
@@ -973,7 +784,7 @@ export class Routines {
                                         "operator": "<=",
                                         "value": `${_values.end.value}`
                                     },
-                    
+                                    ...timeConditions
                                 ],
                             },
                             sort: `-createdDate`,
@@ -983,88 +794,142 @@ export class Routines {
                         });
                         return rawExport;
                     };
-                    let rawExport = rawToExport(0);
-                    const totalRegisters = await getFilterEntityCount("RoutineMarcation", rawExport);
-                    if (totalRegisters === undefined) {
-                        onPressed = false;
-                        const _dialog = document.getElementById('dialog-content');
-                        new CloseDialog().x(_dialog);
-                        alert("Ocurrió un error al exportar");
-                    }
-                    else if (totalRegisters === 0) {
-                        onPressed = false;
-                        const _dialog = document.getElementById('dialog-content');
-                        new CloseDialog().x(_dialog);
-                        alert("No hay ningún registro");
-                    }
-                    else {
-                        const data = await getEntityData('Routine', entityId);
-                        const users = await searchUniversalValueComplex('routine.id', '=', entityId, 'RoutineUser');
-                        message1.value = `0 / ${totalRegisters}`;
-                        const pages = Math.ceil(totalRegisters / Config.limitExport);
-                        let array = [];
-                        let registers = [];
-                        let offset = 0;
-                        for (let i = 0; i < pages; i++) {
-                            if (onPressed) {
-                                rawExport = rawToExport(offset);
-                                array[i] = await getFilterEntityData("RoutineMarcation", rawExport); //await getEvents();
-                                for (let y = 0; y < array[i].length; y++) {
-                                    registers.push(array[i][y]);
+                        let rawExport = rawToExport(0);
+                        const totalRegisters = await getFilterEntityCount("RoutineRegister", rawExport);
+                        if (totalRegisters === undefined) {
+                            onPressed = false;
+                            errorContainer.style.display = 'block';
+                            errorLog.innerHTML += `<div style="margin-bottom: 4px; color: #721c24; background: #f8d7da; padding: 4px 8px; border-radius: 4px; border: 1px solid #f5c6cb;">
+                                <i class="fa-solid fa-circle-xmark"></i> Ocurrió un error al exportar.
+                            </div>`;
+                            messageLabel.innerText = "Error en el proceso";
+                            const cancelButton = document.getElementById('cancel');
+                            if (cancelButton) cancelButton.innerText = "Cerrar Ventana";
+                        }
+                        else if (totalRegisters === 0) {
+                            onPressed = false;
+                            errorContainer.style.display = 'block';
+                            errorLog.innerHTML += `<div style="margin-bottom: 4px; color: #475569; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                <i class="fa-solid fa-file-circle-xmark"></i> No hay ningún registro para exportar.
+                            </div>`;
+                            messageLabel.innerText = "Sin registros";
+                            const cancelButton = document.getElementById('cancel');
+                            if (cancelButton) cancelButton.innerText = "Cerrar Ventana";
+                        }
+                        else {
+                            progressBarContainer.style.display = 'block';
+                            messageLabel.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> Obteniendo registros...`;
+                            const users = await getDetails('routine.id', entityId, 'RoutineUser');
+                            messageTotal.innerText = `0 / ${totalRegisters}`;
+                            const pages = Math.ceil(totalRegisters / Config.limitExport);
+                            let array = [];
+                            let registers = [];
+                            let offset = 0;
+                            for (let i = 0; i < pages; i++) {
+                                if (onPressed) {
+                                    rawExport = rawToExport(offset);
+                                    array[i] = await getFilterEntityData("RoutineRegister", rawExport); //await getEvents();
+                                    for (let y = 0; y < array[i].length; y++) {
+                                        registers.push(array[i][y]);
+                                    }
+                                    messageTotal.innerText = `${registers.length} / ${totalRegisters}`;
+                                    messageExport.innerText = `Cargando: ${registers.length} registros`;
+                                    progressBar.style.width = `${(registers.length / totalRegisters) * 50}%`;
+                                    offset = Config.limitExport + (offset);
+                                    await sleep(Config.timeOutExport);
                                 }
-                                message1.value = `${registers.length} / ${totalRegisters}`;
-                                offset = Config.limitExport + (offset);
-                                await sleep(Config.timeOutExport);
                             }
-                        }
-                        message2.innerText = `Generando archivo pdf,\nesto puede tomar un momento.`;
-                        let rows = [];
-                        for (let i = 0; i < registers.length; i++) {
-                            let register = registers[i];
+
+                            messageLabel.innerHTML = `<i class="fa-solid fa-image"></i> Descargando datos...`;
+                            messageExport.innerText = `Procesando imágenes...`;
+                            let rows = [];
+                            for (let i = 0; i < registers.length; i++) {
+                                if (!onPressed) break;
+                                let register = registers[i];
+
+                                if (i % 5 === 0 || i === registers.length - 1) {
+                                    messageTotal.innerText = `${i + 1} / ${registers.length} registros`;
+                                }
+
+                                let image = '';
+                                if (exportFormat.value === 'pdf') {
+                                    if (register.attachment !== undefined) {
+                                        image = await getFile(register.attachment);
+                                    }
+                                }
+
+                                let obj = {
+                                    "cliente": `${register?.customer?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                                    "rutina": `${register?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                                    "ubicacion": `${register?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                                    "inicio": `${_values.start.value} ${_values.startTime.value}`,
+                                    "fin": `${_values.end.value} ${_values.endTime.value}`,
+                                    "fecha": `${register.creationDate}`,
+                                    "hora": `${register.creationTime}`,
+                                    "estado": `${register?.routineState?.name ?? ''}`,
+                                    "latitud": `${register?.latitude ?? ''}`,
+                                    "longitud": `${register?.longitude ?? ''}`,
+                                    "cords": `${register?.latitude ?? ''}\n${register?.longitude ?? ''}`,
+                                    "usuario": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
+                                    "observacion": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
+                                };
+
+                                if (exportFormat.value === 'pdf') {
+                                    obj.imagen = image;
+                                    obj.imageTag = i + 1;
+                                }
+
+                                rows.push(obj);
+                                progressBar.style.width = `${50 + ((i + 1) / registers.length) * 50}%`;
+                            }
+
                             // @ts-ignore
-                            //if (noteCreationDate >= _values.start.value && noteCreationDate <= _values.end.value) {
-                            let image = '';
-                            if (register.attachment !== undefined) {
-                                image = await getFile(register.attachment);
+                            const customer = await getEntityData('Customer', customerId);
+
+                            if (onPressed) {
+                                if (exportFormat.value === 'pdf') {
+                                    messageLabel.innerHTML = `<i class="fa-solid fa-file-pdf"></i> Generando documento...`;
+                                    messageExport.innerText = `Preparando PDF para ${customer?.name ?? ''}...`;
+                                    // @ts-ignore
+                                    await exportRoutinePdf2(rows, users, flipImage.checked ? true : false, false, customer?.email ?? '', 1, 1);
+                                } else {
+                                    messageLabel.innerHTML = `<i class="fa-solid fa-file-excel"></i> Generando Excel...`;
+                                    messageExport.innerText = `Preparando archivo para ${customer?.name ?? ''}...`;
+                                    // Excel / CSV
+                                    let headerInfo = `REPORTE DE RUTINA\n`;
+                                    headerInfo += `Cliente:;${customer.name}\n`;
+                                    headerInfo += `Periodo:;${_values.start.value} al ${_values.end.value}\n`;
+                                    headerInfo += `Horario:;${_values.startTime.value} a ${_values.endTime.value}\n\n`;
+
+                                    let contenido = "\ufeff" + headerInfo + Object.keys(rows[0]).filter(k => !['inicio', 'fin', 'imagen', 'imageTag', 'cords'].includes(k)).join(";") + "\n";
+                                    rows.forEach(row => {
+                                        contenido += Object.keys(row).filter(k => !['inicio', 'fin', 'imagen', 'imageTag', 'cords'].includes(k)).map(key => String(row[key] ?? "").replace(/[\n\r]+/g, ' ').replace(/;/g, ',').trim()).join(";") + "\n";
+                                    });
+
+                                    const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8' });
+                                    const url = URL.createObjectURL(blob);
+                                    const link = document.createElement("a");
+                                    const d = new Date();
+                                    link.href = url;
+                                    link.download = `Reporte_Rutina_${customer.name.replace(/\s+/g, '_')}_${d.getDate()}_${d.getMonth() + 1}.csv`;
+                                    link.click();
+                                    URL.revokeObjectURL(url);
+                                }
                             }
-                            let obj = {
-                                //"code": `${data?.customer?.docRoutineCode ?? ''}`,
-                                //"version": `${data?.customer?.docRoutineVersion ?? ''}`,
-                                //"date": `${data?.customer?.docRoutineDateApproval ?? ''}`,
-                                "rutina": `${register?.routineRelation?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                                "cliente": `${register?.routineRelation?.customer?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                                //"status": `${data?.routineState?.name ?? ''}`,
-                                "creado": `${data?.creationDate ?? ''} ${data?.creationTime ?? ''}`,
-                                "creadopor": `${data?.user?.firstName ?? ''} ${data?.user?.lastName ?? ''}`,
-                                "inicio": `${_values.start.value}`,
-                                "fin": `${_values.end.value}`,
-                                //"inicio": `${data?.startDate ?? ''} ${data?.startTime ?? ''}`,
-                                //"iniciopor": `${data?.startUserId?.firstName ?? ''} ${data?.startUserId?.lastName ?? ''}`,
-                                //"fin": `${data?.endDate ?? ''} ${data?.endTime ?? ''}`,
-                                //"finpor": `${data?.endUserId?.firstName ?? ''} ${data?.endUserId?.lastName ?? ''}`,
-                                "fecha": `${register.creationDate}`,
-                                "hora": `${register.creationTime}`,
-                                "estado": `${register?.routineState?.name ?? ''}`,
-                                "cords": `${register?.latitude ?? ''}\n${register?.longitude ?? ''}`,
-                                "usuario": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
-                                "observacion": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
-                                //"pedido": `${data?.noOrder ?? ''}`,
-                                //"guia": `${data?.noGuide ?? ''}`,
-                                //"supervisor": `${data?.supervisorId?.firstName ?? ''} ${data?.supervisorId?.lastName ?? ''} ${data?.supervisorId?.secondLastName ?? ''}`,
-                                "imagen": `${image}`,
-                                "imageTag": `${i + 1}`
-                            };
-                            rows.push(obj);
-                            //}
+
+                            const hasIssues = errorLog.innerHTML !== "";
+                            if (hasIssues) {
+                                messageLabel.innerText = "Proceso terminado con observaciones";
+                                const cancelButton = document.getElementById('cancel');
+                                if (cancelButton) cancelButton.innerText = "Cerrar Ventana";
+                            } else {
+                                const _dialog = document.getElementById('dialog-content');
+                                new CloseDialog().x(_dialog);
+                            }
+                            onPressed = false;
                         }
-                        // @ts-ignore
-                        await exportRoutinePdf2(rows, users, flipImage.checked ? true : false);
-                        const _dialog = document.getElementById('dialog-content');
-                        new CloseDialog().x(_dialog);
-                        onPressed = false;
                     }
-                }
-            });
+                });
             _closeButton.onclick = () => {
                 onPressed = false;
                 const editor = document.getElementById('entity-editor-container');
@@ -1110,34 +975,43 @@ export class Routines {
                 this.dialogContainer.style.display = 'block';
                 this.dialogContainer.innerHTML = `
                 <div class="dialog_content" id="dialog-content">
-                    <div class="dialog">
-                        <div class="dialog_container padding_8">
-                            <div class="dialog_header">
-                                <h2>Exportando...</h2>
+                    <div class="dialog" style="width: 450px; max-width: 90%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                        <div class="dialog_container padding_16">
+                            <div class="dialog_header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px;">
+                                <h2 style="margin: 0; color: #1e293b; font-size: 1.25rem;">Exportando Rutinas</h2>
                             </div>
 
-                            <div class="dialog_message padding_8">
-                                <div class="material_input">
-                                    <input type="text" id="export-total" class="input_filled" value="..." readonly>
-                                    <label for="export-total"><i class="fa-solid fa-cloud-arrow-down"></i>Obteniendo datos</label>
+                            <div class="dialog_message">
+                                <div style="margin-bottom: 20px;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                        <span id="export-status-label" style="font-size: 13px; font-weight: 600; color: #64748b;">Obteniendo datos...</span>
+                                        <span id="export-total" style="font-size: 12px; color: #94a3b8;">...</span>
+                                    </div>
+                                    <div id="progress-bar-container" style="background: #f1f5f9; border-radius: 10px; height: 8px; overflow: hidden; margin-bottom: 4px;">
+                                        <div id="progress-bar" style="background: #3b82f6; height: 100%; width: 0%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 10px;"></div>
+                                    </div>
+                                    <p id="message-export" style="margin: 4px 0 0 0; font-size: 13px; color: #334155; font-weight: 500;"></p>
                                 </div>
 
-                                <div class="input_detail">
-                                    <label for="message-export"><i class="fa-solid fa-file-export"></i></label>
-                                    <p id="message-export" class="input_filled" readonly></p>
+                                <div id="error-container" style="display: none;">
+                                    <div id="error-log" style="background: #fafafa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; max-height: 120px; overflow-y: scroll; font-size: 11.5px; line-height: 1.5; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;"></div>
                                 </div>
                             </div>
 
-                            <div class="dialog_footer">
-                                <button class="btn btn_primary" id="cancel">Cancelar</button>
+                            <div class="dialog_footer" style="margin-top: 20px; padding-top: 12px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end;">
+                                <button class="btn btn_secondary" id="cancel" style="border-radius: 6px; padding: 8px 16px;">Cancelar</button>
                             </div>
                         </div>
                     </div>
                 </div>
                 `;
                 inputObserver();
-                const message1 = document.getElementById("export-total");
-                const message2 = document.getElementById("message-export");
+                const messageTotal = document.getElementById("export-total");
+                const messageExport = document.getElementById("message-export");
+                const messageLabel = document.getElementById("export-status-label");
+                const progressBar = document.getElementById("progress-bar");
+                const errorLog = document.getElementById("error-log");
+                const errorContainer = document.getElementById("error-container");
                 const _closeButton = document.getElementById('cancel');
                 _closeButton.onclick = () => {
                     onPressed = false;
@@ -1171,16 +1045,24 @@ export class Routines {
                 const totalRegisters = await getFilterEntityCount("RoutineSchedule", rawExport);
                 if(totalRegisters === undefined){
                     onPressed = false;
-                    const _dialog = document.getElementById('dialog-content');
-                    new CloseDialog().x(_dialog);
-                    alert("Ocurrió un error al exportar");
+                    errorContainer.style.display = 'block';
+                    errorLog.innerHTML += `<div style="margin-bottom: 4px; color: #721c24; background: #f8d7da; padding: 4px 8px; border-radius: 4px; border: 1px solid #f5c6cb;">
+                        <i class="fa-solid fa-circle-xmark"></i> Ocurrió un error al exportar.
+                    </div>`;
+                    messageLabel.innerText = "Error en el proceso";
+                    const cancelButton = document.getElementById('cancel');
+                    if (cancelButton) cancelButton.innerText = "Cerrar Ventana";
                 }else if(totalRegisters===0){
                     onPressed = false;
-                    const _dialog = document.getElementById('dialog-content');
-                    new CloseDialog().x(_dialog);
-                    alert("No hay ningún registro");  
+                    errorContainer.style.display = 'block';
+                    errorLog.innerHTML += `<div style="margin-bottom: 4px; color: #475569; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                        <i class="fa-solid fa-file-circle-xmark"></i> No hay ningún registro para exportar.
+                    </div>`;
+                    messageLabel.innerText = "Sin registros";
+                    const cancelButton = document.getElementById('cancel');
+                    if (cancelButton) cancelButton.innerText = "Cerrar Ventana";
                 }else {
-                    message1.value = `0 / ${totalRegisters}`;
+                    messageTotal.innerText = `0 / ${totalRegisters}`;
                     const pages = Math.ceil(totalRegisters / Config.limitExport);
                     let array = [];
                     let dataToExport = [];
@@ -1202,15 +1084,23 @@ export class Routines {
                                     "Distancia":array[i][y].distance ?? 0
                                 });
                             }
-                            message1.value = `${dataToExport.length} / ${totalRegisters}`;
+                            messageTotal.innerText = `${dataToExport.length} / ${totalRegisters}`;
+                            progressBar.style.width = `${(dataToExport.length / totalRegisters) * 100}%`;
                             offset = Config.limitExport + (offset);
                             await sleep(Config.timeOutExport);
                         }
                     }
                 
                     generateFileSimpleXls(dataToExport,"Rutinas","csv");
-                    const _dialog = document.getElementById('dialog-content');
-                    new CloseDialog().x(_dialog);
+                    const hasIssues = errorLog.innerHTML !== "";
+                    if (hasIssues) {
+                        messageLabel.innerText = "Proceso terminado con observaciones";
+                        const cancelButton = document.getElementById('cancel');
+                        if (cancelButton) cancelButton.innerText = "Cerrar Ventana";
+                    } else {
+                        const _dialog = document.getElementById('dialog-content');
+                        new CloseDialog().x(_dialog);
+                    }
                     onPressed = false;
                 }
             }
@@ -1221,12 +1111,12 @@ export class Routines {
     });
   }
   
-    schedules() {
-      const scheudleRoutine = document.querySelectorAll('#schedule-entity');
-      scheudleRoutine.forEach((buttonKey) => {
+    location() {
+      const locationRoutine = document.querySelectorAll('#location-entity');
+      locationRoutine.forEach((buttonKey) => {
             buttonKey.addEventListener('click', async () => {
                 let entityId = buttonKey.dataset.entityid;
-                new Schedules().render(Config.offset, Config.currentPage, "", entityId);
+                new Locations().render(Config.offset, Config.currentPage, "", entityId);
             });
         });
   }

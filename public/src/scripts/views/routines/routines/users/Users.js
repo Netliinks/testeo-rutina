@@ -1,6 +1,6 @@
 // @filename: locations.ts
 import { deleteEntity, getEntitiesData, registerEntity, updateEntity, getEntityData, getFilterEntityData, getFilterEntityCount, getUserInfo } from "../../../../endpoints.js";
-import { inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, getDetails, getDetails2 } from "../../../../tools.js";
+import { inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, getDetails, getDetails2, generateFileSimpleXls } from "../../../../tools.js";
 import { Config } from "../../../../Configs.js";
 import { tableLayout } from "./Layout.js";
 import { tableLayoutTemplate } from "./Template.js";
@@ -82,6 +82,109 @@ const getUsers = async (routineId) => {
   dataPage = await getFilterEntityData("RoutineUser", raw);
   return dataPage;
 };
+
+const exportUsers = (routineId) => {
+  const dialogContainer = document.getElementById('app-dialogs');
+  dialogContainer.style.display = 'block';
+  dialogContainer.innerHTML = `
+    <div class="dialog_content" id="dialog-content">
+      <div class="dialog">
+        <div class="dialog_container padding_8">
+          <div class="dialog_header">
+            <h2>Antes de exportar</h2>
+          </div>
+          <div class="dialog_message padding_8">
+            <div class="input_checkbox">
+              <label><input type="checkbox" class="checkbox" id="export-all-routine-users"> Exportar de todas las empresas</label>
+            </div>
+          </div>
+          <div class="dialog_footer">
+            <button class="btn btn_primary" id="cancel-routine-users-export">Cancelar</button>
+            <button class="btn btn_danger" id="confirm-routine-users-export">Exportar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const dialog = document.getElementById('dialog-content');
+  const cancelButton = document.getElementById('cancel-routine-users-export');
+  const exportButton = document.getElementById('confirm-routine-users-export');
+  const allCustomersCheckbox = document.getElementById('export-all-routine-users');
+
+  cancelButton.addEventListener('click', () => new CloseDialog().x(dialog));
+  exportButton.addEventListener('click', async () => {
+    const exportAllCustomers = allCustomersCheckbox.checked;
+    exportButton.disabled = true;
+    exportButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Exportando...';
+
+    try {
+      const businessId = Config.currentUser?.business?.id;
+      if (!businessId) {
+        throw new Error('El usuario actual no tiene un negocio asignado.');
+      }
+
+      const buildFilter = (offset) => JSON.stringify({
+        filter: {
+          conditions: [
+            {
+              property: "business.id",
+              operator: "=",
+              value: `${businessId}`
+            },
+            ...(!exportAllCustomers ? [
+              {
+                property: "customer.id",
+                operator: "=",
+                value: `${customerId}`
+              },
+              {
+                property: "routine.id",
+                operator: "=",
+                value: `${routineId}`
+              }
+            ] : [])
+          ]
+        },
+        sort: "+customer.name",
+        limit: Config.limitExport,
+        offset: offset,
+        fetchPlan: 'full'
+      });
+
+      const total = await getFilterEntityCount("RoutineUser", buildFilter(0));
+      if (!total) {
+        alert('No existen guardias asignados para exportar.');
+        return;
+      }
+
+      const rows = [];
+      for (let offset = 0; offset < total; offset += Config.limitExport) {
+        const assignments = await getFilterEntityData("RoutineUser", buildFilter(offset));
+        assignments.forEach((assignment) => {
+          rows.push({
+            "Empresa": assignment?.customer?.name ?? '',
+            "Rutina": assignment?.routine?.name ?? '',
+            "Usuario": assignment?.user?.username ?? '',
+            "Nombre": assignment?.user?.firstName ?? '',
+            "Apellido": [assignment?.user?.lastName, assignment?.user?.secondLastName]
+              .filter(Boolean)
+              .join(' ')
+          });
+        });
+      }
+
+      generateFileSimpleXls(rows, "Guardias_Rutina", "csv");
+      new CloseDialog().x(dialog);
+    } catch (error) {
+      console.error('Error al exportar los guardias asignados:', error);
+      alert('No se pudo generar el archivo CSV. Intente nuevamente.');
+    } finally {
+      exportButton.disabled = false;
+      exportButton.innerText = 'Exportar';
+    }
+  });
+};
 export class RoutineUsers {
     constructor() {
         this.dialogContainer = document.getElementById('app-dialogs');
@@ -122,6 +225,7 @@ export class RoutineUsers {
         tableBody.innerHTML = tableLayoutTemplate.repeat(tableRows);
         this.load(tableBody, currentPage, data);
         this.searchEntity(tableBody /*, data*/);
+        document.getElementById('export-routine-users').addEventListener('click', () => exportUsers(routine.id));
         new filterDataByHeaderType().filter();
         this.pagination(data, tableRows, infoPage.currentPage);
     }

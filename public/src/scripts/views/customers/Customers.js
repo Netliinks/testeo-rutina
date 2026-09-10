@@ -1,9 +1,10 @@
 // @filename: Customers.ts
 import { registerEntity, getUserInfo, getEntityData, updateEntity, getFilterEntityData, getFilterEntityCount } from "../../endpoints.js";
-import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, searchUniversalSingle2 } from "../../tools.js";
+import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, searchUniversalSingle2, sleep } from "../../tools.js";
 import { Config } from "../../Configs.js";
-import { tableLayout, UIContact } from "./Layout.js";
+import { tableLayout, UIContact, UIImport, UIProgress } from "./Layout.js";
 import { tableLayoutTemplate } from "./Template.js";
+import { isFeatureEnabled, FEATURE_FLAG_FACE_MARCATIONS } from "../../services/featureFlags.js";
 const tableRows = Config.tableRows;
 const currentPage = Config.currentPage;
 let infoPage = {
@@ -12,64 +13,65 @@ let infoPage = {
   currentPage: currentPage,
   search: ""
 };
-const currentBusiness = async() => {
-  const currentUser = await getUserInfo();
-  const userid = await getEntityData('User', `${currentUser.attributes.id}`);
-  return userid;
-}
 
-const getCustomers = async () => {
-    const currentUser = await currentBusiness();
-    let raw = JSON.stringify({
-      "filter": {
-          "conditions": [
-              {
-                  "property": "business.id",
-                  "operator": "=",
-                  "value": `${currentUser.business.id}`
-              }
-          ],
-      },
-      sort: "-createdDate",
-      limit: Config.tableRows,
-      offset: infoPage.offset,
-      fetchPlan: 'full',
-  });
-  if (infoPage.search != "") {
-    raw = JSON.stringify({
-        "filter": {
+const getCustomerFilterRaw = (businessId, search = "", limit = null, offset = null, onlyActive = false) => {
+    let conditions = [
+        {
+            "property": "business.id",
+            "operator": "=",
+            "value": `${businessId}`
+        }
+    ];
+
+    if (onlyActive) {
+        conditions.push({
+            "property": "state.name",
+            "operator": "=",
+            "value": "Enabled"
+        });
+    }
+
+    if (search !== "") {
+        conditions.unshift({
+            "group": "OR",
             "conditions": [
                 {
-                    "group": "OR",
-                    "conditions": [
-                        {
-                            "property": "name",
-                            "operator": "contains",
-                            "value": `${infoPage.search.toLowerCase()}`
-                        },
-                        {
-                            "property": "ruc",
-                            "operator": "contains",
-                            "value": `${infoPage.search.toLowerCase()}`
-                        }
-                    ]
+                    "property": "name",
+                    "operator": "contains",
+                    "value": `${search.toLowerCase()}`
                 },
                 {
-                  "property": "business.id",
-                  "operator": "=",
-                  "value": `${currentUser.business.id}`
+                    "property": "ruc",
+                    "operator": "contains",
+                    "value": `${search.toLowerCase()}`
                 }
             ]
-        },
-        sort: "-createdDate",
-        limit: Config.tableRows,
-        offset: infoPage.offset,
-        fetchPlan: 'full',
-    });
-}
-  infoPage.count = await getFilterEntityCount("Customer", raw);
+        });
+    }
+
+    let rawObj = {
+        "filter": { "conditions": conditions },
+        "sort": "-createdDate",
+        "fetchPlan": "full"
+    };
+
+    if (limit !== null) rawObj.limit = limit;
+    if (offset !== null) rawObj.offset = offset;
+
+    return JSON.stringify(rawObj);
+};
+
+const getCustomers = async () => {
+    const raw = getCustomerFilterRaw(Config.currentUser.business.id, infoPage.search, Config.tableRows, infoPage.offset);
+    infoPage.count = await getFilterEntityCount("Customer", raw);
+    return await getFilterEntityData("Customer", raw);
+};
+
+const getCustomersPaginated = async (limit, offset, onlyActive = false) => {
+  const raw = getCustomerFilterRaw(Config.currentUser.business.id, "", limit, offset, onlyActive);
   return await getFilterEntityData("Customer", raw);
 };
+
 export class Customers {
     constructor() {
         this.dialogContainer = document.getElementById('app-dialogs');
@@ -138,6 +140,7 @@ export class Customers {
           <td>${customer?.permitVehicular ? 'Si' : 'No'}</td>
           <td>${customer?.permitRoutine ? 'Si' : 'No'}</td>
           <td>${customer?.permitVisitStatic ? 'Si' : 'No'}</td>
+          <td>${customer?.permitPersonalStatic ? 'Si' : 'No'}</td>
           <td>${customer?.licenseType ? customer?.licenseType : ''}</td>
           <td class="entity_options">
               <button class="button" id="edit-entity" data-entityId="${customer.id}">
@@ -154,6 +157,7 @@ export class Customers {
             }
         }
         this.register();
+        this.export();
         this.updateContact();
         this.edit(this.entityDialogContainer, data);
     }
@@ -217,6 +221,279 @@ export class Customers {
           });
       }
     }
+    export() {
+      const exportBtn = document.getElementById('import-emails');
+      if (exportBtn) {
+          exportBtn.addEventListener('click', async () => {
+              this.renderImportInterface();
+          });
+      }
+    }
+    renderImportInterface() {
+      this.dialogContainer.style.display = 'block';
+      this.dialogContainer.innerHTML = UIImport;
+      const downloadBtn = document.getElementById('download-template');
+      const processBtn = document.getElementById('process-import');
+      const cancelBtn = document.getElementById('cancel');
+      const fileInput = document.getElementById('file-input');
+      const dialogContent = document.getElementById('dialog-content');
+      downloadBtn.addEventListener('click', () => {
+          new CloseDialog().x(dialogContent);
+          this.downloadCSV();
+      });
+      cancelBtn.addEventListener('click', () => {
+          new CloseDialog().x(dialogContent);
+      });
+      processBtn.addEventListener('click', async () => {
+          const file = fileInput.files[0];
+          if (!file) {
+              alert("Por favor seleccione un archivo.");
+              return;
+          }
+          const reader = new FileReader();
+          reader.onload = async (e) => {
+              const text = e.target.result;
+              new CloseDialog().x(dialogContent);
+              await this.processCSV(text);
+          };
+          reader.readAsText(file);
+      });
+    }
+
+    showProgress(title, subtitle = "Iniciando...") {
+        this.dialogContainer.style.display = 'block';
+        this.dialogContainer.innerHTML = UIProgress;
+        document.getElementById('progress-title').innerText = title;
+        document.getElementById('progress-subtitle').innerText = subtitle;
+        const closeBtn = document.getElementById('close-progress');
+        closeBtn.addEventListener('click', () => {
+            new CloseDialog().x(document.getElementById('dialog-progress'));
+        });
+    }
+
+    updateProgress(percentage, message = "") {
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const progressMessage = document.getElementById('progress-message');
+        if (progressBar && progressText) {
+            progressBar.style.width = `${percentage}%`;
+            progressText.innerText = `${Math.round(percentage)}%`;
+        }
+        if (progressMessage && message) {
+            progressMessage.innerText = message;
+        }
+    }
+
+    showProgressError(message, cause) {
+        const errorContainer = document.getElementById('error-container');
+        const errorMsg = document.getElementById('error-message');
+        const errorCause = document.getElementById('error-cause');
+        const footer = document.getElementById('progress-footer');
+        if (errorContainer) {
+            errorContainer.style.display = 'block';
+            errorMsg.innerText = message;
+            errorCause.innerText = cause;
+            footer.style.display = 'flex';
+        }
+    }
+
+    finishProgress() {
+        const footer = document.getElementById('progress-footer');
+        if (footer) footer.style.display = 'flex';
+    }
+
+    async processCSV(text) {
+      this.showProgress("Importando Correos", "Validando archivo...");
+      try {
+          const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+          const total = lines.length - 1; // Excluir cabecera
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          const errors = [];
+
+          const parseCSVLine = (line) => {
+              const result = [];
+              let current = '';
+              let inQuotes = false;
+              for (let i = 0; i < line.length; i++) {
+                  const char = line[i];
+                  if (char === '"') {
+                      if (inQuotes && line[i + 1] === '"') {
+                          current += '"';
+                          i++;
+                      }
+                      else {
+                          inQuotes = !inQuotes;
+                      }
+                  }
+                  else if ((char === ';' || char === ',') && !inQuotes) {
+                      result.push(current);
+                      current = '';
+                  }
+                  else {
+                      current += char;
+                  }
+              }
+              result.push(current);
+              return result;
+          };
+
+          // FASE 1: VALIDACIÓN PREVIA
+          for (let i = 1; i < lines.length; i++) {
+              const values = parseCSVLine(lines[i]);
+              const email1 = values[2] ? values[2].trim() : "";
+              const email2 = values[3] ? values[3].trim() : "";
+
+              if (email1 !== "" && !emailRegex.test(email1)) {
+                  errors.push(`Línea ${i + 1}: Correo 1 inválido (${email1})`);
+              }
+              if (email2 !== "" && !emailRegex.test(email2)) {
+                  errors.push(`Línea ${i + 1}: Correo 2 inválido (${email2})`);
+              }
+
+              if (i % 20 === 0) {
+                  this.updateProgress((i / lines.length) * 100, `Validando: ${i} de ${lines.length} líneas`);
+              }
+          }
+
+          if (errors.length > 0) {
+              const maxErrors = 10;
+              let errorMessage = errors.slice(0, maxErrors).join('\n');
+              if (errors.length > maxErrors) errorMessage += `\n... y ${errors.length - maxErrors} errores más.`;
+              this.showProgressError("Errores de formato en el CSV", errorMessage);
+              return;
+          }
+
+          // FASE 2: IMPORTACIÓN REAL
+          document.getElementById('progress-subtitle').innerText = "Actualizando base de datos...";
+          let successCount = 0;
+          let failCount = 0;
+          const importErrors = [];
+
+          for (let i = 1; i < lines.length; i++) {
+              try {
+                  const values = parseCSVLine(lines[i]);
+                  const id = values[0] ? values[0].trim() : null;
+                  const email1 = values[2] ? values[2].trim() : "";
+                  const email2 = values[3] ? values[3].trim() : "";
+
+                  let emails = [];
+                  if (email1) emails.push(email1);
+                  if (email2) emails.push(email2);
+
+                  if (id && id !== "") {
+                      // Verificar si el cliente existe mediante conteo (más eficiente)
+                      const rawCheck = JSON.stringify({
+                          "filter": {
+                              "conditions": [{ "property": "id", "operator": "=", "value": id }]
+                          }
+                      });
+                      const count = await getFilterEntityCount('Customer', rawCheck);
+
+                      if (count > 0) {
+                          const raw = JSON.stringify({ "email": emails.join(',') });
+                          await updateEntity('Customer', id, raw);
+                          successCount++;
+                      } else {
+                          failCount++;
+                          importErrors.push(`ID no encontrado: ${id}`);
+                          console.warn(`Cliente con ID ${id} con nombre ${values[1]} no encontrado.`);
+                      }
+                      // Pequeña pausa para evitar sobrecarga del servidor (Throttling)
+                      await sleep(50);
+                  }
+                  this.updateProgress((i / total) * 100, `Procesando: ${i} de ${total} registros`);
+              } catch (lineError) {
+                  failCount++;
+                  importErrors.push(`Línea ${i + 1}: ${lineError.message}`);
+                  console.error(`Error en línea ${i + 1}:`, lineError);
+              }
+          }
+          this.updateProgress(100);
+
+          if (failCount > 0) {
+              const finalTitle = `Finalizado con ${failCount} errores`;
+              document.getElementById('progress-title').innerText = finalTitle;
+              this.showProgressError(`Se actualizaron ${successCount} registros.`, importErrors.join('\n'));
+          } else {
+              document.getElementById('progress-title').innerText = "Importación Finalizada";
+              this.finishProgress();
+              await sleep(1000);
+              new CloseDialog().x(document.getElementById('dialog-progress'));
+          }
+          new Customers().render(infoPage.offset, infoPage.currentPage, infoPage.search);
+      } catch (error) {
+          this.showProgressError("Error al procesar el archivo CSV", error.message);
+      }
+    }
+
+    async downloadCSV() {
+      if (!Config.currentUser || !Config.currentUser.business) {
+          alert("Error: No se pudo identificar la empresa actual.");
+          return;
+      }
+      this.showProgress("Generando Plantilla", "Preparando datos...");
+      try {
+          const businessId = Config.currentUser.business.id;
+          const filterRaw = getCustomerFilterRaw(businessId, "", null, null, true);
+
+          const totalCount = await getFilterEntityCount("Customer", filterRaw);
+          if (totalCount === undefined || totalCount === 0) {
+              this.updateProgress(100, "No se encontraron registros activos para exportar.");
+              const footer = document.getElementById('progress-footer');
+              if (footer) footer.style.display = 'flex';
+              return;
+          }
+
+          let csvContent = "ID;Nombre;Correo 1;Correo 2\n";
+          const batchSize = 100;
+          let processed = 0;
+
+          while (processed < totalCount) {
+              const batchData = await getCustomersPaginated(batchSize, processed, true);
+              if (!batchData || batchData.length === 0) break;
+
+              batchData.forEach(customer => {
+                  let emails = [];
+                  if (customer.email) {
+                      emails = customer.email.split(/[,;]/).map(e => e.trim()).filter(e => e !== "");
+                  }
+
+                  let row = [
+                      customer.id,
+                      `"${(customer.name || '').replace(/"/g, '""')}"`,
+                      emails[0] ? `"${emails[0].replace(/"/g, '""')}"` : "",
+                      emails[1] ? `"${emails[1].replace(/"/g, '""')}"` : ""
+                  ];
+                  csvContent += row.join(";") + "\n";
+              });
+
+              processed += batchData.length;
+              this.updateProgress((processed / totalCount) * 100, `Obteniendo registros: ${processed} de ${totalCount}`);
+          }
+
+          if (processed > 0) {
+              const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.setAttribute("href", url);
+              link.setAttribute("download", "plantilla_clientes_email.csv");
+              link.style.visibility = 'hidden';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+
+              document.getElementById('progress-title').innerText = "Plantilla Generada";
+              this.finishProgress();
+              await sleep(1000);
+              new CloseDialog().x(document.getElementById('dialog-progress'));
+          } else {
+              this.showProgressError("Sin registros", "No se procesó ningún registro.");
+          }
+      } catch (error) {
+          console.error("Error downloading CSV:", error);
+          this.showProgressError("Error al generar la plantilla", error.message);
+      }
+    }
     register() {
         // register entity
         const openEditor = document.getElementById('new-entity');
@@ -273,6 +550,10 @@ export class Customers {
             <div class="input_checkbox">
                 <label><input type="checkbox" class="checkbox" id="entity-qr-static"> Permitir QR estático para visita</label>
             </div>
+
+            <div class="input_checkbox">
+                <label><input type="checkbox" class="checkbox" id="entity-personal-static"> Permitir QR estático para personal</label>
+            </div>
             <br>
 
             <div class="material_input">
@@ -283,6 +564,13 @@ export class Customers {
                     <option value="STANDARD" selected>STANDARD</option>
                     <option value="POOL 50">POOL 50</option>
                 </select>
+            </div>
+            <br>
+            <div class="material_input">
+              <input type="text"
+                id="entity-email"
+                autocomplete="none">
+              <label for="entity-email">Email (máx 2, sep por , o ;)</label>
             </div>
 
             <br>
@@ -329,45 +617,61 @@ export class Customers {
             this.close();
             const registerButton = document.getElementById('register-entity');
             registerButton.addEventListener('click', async() => {
-                const businessData = await currentBusiness();
                 const inputsCollection = {
                     name: document.getElementById('entity-name'),
                     ruc: document.getElementById('entity-ruc'),
+                    email: document.getElementById('entity-email'),
                     state: document.getElementById('entity-state'),
                     marcation: document.getElementById('entity-marcation'),
                     vehicular: document.getElementById('entity-vehicular'),
                     routine: document.getElementById('entity-routine'),
                     qrstatic: document.getElementById('entity-qr-static'),
+                    personalstatic: document.getElementById('entity-personal-static'),
                     reqNroVisitEmer: document.getElementById('entity-required-visitemer'),
                     reqNroVehicle: document.getElementById('entity-required-vehicular'),
                     reqNroReport: document.getElementById('entity-required-report'),
                     reqNroRoutine: document.getElementById('entity-required-routine'),
                     licenseType: document.getElementById('license-type'),
                 };
+                const emails = inputsCollection.email.value.split(/[,;]/).map(e => e.trim()).filter(e => e !== "");
+                if (emails.length > 2) {
+                    alert("Se permiten máximo 2 correos electrónicos.");
+                    return;
+                }
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                for (const email of emails) {
+                    if (!emailRegex.test(email)) {
+                        alert(`Formato de correo inválido: ${email}`);
+                        return;
+                    }
+                }
+
                 const raw = JSON.stringify({
-                    "name": `${inputsCollection.name.value}`,
+                    "name": `${inputsCollection.name.value.trim()}`,
                     "business": {
-                        "id": `${businessData.business.id}`},
-                    "ruc": `${inputsCollection.ruc.value}`,
+                        "id": `${Config.currentUser.business.id}`},
+                    "ruc": `${inputsCollection.ruc.value.trim()}`,
+                    "email": `${emails.join(',')}`,
                     "state": {
                       "id": `${inputsCollection.state.dataset.optionid}`},
                     "firebaseId":`${inputsCollection.name.value}`,
-                    "associate":`${businessData.business.name}`,
+                    "associate":`${Config.currentUser.business.name}`,
                     "permitMarcation": `${inputsCollection.marcation.checked ? true : false}`,
                     "permitVehicular": `${inputsCollection.vehicular.checked ? true : false}`,
                     "permitRoutine": `${inputsCollection.routine.checked ? true : false}`,
                     'permitVisitStatic': `${inputsCollection.qrstatic.checked ? true : false}`,
+                    'permitPersonalStatic': `${inputsCollection.personalstatic.checked ? true : false}`,
                     'reqNroVisitEmer': `${inputsCollection.reqNroVisitEmer.value ?? 0}`,
                     'reqNroVehicle': `${inputsCollection.reqNroVehicle.value ?? 0}`,
                     'reqNroReport': `${inputsCollection.reqNroReport.value ?? 0}`,
                     'reqNroRoutine': `${inputsCollection.reqNroRoutine.value ?? 0}`,
                     'licenseType': `${inputsCollection.licenseType.value ?? 'STANDARD'}`
                 });
-                const exist = await searchUniversalSingle2('name', 'contains', inputsCollection.name.value, 'business.id', '=', businessData.business.id, 'Customer');
+                const exist = await searchUniversalSingle2('name', 'contains', inputsCollection.name.value, 'business.id', '=', Config.currentUser.business.id, 'Customer');
                 //const exist = await searchCustomerbyName(inputsCollection.name.value, businessId)
                 if(inputsCollection.name.value === '' || inputsCollection.name.value === undefined){
                     alert("¡Nombre vacío!")
-                }else if(businessData.business.id == undefined || businessData.business.id == null){
+                }else if(Config.currentUser.business.id == undefined || Config.currentUser.business.id == null){
                     alert("¡Id empresa seguridad vacío!")
                 }else if(exist == undefined || exist != 'none'){
                     alert("¡Nombre de empresa ya existente o no se ha podido comprobar!")
@@ -386,6 +690,7 @@ export class Customers {
     }
     edit(container, data) {
         // Edit entity
+        const faceMarcationsEnabled = isFeatureEnabled(FEATURE_FLAG_FACE_MARCATIONS);
         const edit = document.querySelectorAll('#edit-entity');
         edit.forEach((edit) => {
             const entityId = edit.dataset.entityid;
@@ -393,6 +698,7 @@ export class Customers {
                 RInterface('Customer', entityId);
             });
         });
+        let locationMapInstance = null;
         const RInterface = async (entities, entityID) => {
             const data = await getEntityData(entities, entityID);
             this.entityDialogContainer.innerHTML = '';
@@ -441,6 +747,10 @@ export class Customers {
             <div class="input_checkbox">
                 <label><input type="checkbox" class="checkbox" id="entity-qr-static"> Permitir QR estático para visita</label>
             </div>
+
+            <div class="input_checkbox">
+                <label><input type="checkbox" class="checkbox" id="entity-personal-static"> Permitir QR estático para personal</label>
+            </div>
             <br>
 
              <div class="material_input">
@@ -451,6 +761,14 @@ export class Customers {
                     <option value="STANDARD" selected>STANDARD</option>
                     <option value="POOL 50">POOL 50</option>
                 </select>
+            </div>
+            <br>
+            <div class="material_input">
+              <input type="text"
+                id="entity-email"
+                class="input_filled"
+                value="${data?.email ?? ''}">
+              <label for="entity-email">Email (máx 2, sep por , o ;)</label>
             </div>
 
             <br>
@@ -483,6 +801,39 @@ export class Customers {
               <label for="entity-required-routine">Requerido rutinas</label>
             </div>
 
+            ${faceMarcationsEnabled ? `
+            <div class="input_checkbox">
+                <label><input type="checkbox" class="checkbox" id="entity-location-enabled"> Habilitar ubicación</label>
+            </div>
+
+            <div class="entity_map_field" id="entity-location-fields" style="display: none;">
+              <label class="entity_map_label">Ubicación</label>
+              <p class="entity_map_hint">Escribe la latitud y longitud o selecciona el punto en el mapa.</p>
+              <div class="entity_map_coords">
+                <div class="material_input">
+                  <input type="number"
+                    id="entity-latitude"
+                   autocomplete="none" step="any" class="input_filled" value="${data?.latitude ?? ''}">
+                  <label for="entity-latitude">Latitud</label>
+                </div>
+                <div class="material_input">
+                  <input type="number"
+                    id="entity-longitude"
+                   autocomplete="none" step="any" class="input_filled" value="${data?.longitude ?? ''}">
+                  <label for="entity-longitude">Longitud</label>
+                </div>
+              </div>
+              <div class="material_input">
+                <input type="number"
+                  id="entity-location-radius"
+                 autocomplete="none" min="1" max="60" step="any" class="input_filled" value="${data?.locationRadius ?? 60}">
+                <label for="entity-location-radius">Radio de ubicación (metros)</label>
+              </div>
+              <input type="hidden" id="entity-location-zoom" value="${data?.zoomLevel ?? ''}">
+              <div class="entity_map" id="entity-map"></div>
+            </div>
+            ` : ''}
+
           </div>
           <!-- END EDITOR BODY -->
 
@@ -491,6 +842,10 @@ export class Customers {
           </div>
         </div>
       `;
+            if (locationMapInstance) {
+              locationMapInstance.remove();
+              locationMapInstance = null;
+            }
             const checkboxMarcation = document.getElementById('entity-marcation');
             if (data.permitMarcation === true) {
               checkboxMarcation?.setAttribute('checked', 'true');
@@ -511,18 +866,108 @@ export class Customers {
               checkboxQRStatic?.setAttribute('checked', 'true');
             }
 
+            const checkboxPersonalStatic = document.getElementById('entity-personal-static');
+            if (data?.permitPersonalStatic === true) {
+                checkboxPersonalStatic?.setAttribute('checked', 'true');
+            }
+
             const licenseType = document.getElementById('license-type');
             licenseType.value = data?.licenseType ?? 'STANDARD';
             inputObserver();
             inputSelect('State', 'entity-state', data.state.name);
+            if (faceMarcationsEnabled) {
+              const checkboxLocationEnabled = document.getElementById('entity-location-enabled');
+              const locationFields = document.getElementById('entity-location-fields');
+              if (data?.locationEnabled === true) {
+                checkboxLocationEnabled?.setAttribute('checked', 'true');
+                locationFields.style.display = 'block';
+                initLocationMap(data);
+              }
+              checkboxLocationEnabled.addEventListener('change', () => {
+                if (checkboxLocationEnabled.checked) {
+                  locationFields.style.display = 'block';
+                  initLocationMap(data);
+                } else {
+                  locationFields.style.display = 'none';
+                }
+              });
+            }
             this.close();
             UUpdate(entityID);
+        };
+        const initLocationMap = (data) => {
+            if (locationMapInstance) {
+                setTimeout(() => locationMapInstance.invalidateSize(), 200);
+                return;
+            }
+            const latInput = document.getElementById('entity-latitude');
+            const lngInput = document.getElementById('entity-longitude');
+            const zoomInput = document.getElementById('entity-location-zoom');
+            const defaultCenter = [-1.8312, -78.1834];
+            const defaultZoom = 6;
+            const savedZoomFallback = 15;
+            const savedLat = parseFloat(data?.latitude);
+            const savedLng = parseFloat(data?.longitude);
+            const hasSavedPosition = !isNaN(savedLat) && !isNaN(savedLng);
+            const initialCenter = hasSavedPosition ? [savedLat, savedLng] : defaultCenter;
+            const savedZoom = parseInt(zoomInput.value);
+            const initialZoom = hasSavedPosition ? (isNaN(savedZoom) ? savedZoomFallback : savedZoom) : defaultZoom;
+            const map = L.map('entity-map').setView(initialCenter, initialZoom);
+            locationMapInstance = map;
+            zoomInput.value = map.getZoom();
+            map.on('zoomend', () => {
+                zoomInput.value = map.getZoom();
+            });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19,
+            }).addTo(map);
+            let marker = hasSavedPosition ? L.marker(initialCenter, { draggable: true }).addTo(map) : null;
+            const setPosition = (lat, lng, recenter) => {
+                latInput.value = lat;
+                lngInput.value = lng;
+                latInput.classList.add('input_filled');
+                lngInput.classList.add('input_filled');
+                if (marker) {
+                    marker.setLatLng([lat, lng]);
+                } else {
+                    marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+                    marker.on('dragend', () => {
+                        const position = marker.getLatLng();
+                        setPosition(position.lat, position.lng, false);
+                    });
+                }
+                if (recenter) {
+                    map.setView([lat, lng], map.getZoom() < 15 ? 15 : map.getZoom());
+                }
+            };
+            if (marker) {
+                marker.on('dragend', () => {
+                    const position = marker.getLatLng();
+                    setPosition(position.lat, position.lng, false);
+                });
+            }
+            map.on('click', (e) => {
+                setPosition(e.latlng.lat, e.latlng.lng, false);
+            });
+            const onCoordsInput = () => {
+                const lat = parseFloat(latInput.value);
+                const lng = parseFloat(lngInput.value);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    setPosition(lat, lng, true);
+                }
+            };
+            latInput.addEventListener('change', onCoordsInput);
+            lngInput.addEventListener('change', onCoordsInput);
+            setTimeout(() => map.invalidateSize(), 200);
         };
         const UUpdate = async (entityId) => {
             const updateButton = document.getElementById('update-changes');
             const $value = {
               // @ts-ignore
               ruc: document.getElementById('entity-ruc'),
+              // @ts-ignore
+              email: document.getElementById('entity-email'),
               // @ts-ignore
               status: document.getElementById('entity-state'),
               // @ts-ignore
@@ -532,16 +977,44 @@ export class Customers {
               // @ts-ignore
               routine: document.getElementById('entity-routine'),
               qrstatic: document.getElementById('entity-qr-static'),
+              personalstatic: document.getElementById('entity-personal-static'),
               reqNroVisitEmer: document.getElementById('entity-required-visitemer'),
               reqNroVehicle: document.getElementById('entity-required-vehicular'),
               reqNroReport: document.getElementById('entity-required-report'),
               reqNroRoutine: document.getElementById('entity-required-routine'),
+              locationEnabled: document.getElementById('entity-location-enabled'),
+              latitude: document.getElementById('entity-latitude'),
+              longitude: document.getElementById('entity-longitude'),
+              locationRadius: document.getElementById('entity-location-radius'),
+              locationZoom: document.getElementById('entity-location-zoom'),
               licenseType: document.getElementById('license-type'),
           };
             updateButton.addEventListener('click', () => {
-              let raw = JSON.stringify({
+              if (faceMarcationsEnabled) {
+                const locationRadiusValue = parseFloat($value.locationRadius.value);
+                if ($value.locationEnabled.checked && !(locationRadiusValue > 0 && locationRadiusValue <= 60)) {
+                  alert('El radio de ubicación debe ser un número mayor a 0 y menor o igual a 60');
+                  return;
+                }
+              }
+
+              const emails = $value.email.value.split(/[,;]/).map(e => e.trim()).filter(e => e !== "");
+              if (emails.length > 2) {
+                  alert("Se permiten máximo 2 correos electrónicos.");
+                  return;
+              }
+              const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+              for (const email of emails) {
+                  if (!emailRegex.test(email)) {
+                      alert(`Formato de correo inválido: ${email}`);
+                      return;
+                  }
+              }
+
+              const payload = {
                   // @ts-ignore
-                  "ruc": `${$value.ruc.value}`,
+                  "ruc": `${$value.ruc.value.trim()}`,
+                  "email": `${emails.join(',')}`,
                   "state": {
                       "id": `${$value.status?.dataset.optionid}`
                   },
@@ -549,12 +1022,29 @@ export class Customers {
                   "permitVehicular": `${$value.vehicular.checked ? true : false}`,
                   "permitRoutine": `${$value.routine.checked ? true : false}`,
                   'permitVisitStatic': `${$value.qrstatic.checked ? true : false}`,
+                  'permitPersonalStatic': `${$value.personalstatic.checked ? true : false}`,
                   'reqNroVisitEmer': `${$value.reqNroVisitEmer.value ?? 0}`,
                   'reqNroVehicle': `${$value.reqNroVehicle.value ?? 0}`,
                   'reqNroReport': `${$value.reqNroReport.value ?? 0}`,
                   'reqNroRoutine': `${$value.reqNroRoutine.value ?? 0}`,
                   'licenseType': `${$value.licenseType.value ?? 'STANDARD'}`,
-              });
+              };
+              if (faceMarcationsEnabled) {
+                payload.locationEnabled = `${$value.locationEnabled.checked ? true : false}`;
+                if ($value.latitude.value !== '') {
+                    payload.latitude = `${$value.latitude.value}`;
+                }
+                if ($value.longitude.value !== '') {
+                    payload.longitude = `${$value.longitude.value}`;
+                }
+                if ($value.locationRadius.value !== '') {
+                    payload.locationRadius = `${$value.locationRadius.value}`;
+                }
+                if ($value.locationZoom.value !== '') {
+                    payload.zoomLevel = `${$value.locationZoom.value}`;
+                }
+              }
+              const raw = JSON.stringify(payload);
               update(raw);
             });
             const update = (raw) => {

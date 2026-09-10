@@ -1,4 +1,5 @@
 import { visitToStimate } from "../tools.js";
+import { exportNetGuardStatisticalReport } from "./statisticalReport.js";
 
 export const exportVisitPdf = (ar, start, end) => {
     // @ts-ignore
@@ -263,6 +264,18 @@ const splitText = (doc, field, lMargin, rMargin, pdfInMM) => {
 }
 
 export const generarReportVisitXls = async (conditions, visits) => {
+    const statisticalRows = await visitToStimate(conditions, visits);
+    return exportNetGuardStatisticalReport({
+        title: 'REPORTE DE INGRESO DE PERSONAS (VISITAS EMERGENTES)',
+        filename: 'Cumplimiento_Visita.xlsx',
+        conditions,
+        rows: statisticalRows.map((user) => ({ customer: user.customer, user: `[${user.username}] ${user.name}`, required: user.requerido, completed: user.visits, compliance: user.cumplimiento })),
+        glossary: [
+            { term: 'Requeridos', definition: 'Cantidad de ingresos emergentes esperados para el usuario durante el período seleccionado.' },
+            { term: 'Realizados', definition: 'Cantidad de ingresos emergentes registrados por el usuario durante el período seleccionado.' },
+            { term: 'Cumplimiento', definition: 'Porcentaje calculado por NetGuard: realizados / requeridos.' }
+        ]
+    });
     // @ts-ignore
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Personal");

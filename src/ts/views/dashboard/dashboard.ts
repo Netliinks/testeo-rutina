@@ -172,7 +172,7 @@ export class Dashboard implements NDashbd.IRender {
 
     private async renderlastNotes(): Promise<void> {
         async function getNotes() {
-            let url: string = 'https://dev-backend-rutina.netliinks.com:443/rest/entities/Note?fetchPlan=full&&limit=5&&offset=0'
+            let url: string = 'https://backend.netliinks.com:443/rest/entities/Note?fetchPlan=full&&limit=5&&offset=0'
             return await getData(url)
         }
 

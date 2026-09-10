@@ -1,4 +1,5 @@
 import { reportToStimate } from "../tools.js";
+import { exportNetGuardStatisticalReport } from "./statisticalReport.js";
 
 //import {generateFile } from "../tools";
 export const exportReportPdf = (ar, start, end) => {
@@ -230,6 +231,18 @@ const newDataBlock = (array, index) => {
 }
 
 export const generarReporteXls = async (conditions, reports) => {
+    const statisticalRows = await reportToStimate(conditions, reports);
+    return exportNetGuardStatisticalReport({
+        title: 'REPORTE DE INGRESO DE CONSIGNAS (REPORTES)',
+        filename: 'Cumplimiento_Reporte.xlsx',
+        conditions,
+        rows: statisticalRows.map((user) => ({ customer: user.customer, user: `[${user.username}] ${user.name}`, required: user.requerido, completed: user.reports, compliance: user.cumplimiento })),
+        glossary: [
+            { term: 'Requeridos', definition: 'Cantidad de consignas esperadas para el usuario durante el período seleccionado.' },
+            { term: 'Realizados', definition: 'Cantidad de consignas registradas durante el período seleccionado.' },
+            { term: 'Cumplimiento', definition: 'Porcentaje calculado por NetGuard: realizados / requeridos.' }
+        ]
+    });
     // @ts-ignore
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Reporte");

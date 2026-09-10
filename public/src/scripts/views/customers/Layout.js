@@ -22,6 +22,11 @@ export const tableLayout = `
           id="new-entity">
           <i class="fa-solid fa-add"></i>
         </button>
+        <button
+          class="datatable_button add_user"
+          id="import-emails">
+          <i class="fa-solid fa-file-import"></i>
+        </button>
       </div>
     </div>
 
@@ -52,7 +57,11 @@ export const tableLayout = `
         </span></th>
 
         <th><span data-type="qrstatic">
-            QR Estático <i class="fa-regular fa-filter"></i>
+            QR Visita <i class="fa-regular fa-filter"></i>
+        </span></th>
+
+        <th><span data-type="qrstatic">
+            QR Personal <i class="fa-regular fa-filter"></i>
         </span></th>
 
         <th><span data-type="license">
@@ -105,3 +114,62 @@ export const UIContact = `
   </div>
   </div>
 `;
+export const UIImport = `
+  <div class="dialog_content" id="dialog-content">
+  <div class="dialog">
+      <div class="dialog_container padding_8">
+          <div class="dialog_header">
+              <h2>Importar Correos</h2>
+          </div>
+
+          <div class="dialog_message padding_8">
+            <p>Seleccione un archivo CSV para actualizar los correos de los clientes.</p>
+            <br>
+            <button class="btn btn_primary" id="download-template">
+                <i class="fa-solid fa-download"></i> &nbsp; Descargar Plantilla
+            </button>
+            <br><br>
+            <div class="material_input">
+              <input type="file" id="file-input" accept=".csv" class="input_filled">
+            </div>
+          </div>
+
+          <div class="dialog_footer">
+              <button class="btn btn_primary" id="cancel">Cerrar</button>
+              <button class="btn btn_danger" id="process-import">Importar</button>
+          </div>
+      </div>
+  </div>
+  </div>
+`;
+
+export const UIProgress = `
+  <div class="dialog_content" id="dialog-progress">
+    <div class="dialog">
+        <div class="dialog_container padding_8">
+            <div class="dialog_header">
+                <h2 id="progress-title">Procesando...</h2>
+            </div>
+            <div class="dialog_message padding_8">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span id="progress-subtitle" style="font-size: 13px; font-weight: 600; color: #64748b;">Iniciando...</span>
+                    <span id="progress-text" style="font-size: 12px; color: #94a3b8;">0%</span>
+                </div>
+                <div id="progress-container" style="width: 100%; background: #eee; border-radius: 5px; overflow: hidden; margin-bottom: 5px;">
+                    <div id="progress-bar" style="width: 0%; height: 20px; background: #007bff; transition: width 0.3s;"></div>
+                </div>
+                <p id="progress-message" style="margin: 4px 0 10px 0; font-size: 13px; color: #334155; font-weight: 500; text-align: center;"></p>
+                <div id="error-container" style="display: none; color: red; margin-top: 10px; border: 1px solid red; padding: 10px; border-radius: 5px; max-height: 150px; overflow-y: scroll; white-space: pre-wrap; font-family: monospace; font-size: 12px; scrollbar-width: thin; scrollbar-color: #f87171 transparent;">
+                    <strong>Detalles:</strong><br>
+                    <span id="error-message" style="font-weight: bold;"></span>
+                    <br><span id="error-cause"></span>
+                </div>
+            </div>
+            <div class="dialog_footer" id="progress-footer" style="display: none;">
+                <button class="btn btn_primary" id="close-progress">Cerrar</button>
+            </div>
+        </div>
+    </div>
+  </div>
+`;
+

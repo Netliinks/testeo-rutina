@@ -13,9 +13,11 @@ import { Config } from "../Configs.js";
 import { ChangePassword } from "./changePassword/changePassword.js";
 import { CloseDialog } from "../tools.js";
 import { FirebaseCtrl } from "../services/FirebaseCtrl.js";
+import { loadFeatureFlags } from "../services/featureFlags.js";
 import { Events } from "../views/binnacle/Events/EventsView.js";
 import { Notes } from "../views/binnacle/notes/NotesView.js";
 import { AlertsRegisters } from "./alert/alertpage.js";
+import { TaskManager } from "../TaskManager.js";
 let infoPage = {
     count: 0,
     counter: 10,
@@ -40,6 +42,7 @@ export class RenderApplicationUI {
       this.topbar.style.display = 'flex';
       this.topbar.style.justifyContent = 'space-between';
       await this.renderTopbar();
+      await loadFeatureFlags();
       new Sidebar().render();
       Config.currentScreen = "AlertsRegisters";
       new AlertsRegisters().render([], [], 0, 0, 0, 0);
@@ -76,11 +79,227 @@ export class RenderApplicationUI {
                 </p>
                 <p id="routine-message-topbar" class="customer">Ninguna</p>
             </div>
+            <div id="tasks-indicator" style="margin-left: 15px; display: none; align-items: center; cursor: pointer; position: relative;">
+                <div style="background: #3b82f6; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;" id="tasks-count">0</div>
+                <i class="fa-solid fa-spinner" id="tasks-icon" style="margin-left: 5px; color: #3b82f6; font-size: 16px;"></i>
+                <div id="tasks-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 300px; z-index: 1000; padding: 10px; margin-top: 5px;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;">
+                        <span style="font-weight: bold; font-size: 14px;">Tareas en segundo plano</span>
+                        <button id="close-tasks" style="background: none; border: none; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div id="tasks-list" style="max-height: 300px; overflow-y: auto;"></div>
+                </div>
+            </div>
         </div>
         <div id="menuAlert"></div>
          
     `;
     this.topbar.innerHTML = topbar;
+
+    const tasksIndicator = document.getElementById('tasks-indicator');
+    const tasksCount = document.getElementById('tasks-count');
+    const tasksIcon = document.getElementById('tasks-icon');
+    const tasksDropdown = document.getElementById('tasks-dropdown');
+    const tasksList = document.getElementById('tasks-list');
+    const closeTasks = document.getElementById('close-tasks');
+
+    tasksIndicator.addEventListener('click', (e) => {
+        e.stopPropagation();
+        tasksDropdown.style.display = tasksDropdown.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.addEventListener('click', () => {
+        tasksDropdown.style.display = 'none';
+    });
+
+    tasksDropdown.addEventListener('click', (e) => e.stopPropagation());
+    closeTasks.addEventListener('click', () => tasksDropdown.style.display = 'none');
+
+    window.addEventListener('taskUpdate', (e) => {
+        const tasks = e.detail;
+        const runningTasks = tasks.filter(t => t.status === 'running');
+
+        if (tasks.length > 0) {
+            tasksIndicator.style.display = 'flex';
+            tasksCount.innerText = runningTasks.length;
+
+            if (runningTasks.length > 0) {
+                tasksIcon.classList.add('fa-spin');
+                tasksIcon.classList.replace('fa-list-check', 'fa-spinner');
+            } else {
+                tasksIcon.classList.remove('fa-spin');
+                tasksIcon.classList.replace('fa-spinner', 'fa-list-check');
+            }
+
+            tasksList.innerHTML = tasks.map(task => {
+                const hasErrors = task.errors.length > 0;
+                const hasWarnings = task.warnings.length > 0;
+
+                let statusIcon = '';
+                if (hasErrors) {
+                    statusIcon = `<i class="fa-solid fa-circle-xmark" style="color: #ef4444; margin-left: 5px;" title="Tiene errores"></i>`;
+                } else if (hasWarnings) {
+                    statusIcon = `<i class="fa-solid fa-circle-exclamation" style="color: #f59e0b; margin-left: 5px;" title="Tiene observaciones"></i>`;
+                }
+
+                let barColor = '#3b82f6'; // running
+                if (task.status === 'finished') {
+                    if (hasErrors) barColor = '#ef4444';
+                    else if (hasWarnings) barColor = '#f59e0b';
+                    else barColor = '#10b981';
+                } else if (task.status === 'cancelled') {
+                    barColor = '#64748b';
+                }
+
+                return `
+                <div style="margin-bottom: 15px; border-bottom: 1px solid #f8fafc; padding-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-weight: 500; font-size: 13px;">${task.title} ${statusIcon}</span>
+                        <span style="font-size: 11px; color: #64748b;">${task.progress}%</span>
+                    </div>
+                    <div style="background: #f1f5f9; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 5px;">
+                        <div style="background: ${barColor}; width: ${task.progress}%; height: 100%;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <span style="font-size: 11px; color: #64748b;">${task.message}</span>
+                        ${task.status === 'running' ? `<button onclick="window.cancelBackgroundTask('${task.id}')" style="background: none; border: none; color: #ef4444; font-size: 11px; cursor: pointer;">Cancelar</button>` : `<button onclick="window.removeBackgroundTask('${task.id}')" style="background: none; border: none; color: #64748b; font-size: 11px; cursor: pointer;">Cerrar</button>`}
+                    </div>
+                    <button onclick="window.viewBackgroundTaskDetails('${task.id}')" style="width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px; font-size: 10px; color: #475569; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-list-ul" style="margin-right: 5px;"></i> Ver detalles y bitácora
+                    </button>
+                </div>
+            `;}).join('');
+
+            // If a task modal is open, refresh it in real-time
+            if (window.currentViewingTaskId) {
+                window.viewBackgroundTaskDetails(window.currentViewingTaskId, true);
+            }
+        } else {
+            tasksIndicator.style.display = 'none';
+        }
+    });
+
+    window.cancelBackgroundTask = (id) => TaskManager.cancelTask(id);
+    window.removeBackgroundTask = (id) => TaskManager.removeTask(id);
+
+    // Global listener to prevent accidental page reloads/closings when tasks are running
+    window.addEventListener('beforeunload', (e) => {
+        const activeTask = Config.backgroundTasks.find(t => t.status === 'running');
+        if (activeTask) {
+            e.preventDefault();
+            e.returnValue = ''; // Required for some browsers to show the confirmation dialog
+        }
+    });
+
+    window.viewBackgroundTaskDetails = (id, isRefresh = false) => {
+        const task = Config.backgroundTasks.find(t => t.id === id);
+        if (!task) {
+            if (isRefresh) window.currentViewingTaskId = null;
+            return;
+        }
+
+        if (!isRefresh) window.currentViewingTaskId = id;
+
+        const dialogContainer = document.getElementById('app-dialogs');
+
+        const modalHtml = `
+            <div class="dialog_content" id="dialog-task-details">
+                <div class="dialog" style="width: 700px; max-width: 95%; border-radius: 12px; overflow: hidden;">
+                    <div class="dialog_container padding_16">
+                        <div class="dialog_header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
+                            <h2 style="margin: 0; font-size: 1.25rem;">Bitácora: ${task.title}</h2>
+                            <button id="close-task-modal" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                        </div>
+                        <div class="dialog_message">
+                            <div style="display: flex; gap: 20px; margin-bottom: 15px; font-size: 13px;">
+                                <div><b>Estado:</b> ${task.status === 'running' ? '<span style="color:#3b82f6">En ejecución...</span>' : (task.status === 'finished' ? '<span style="color:#10b981">Finalizado</span>' : '<span style="color:#ef4444">Cancelado</span>')}</div>
+                                <div><b>Progreso:</b> ${task.progress}%</div>
+                                <div><b>Items:</b> ${task.currentItem} / ${task.totalItems}</div>
+                            </div>
+
+                            <div style="margin-bottom: 20px;">
+                                <h3 style="font-size: 14px; color: #3b82f6; margin-bottom: 8px;"><i class="fa-solid fa-clock-rotate-left"></i> Historial de Ejecución (${task.logs.length})</h3>
+                                <div id="task-logs-container" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; height: 300px; overflow-y: auto; font-size: 12px; font-family: monospace;">
+                                    ${task.logs.length > 0 ? task.logs.map(l => {
+                                        let color = '#475569';
+                                        let icon = 'fa-info-circle';
+                                        if (l.type === 'success') { color = '#10b981'; icon = 'fa-check-circle'; }
+                                        if (l.type === 'warning') { color = '#f59e0b'; icon = 'fa-exclamation-triangle'; }
+                                        if (l.type === 'error') { color = '#ef4444'; icon = 'fa-times-circle'; }
+
+                                        return `<div style="padding: 6px 0; border-bottom: 1px solid #f1f5f9; color: ${color}; display: flex; align-items: flex-start;">
+                                            <span style="min-width: 70px; color: #94a3b8; font-size: 10px;">[${l.timestamp}]</span>
+                                            <i class="fa-solid ${icon}" style="margin: 3px 8px 0 5px; font-size: 11px;"></i>
+                                            <span style="white-space: pre-wrap;">${l.message}</span>
+                                        </div>`;
+                                    }).join('') : '<p style="color: #94a3b8; text-align: center;">Sin registros en la bitácora</p>'}
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <h3 style="font-size: 14px; color: #f59e0b; margin-bottom: 8px;"><i class="fa-solid fa-circle-exclamation"></i> Resumen de Observaciones (${task.warnings.length})</h3>
+                                    <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 10px; height: 200px; overflow-y: auto; font-size: 12px; white-space: pre-wrap;">
+                                        ${task.warnings.length > 0 ? task.warnings.map(w => `<div style="padding: 5px 0; border-bottom: 1px solid #fef3c7;">${w}</div>`).join('') : '<p style="color: #94a3b8; text-align: center;">Sin observaciones</p>'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 style="font-size: 14px; color: #ef4444; margin-bottom: 8px;"><i class="fa-solid fa-circle-xmark"></i> Errores Críticos (${task.errors.length})</h3>
+                                    <div style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 10px; height: 250px; overflow-y: auto; font-size: 12px; white-space: pre-wrap;">
+                                        ${task.errors.length > 0 ? task.errors.map(e => `<div style="padding: 5px 0; border-bottom: 1px solid #fee2e2; color: #991b1b;">${e}</div>`).join('') : '<p style="color: #94a3b8; text-align: center;">Sin errores</p>'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dialog_footer" style="margin-top: 20px; text-align: right;">
+                            <button class="btn btn_primary" id="btn-close-task-modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        if (isRefresh) {
+            const currentModal = document.getElementById('dialog-task-details');
+            if (currentModal) {
+                const logContainer = document.getElementById('task-logs-container');
+                const scrollPos = logContainer ? logContainer.scrollTop : 0;
+                const isAtBottom = logContainer ? (logContainer.scrollHeight - logContainer.scrollTop <= logContainer.clientHeight + 50) : true;
+
+                // Replace the content directly
+                currentModal.innerHTML = modalHtml.replace('<div class="dialog_content" id="dialog-task-details">', '').replace(/<\/div>$/, '');
+
+                const newLogContainer = document.getElementById('task-logs-container');
+                if (newLogContainer) {
+                    if (isAtBottom) {
+                        newLogContainer.scrollTop = newLogContainer.scrollHeight;
+                    } else {
+                        newLogContainer.scrollTop = scrollPos;
+                    }
+                }
+            } else {
+                // If the modal was closed but we are still trying to refresh, reset the flag
+                window.currentViewingTaskId = null;
+            }
+        } else {
+            dialogContainer.style.display = 'block';
+            dialogContainer.innerHTML = modalHtml;
+        }
+
+        const closeModal = () => {
+            window.currentViewingTaskId = null;
+            new CloseDialog().x(document.getElementById('dialog-task-details'));
+            if (task.status !== 'running') {
+                TaskManager.removeTask(task.id);
+            }
+        };
+
+        const closeBtnX = document.getElementById('close-task-modal');
+        const closeBtnFooter = document.getElementById('btn-close-task-modal');
+        if (closeBtnX) closeBtnX.onclick = closeModal;
+        if (closeBtnFooter) closeBtnFooter.onclick = closeModal;
+    };
+
     const divMenu = document.getElementById('menuAlert');
     const defaultMenu = () => {
         const userMenu =  `
@@ -202,8 +421,17 @@ export class RenderApplicationUI {
             });
         });
         const options = document.getElementById('settings-button');
+        const settingOptions = document.getElementById('user-settings');
+        if (infoPage.closeSettingsOnOutsideClick) {
+            document.removeEventListener('pointerdown', infoPage.closeSettingsOnOutsideClick);
+        }
+        infoPage.closeSettingsOnOutsideClick = (event) => {
+            if (!options.contains(event.target) && !settingOptions.contains(event.target)) {
+                settingOptions.classList.remove('user_settings_visible');
+            }
+        };
+        document.addEventListener('pointerdown', infoPage.closeSettingsOnOutsideClick);
         options.addEventListener('click', () => {
-            const settingOptions = document.getElementById('user-settings');
             const changePassword = document.getElementById('change-password');
             const changeCustomer = document.getElementById('change-customer');
             const logoutButton = document.getElementById('logout-button');
@@ -233,11 +461,23 @@ export class RenderApplicationUI {
                 //new CloseDialog().x(settingOptions);
             });
             changeCustomer.addEventListener("click", () => {
+                const activeTask = Config.backgroundTasks.find(t => t.status === 'running');
+                if (activeTask) {
+                    if (!confirm("Hay un proceso de generación de reportes en curso. Si cambias de empresa ahora, el proceso se cancelará. ¿Deseas continuar?")) {
+                        return;
+                    }
+                }
                 Config.currentScreen = null;
                 new SelectCustomer().render(0, 1, '');
                 //new CloseDialog().x(settingOptions);
             });
             logoutButton.addEventListener("click", () => {
+                const activeTask = Config.backgroundTasks.find(t => t.status === 'running');
+                if (activeTask) {
+                    if (!confirm("Hay un proceso de generación de reportes en curso. Si cierras sesión ahora, el proceso se cancelará. ¿Deseas continuar?")) {
+                        return;
+                    }
+                }
                 new SignIn().signOut();
             });
         });

@@ -479,25 +479,6 @@ export const getDetails2 = async (param, value, param2, value2, table) => {
     return data
 }
 
-export const getDetailsSimple = async (param, operator, value, table) => {
-    const customerId = localStorage.getItem('customer_id');
-    let raw = JSON.stringify({
-        "filter": {
-            "conditions": [
-                {
-                    "property": `${param}`,
-                    "operator": `${operator}`,
-                    "value": `${value}`
-                },
-            ]
-        },
-        sort: "createdDate", 
-        //fetchPlan: 'full',
-    });
-    let data = await getFilterEntityData(`${table}`, raw);
-    return data
-}
-
 export const calculateGestionMarcation = (assistControl) => {
     let objDate = {}
     let arrayAssist= []
@@ -664,7 +645,7 @@ export const getRoutinesTopBar =async(id)=> {
         "filter": {
             "conditions": [
                 {
-                    "property": "routineRelation.business.id",
+                    "property": "business.id",
                     "operator": "=",
                     "value": `${id}`
                 },
@@ -677,7 +658,7 @@ export const getRoutinesTopBar =async(id)=> {
         },
         sort: "-createdDate",
     });
-    return await getFilterEntityCount("RoutineMarcation", raw);
+    return await getFilterEntityCount("RoutineRegister", raw);
 
 }
 
@@ -858,6 +839,11 @@ export const inputSelectThemeAudit = async (selectId, currentSelect, _inputEleme
     select.addEventListener('click', () => {
         inputParent.classList.toggle('select_active');
     });
+    document.addEventListener('pointerdown', (event) => {
+        if (!inputParent.contains(event.target)) {
+            inputParent.classList.remove('select_active');
+        }
+    });
     options.forEach((option) => {
         option.addEventListener('click', () => {
             select.value = option.innerText;
@@ -868,16 +854,8 @@ export const inputSelectThemeAudit = async (selectId, currentSelect, _inputEleme
             //_inputElements.entityElement.removeAttribute('data-optionid');
             //service.removeAttribute('value');
             //service.removeAttribute('data-optionid');
-            if (option.getAttribute('value') === "RUTINA DE GUARDIA" || option.getAttribute('value') === "RUTINA DE CONSOLA") {
-                //console.log("es cliente")
-                _inputElements.divAllCustomer.style.display = "none";
-                _inputElements.divCustomer.style.display = "none";
-            }
-            else {
-                //console.log("no es cliente")
-                _inputElements.divAllCustomer.style.display = "block";
-                _inputElements.divCustomer.style.display = "block";//"flex";
-            }
+            _inputElements.divAllCustomer.style.display = "block";
+            _inputElements.divCustomer.style.display = "grid";
         });
     });
 };
@@ -1266,46 +1244,48 @@ function esMenorOIgualA5Minutos(timestamp, registerTime) {
     //const timestamp = 5 * 60 * 1000; // 5 minutos = 300000 ms
     return registerTime <= timestamp;
 }
-function calcularMarcacionesPorFrecuencia(inicio, fin, hEntrada, hSalida, frecuenciaMinutos) {
-    const fechaActual = new Date(inicio + 'T00:00:00');
-    const fechaLimite = new Date(fin + 'T00:00:00');
-    const todasLasMarcaciones = [];
+function calcularMarcacionesPorFrecuencia(inicio, fin, horaInicio, horaFin, frecuenciaMinutos, filtroHoraInicio = '00:00:00', filtroHoraFin = '23:59:59') {
+    const rangoInicio = new Date(`${inicio}T${filtroHoraInicio}`);
+    const rangoFin = new Date(`${fin}T${filtroHoraFin}`);
+    const frecuencia = Number(frecuenciaMinutos);
+    const marcaciones = [];
+
+    if (Number.isNaN(rangoInicio.getTime()) || Number.isNaN(rangoFin.getTime()) || rangoInicio > rangoFin || frecuencia <= 0) {
+        return { detalle: marcaciones, totalEsperado: 0 };
+    }
+
+    const esTurnoNocturno = horaFin <= horaInicio;
+    const fechaActual = new Date(`${inicio}T00:00:00`);
+    const fechaLimite = new Date(`${fin}T00:00:00`);
+    if (esTurnoNocturno) {
+        fechaActual.setDate(fechaActual.getDate() - 1);
+    }
+
     while (fechaActual <= fechaLimite) {
-        let marcacionesDia = [];
-        const fechaBaseStr = fechaActual.toISOString().split('T')[0];
-        //console.log(`Generando marcaciones para el día: ${fechaBaseStr}`);
-
-        // Definir punto de inicio (Entrada) y punto final (Salida)
-        let mEntrada = new Date(`${fechaBaseStr}T${hEntrada}`);
-        let mSalida = new Date(`${fechaBaseStr}T${hSalida}`);
-
-        // Ajuste de turno nocturno: Si la salida es menor a la entrada, es el día siguiente
-        if (hSalida <= hEntrada) {
-            mSalida.setDate(mSalida.getDate() + 1);
+        const fechaBase = `${fechaActual.getFullYear()}-${String(fechaActual.getMonth() + 1).padStart(2, '0')}-${String(fechaActual.getDate()).padStart(2, '0')}`;
+        const inicioTurno = new Date(`${fechaBase}T${horaInicio}`);
+        const finTurno = new Date(`${fechaBase}T${horaFin}`);
+        if (esTurnoNocturno) {
+            finTurno.setDate(finTurno.getDate() + 1);
         }
 
-        // Generar marcaciones según la frecuencia dentro de esa jornada
-        let marcaIterada = new Date(mEntrada);
-        
-        while (marcaIterada < mSalida) { //<=
-            marcacionesDia.push({
-                fechaHora: new Date(marcaIterada), // Clonamos la fecha
-                display: marcaIterada.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }),
-                count: 0 // Contador inicializado en 0
-            });
-
-            // Sumar la frecuencia en minutos
-            marcaIterada.setMinutes(marcaIterada.getMinutes() + frecuenciaMinutos);
+        for (let inicioVentana = new Date(inicioTurno); inicioVentana < finTurno; inicioVentana.setMinutes(inicioVentana.getMinutes() + frecuencia)) {
+            const finVentana = new Date(Math.min(inicioVentana.getTime() + (frecuencia * 60 * 1000), finTurno.getTime()));
+            if (finVentana > rangoInicio && inicioVentana <= rangoFin) {
+                marcaciones.push({
+                    fechaHora: new Date(inicioVentana),
+                    fechaHoraFin: finVentana,
+                    count: 0
+                });
+            }
         }
 
-        // Avanzar al siguiente día calendario
         fechaActual.setDate(fechaActual.getDate() + 1);
-        todasLasMarcaciones.push(marcacionesDia);
     }
 
     return {
-        detalle: todasLasMarcaciones,
-        totalEsperado: todasLasMarcaciones.flat().length
+        detalle: marcaciones,
+        totalEsperado: marcaciones.length
     };
 }
 const generarRangosTiempo = (inicio, fin, intervaloMinutos) => {
@@ -1429,13 +1409,13 @@ export const auditResponse = (conditions) => {
                         }
                     }
                 });
-                const cumplimiento = ((variables.totalAlertasRespondidasATiempo / conditions.registersNot.length/*variables.totalAlertasGeneradas*/) * 100).toFixed(2);
+                const cumplimiento = ((variables.totalAlertasRespondidasATiempo / conditions.registersNot.length) * 100).toFixed(2);
                 const averageDate = averageTime(averageConsole);
                 const obj = {
                     "Usuario": `${objects[0]['consoleUserId']['firstName'] ?? ''} ${objects[0]['consoleUserId']['lastName'] ?? ''} ${objects[0]['consoleUserId']['secondLastName'] ?? ''}`,
                     //"Total Intentos Marcacion": variables.totalIntentosMarcacion,
                     "Total Marcaciones Hechas": variables.totalMarcacionesHechas,
-                    "Total Alertas Generadas": conditions.registersNot.length,//variables.totalAlertasGeneradas,
+                    "Total Alertas Generadas": conditions.registersNot.length,
                     //"Total Alertas No Marcadas": variables.totalAlertasNoMarcadas,
                     "Total Alertas Respondidas": variables.totalAlertasRespondidas,
                     "Total Alertas Respondidas A Tiempo": variables.totalAlertasRespondidasATiempo,
@@ -1475,7 +1455,15 @@ export const auditResponse = (conditions) => {
 
                             const exisRoutineScheduleG = routineScheduleG.some(data => data.id === element2['routineSchedule']['id']);
                             if (!exisRoutineScheduleG) {
-                                const esperadas = calcularMarcacionesPorFrecuencia(conditions.filterStartDate, conditions.filterEndDate, element2['routineSchedule']['scheduleTime'], element2['routineSchedule']['scheduleTimeEnd'], element2['routineSchedule']['frequency']);
+                                const esperadas = calcularMarcacionesPorFrecuencia(
+                                    conditions.filterStartDate,
+                                    conditions.filterEndDate,
+                                    element2['routineSchedule']['scheduleTime'],
+                                    element2['routineSchedule']['scheduleTimeEnd'],
+                                    element2['routineSchedule']['frequency'],
+                                    conditions.filterStartTime,
+                                    conditions.filterEndTime
+                                );
                                 routineScheduleG.push({...element2["routineSchedule"], "rangos": esperadas.detalle});
                                 variables.totalEsperadas += esperadas.totalEsperado;
                             }
@@ -1491,32 +1479,26 @@ export const auditResponse = (conditions) => {
                                 variables.totalRealizadas += 1;
                                 const creationDateTime = new Date(`${element2["creationDate"]}T${element2["creationTime"]}`);
                                 const indice = routineScheduleG.findIndex(data => data.id === element2['routineSchedule']['id']);
-                                for (let r = 0; r < routineScheduleG[indice].rangos.length; r++) {
-                                    let horaRango = routineScheduleG[indice].rangos[r];
-                                    for (let m = 0; m < horaRango.length; m++) {
-                                        if (horaRango[m + 1] != undefined) {
-                                            if((creationDateTime.getTime() >= horaRango[m].fechaHora.getTime()) && (creationDateTime.getTime() < horaRango[m + 1].fechaHora.getTime())) {
-                                                if (horaRango[m].count == 0) {
-                                                    // si tiene marcacion en ese rango de tiempo
-                                                    horaRango[m].count += 1;
-                                                    variables.totalValidas += 1;
-                                                }
-                                                break;
-                                            }
-                                        }
-                                    }
+                                const ventana = routineScheduleG[indice]?.rangos.find((rango) => (
+                                    creationDateTime >= rango.fechaHora && creationDateTime < rango.fechaHoraFin
+                                ));
+                                if (ventana && ventana.count === 0) {
+                                    ventana.count += 1;
+                                    variables.totalValidas += 1;
                                 }
                             }
                         }
                     });
                 }
                 const existUser = audits.some(data => data.id === routineUser['user']['id']);
+                const company = routineUser['customer']?.name ?? routineUser['routine']?.customer?.name ?? '';
                 if (!existUser) {
                     const ponderado = ((variables.totalValidas / variables.totalEsperadas) * 100).toFixed(2);
                     audits.push({
                         id: routineUser['user']['id'],
                         name: `${routineUser['user']['firstName'] ?? ''} ${routineUser['user']['lastName'] ?? ''} ${routineUser['user']['secondLastName'] ?? ''}`,
                         username: routineUser['user']['username'],
+                        empresa: company,
                         totalRutinas: variables.totalRutinas,
                         totalUbicaciones: variables.totalUbicaciones,
                         totalRealizadas: variables.totalRealizadas,
@@ -1527,6 +1509,9 @@ export const auditResponse = (conditions) => {
                 }else{
                     audits.map(data => {
                         if(data.id == routineUser['user']['id']){
+                            const companies = data.empresa.split(' | ').filter(Boolean);
+                            if (company && !companies.includes(company)) companies.push(company);
+                            data.empresa = companies.join(' | ');
                             data.totalRutinas += variables.totalRutinas;
                             data.totalUbicaciones += variables.totalUbicaciones;
                             data.totalRealizadas += variables.totalRealizadas;

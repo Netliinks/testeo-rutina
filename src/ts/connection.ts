@@ -9,7 +9,7 @@ import { InterfaceElement, TokenGenerator } from "./types.js";
 export const connect = (mail: string, password: string): void => {
   const generate = async (): TokenGenerator => {
     const URL: string =
-      'https://dev-backend-rutina.netliinks.com:443/oauth/token'
+      'https://backend.netliinks.com:443/oauth/token'
     const ReqOptions: {} = {
       method: 'POST',
       body: `grant_type=password&username=${mail}&password=${password}`,

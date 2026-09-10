@@ -152,7 +152,7 @@ export class Dashboard {
     }
     async renderlastNotes() {
         async function getNotes() {
-            //let url = 'https://dev-backend-rutina.netliinks.com:443/rest/entities/Note?fetchPlan=full&&limit=5&&offset=0';
+            //let url = 'https://backend.netliinks.com:443/rest/entities/Note?fetchPlan=full&&limit=5&&offset=0';
             //return await getData(url);
             const customerId = localStorage.getItem('customer_id');
             /*const notesRaw = await getEntitiesData('Note');

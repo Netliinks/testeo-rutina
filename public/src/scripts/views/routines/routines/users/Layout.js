@@ -21,6 +21,12 @@ export const tableLayout = `
             <i class="fa-solid fa-search"></i>
         </button>
         <button
+          class="datatable_button"
+          id="export-routine-users"
+          title="Descargar guardias asignados en CSV">
+          <i class="fa-solid fa-file-csv"></i>
+        </button>
+        <button
           class="datatable_button add_location"
           id="new-entity">
           <i class="fa-solid fa-add"></i>
