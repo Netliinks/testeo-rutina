@@ -57,11 +57,11 @@ export const tableLayout = `
         </span></th>
 
         <th><span data-type="qrstatic">
-            QR Visita <i class="fa-regular fa-filter"></i>
+            QR Visita Fijo <i class="fa-regular fa-filter"></i>
         </span></th>
 
-        <th><span data-type="qrstatic">
-            QR Personal <i class="fa-regular fa-filter"></i>
+        <th><span data-type="qrstaticpersonal">
+            QR Personal Fijo <i class="fa-regular fa-filter"></i>
         </span></th>
 
         <th><span data-type="license">

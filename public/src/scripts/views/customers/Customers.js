@@ -551,9 +551,6 @@ export class Customers {
                 <label><input type="checkbox" class="checkbox" id="entity-qr-static"> Permitir QR estático para visita</label>
             </div>
 
-            <div class="input_checkbox">
-                <label><input type="checkbox" class="checkbox" id="entity-personal-static"> Permitir QR estático para personal</label>
-            </div>
             <br>
 
             <div class="material_input">
@@ -626,7 +623,6 @@ export class Customers {
                     vehicular: document.getElementById('entity-vehicular'),
                     routine: document.getElementById('entity-routine'),
                     qrstatic: document.getElementById('entity-qr-static'),
-                    personalstatic: document.getElementById('entity-personal-static'),
                     reqNroVisitEmer: document.getElementById('entity-required-visitemer'),
                     reqNroVehicle: document.getElementById('entity-required-vehicular'),
                     reqNroReport: document.getElementById('entity-required-report'),
@@ -660,7 +656,6 @@ export class Customers {
                     "permitVehicular": `${inputsCollection.vehicular.checked ? true : false}`,
                     "permitRoutine": `${inputsCollection.routine.checked ? true : false}`,
                     'permitVisitStatic': `${inputsCollection.qrstatic.checked ? true : false}`,
-                    'permitPersonalStatic': `${inputsCollection.personalstatic.checked ? true : false}`,
                     'reqNroVisitEmer': `${inputsCollection.reqNroVisitEmer.value ?? 0}`,
                     'reqNroVehicle': `${inputsCollection.reqNroVehicle.value ?? 0}`,
                     'reqNroReport': `${inputsCollection.reqNroReport.value ?? 0}`,
@@ -866,11 +861,6 @@ export class Customers {
               checkboxQRStatic?.setAttribute('checked', 'true');
             }
 
-            const checkboxPersonalStatic = document.getElementById('entity-personal-static');
-            if (data?.permitPersonalStatic === true) {
-                checkboxPersonalStatic?.setAttribute('checked', 'true');
-            }
-
             const licenseType = document.getElementById('license-type');
             licenseType.value = data?.licenseType ?? 'STANDARD';
             inputObserver();
@@ -977,7 +967,6 @@ export class Customers {
               // @ts-ignore
               routine: document.getElementById('entity-routine'),
               qrstatic: document.getElementById('entity-qr-static'),
-              personalstatic: document.getElementById('entity-personal-static'),
               reqNroVisitEmer: document.getElementById('entity-required-visitemer'),
               reqNroVehicle: document.getElementById('entity-required-vehicular'),
               reqNroReport: document.getElementById('entity-required-report'),
@@ -1022,7 +1011,6 @@ export class Customers {
                   "permitVehicular": `${$value.vehicular.checked ? true : false}`,
                   "permitRoutine": `${$value.routine.checked ? true : false}`,
                   'permitVisitStatic': `${$value.qrstatic.checked ? true : false}`,
-                  'permitPersonalStatic': `${$value.personalstatic.checked ? true : false}`,
                   'reqNroVisitEmer': `${$value.reqNroVisitEmer.value ?? 0}`,
                   'reqNroVehicle': `${$value.reqNroVehicle.value ?? 0}`,
                   'reqNroReport': `${$value.reqNroReport.value ?? 0}`,

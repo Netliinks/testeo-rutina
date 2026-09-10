@@ -129,6 +129,8 @@ export class SelectCustomer {
                     <td>${customer?.permitMarcation ? 'Si' : 'No'}</td>
                     <td>${customer?.permitVehicular ? 'Si' : 'No'}</td>
                     <td>${customer?.permitRoutine ? 'Si' : 'No'}</td>
+                    <td>${customer?.permitVisitStatic ? 'Si' : 'No'}</td>
+                    <td>${customer?.permitPersonalStatic ? 'Si' : 'No'}</td>
                     <td>
                         <button class="button" id="entity-details" data-entityId="${customer.id}">
                             <i class="table_icon fa-regular fa-check"></i>

@@ -46,6 +46,14 @@ export const tableLayout = `
             Rutina <i class="fa-regular fa-filter"></i>
         </span></th>
 
+        <th><span data-type="qrstatic">
+            QR Visita Fijo <i class="fa-regular fa-filter"></i>
+        </span></th>
+
+        <th><span data-type="qrstaticpersonal">
+            QR Personal Fijo <i class="fa-regular fa-filter"></i>
+        </span></th>
+
         <th class="header_filled"></th>
 
       </tr></thead>
@@ -63,6 +71,8 @@ export const tableLayoutTemplate = `
 <tr>
     <td>Cargando</td>
     <th colspan="2"></th>
+    <td>Cargando</td>
+    <td>Cargando</td>
     <td>Cargando</td>
     <td>Cargando</td>
     <td>Cargando</td>
