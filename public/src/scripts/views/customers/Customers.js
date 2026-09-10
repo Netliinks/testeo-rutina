@@ -743,9 +743,6 @@ export class Customers {
                 <label><input type="checkbox" class="checkbox" id="entity-qr-static"> Permitir QR estático para visita</label>
             </div>
 
-            <div class="input_checkbox">
-                <label><input type="checkbox" class="checkbox" id="entity-personal-static"> Permitir QR estático para personal</label>
-            </div>
             <br>
 
              <div class="material_input">
