@@ -80,10 +80,6 @@ export const UIContentLayout = `
                   Importar
                 </button>
         */
-
-                /*<th class="thead_centered" width=120><span data-type="time">
-            Hora <i class="fa-regular fa-filter"></i>
-            </span></th>*/
 export const UIRightSidebar = `
 <div class="entity_editor" id="entity-editor">
 <div class="entity_editor_header">
@@ -174,6 +170,16 @@ export const UIRightSidebar = `
         <input type="text" id="ingress-guard-name" class="input_filled" readonly>
     </div>
     <br>
+    <div class="input_detail">
+        <label for="marking-start-document"><i class="fa-solid fa-book-blank"></i></label>
+        <input type="text" id="marking-start-document" class="input_filled" readonly>
+    </div>
+    <br>
+    <div class="input_detail">
+        <label for="marking-start-reference"><i class="fa-solid fa-hashtag"></i></label>
+        <input type="text" id="marking-start-reference" class="input_filled" readonly>
+    </div>
+    <br>
     <!-- End marking -->
     <h3>Salida</h3>
     <br>
@@ -196,6 +202,19 @@ export const UIRightSidebar = `
         <label for="egress-guard-name"><i class="fa-solid fa-user-police"></i></label>
         <input type="text" id="egress-guard-name" class="input_filled" readonly>
     </div>
+    <br>
+    <div class="input_detail">
+        <label for="marking-end-document"><i class="fa-solid fa-book-blank"></i></label>
+        <input type="text" id="marking-end-document" class="input_filled" readonly>
+    </div>
+    <br>
+    <div class="input_detail">
+        <label for="marking-end-reference"><i class="fa-solid fa-hashtag"></i></label>
+        <input type="text" id="marking-end-reference" class="input_filled" readonly>
+    </div>
+    <br>
+    <h3>Etiquetas</h3>
+    <div id="tags-container" class="tag" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
     <br>
     <h3>Galería</h3>
 

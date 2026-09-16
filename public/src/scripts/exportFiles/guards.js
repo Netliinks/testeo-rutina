@@ -1,3 +1,5 @@
+import { generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
+
 export const exportGuardPdf = (ar) => {
     let fecha = new Date(); //Fecha actual
     let mes = fecha.getMonth() + 1; //obteniendo mes
@@ -103,7 +105,7 @@ export const exportGuardCsv = (ar) => {
         };
         rows.push(obj);
     }
-    generateFile(rows, "Guardias", "csv");
+    generateFileSimpleCsv(rows, "Guardias", "csv");
 };
 export const exportGuardXls = (ar) => {
     let rows = [];
@@ -123,7 +125,7 @@ export const exportGuardXls = (ar) => {
         };
         rows.push(obj);
     }
-    generateFile(rows, "Guardias", "xls");
+    generateFileSimpleXls(rows, "Guardias", "xls");
 };
 const generateFile = (ar, title, extension) => {
     //comprobamos compatibilidad

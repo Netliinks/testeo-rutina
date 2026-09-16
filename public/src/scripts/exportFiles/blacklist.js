@@ -1,3 +1,5 @@
+import { generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
+
 export const exportBlackListPdf = (ar) => {
     let fecha = new Date(); //Fecha actual
     let mes = fecha.getMonth() + 1; //obteniendo mes
@@ -84,7 +86,7 @@ export const exportBlackListCsv = (ar) => {
         };
         rows.push(obj);
     }
-    generateFile(rows, "ListaNegra", "csv");
+    generateFileSimpleCsv(rows, "ListaNegra", "csv");
 };
 export const exportBlackListXls = (ar) => {
     let rows = [];
@@ -99,7 +101,7 @@ export const exportBlackListXls = (ar) => {
         };
         rows.push(obj);
     }
-    generateFile(rows, "ListaNegra", "xls");
+    generateFileSimpleXls(rows, "ListaNegra", "xls");
 };
 const generateFile = (ar, title, extension) => {
     //comprobamos compatibilidad

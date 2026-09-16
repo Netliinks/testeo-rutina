@@ -1,5 +1,7 @@
+import { generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
+
 export const exportCredentialsXls = (ar) => {
-    generateFile(ar, "Licensias", "xls");
+    generateFileSimpleXls(ar, "Licencias", "xls");
 };
 const generateFile = (ar, title, extension) => {
     //comprobamos compatibilidad

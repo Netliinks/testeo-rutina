@@ -1,3 +1,4 @@
+import { generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
 //import {generateFile } from "../tools";
 export const exportEventPdf = (ar, start, end) => {
     // @ts-ignore
@@ -118,7 +119,7 @@ export const exportEventCsv = (ar, start, end) => {
             rows.push(obj);
         //}
     }
-    generateFile(rows, "Eventos", "csv");
+    generateFileSimpleCsv(rows, "Eventos", "csv");
 };
 export const exportEventXls = (ar, start, end) => {
     let rows = [];
@@ -138,7 +139,7 @@ export const exportEventXls = (ar, start, end) => {
             rows.push(obj);
         //}
     }
-    generateFile(rows, "Eventos", "xls");
+    generateFileSimpleXls(rows, "Eventos", "xls");
 };
 const generateFile = (ar, title, extension) => {
     //comprobamos compatibilidad

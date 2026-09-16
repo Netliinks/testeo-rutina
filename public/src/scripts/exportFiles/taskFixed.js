@@ -1,3 +1,4 @@
+import { generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
 export const exportFixedPdf = (ar, start, end) => {
     // @ts-ignore
     window.jsPDF = window.jspdf.jsPDF;
@@ -90,7 +91,7 @@ export const exportFixedCsv = (ar, start, end) => {
             rows.push(obj);
         //}
     }
-    generateFile(rows, "Fijas", "csv");
+    generateFileSimpleCsv(rows, "Fijas", "csv");
 };
 export const exportFixedXls = (ar, start, end) => {
     let rows = [];
@@ -109,7 +110,7 @@ export const exportFixedXls = (ar, start, end) => {
             rows.push(obj);
         //}
     }
-    generateFile(rows, "Fijas", "xls");
+    generateFileSimpleXls(rows, "Fijas", "xls");
 };
 const generateFile = (ar, title, extension) => {
     //comprobamos compatibilidad

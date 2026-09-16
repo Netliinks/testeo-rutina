@@ -177,6 +177,9 @@ export const drawTagsIntoTables = () => {
             text === "NO CUMPLIDO"){
             tag.classList.add("tag_red")
         }
+        else if (text === "Visitas" || text === "VISITAS" || text === "Vehicular" || text === "VEHICULAR") {
+            tag.classList.add("tag_blue");
+        }
         else {
             tag.classList.add('tag_gray');
         }
@@ -479,6 +482,25 @@ export const getDetails2 = async (param, value, param2, value2, table) => {
     return data
 }
 
+export const getDetailsSimple = async (param, operator, value, table) => {
+    const customerId = localStorage.getItem('customer_id');
+    let raw = JSON.stringify({
+        "filter": {
+            "conditions": [
+                {
+                    "property": `${param}`,
+                    "operator": `${operator}`,
+                    "value": `${value}`
+                },
+            ]
+        },
+        sort: "createdDate", 
+        //fetchPlan: 'full',
+    });
+    let data = await getFilterEntityData(`${table}`, raw);
+    return data
+}
+
 export const calculateGestionMarcation = (assistControl) => {
     let objDate = {}
     let arrayAssist= []
@@ -645,7 +667,7 @@ export const getRoutinesTopBar =async(id)=> {
         "filter": {
             "conditions": [
                 {
-                    "property": "business.id",
+                    "property": "routineRelation.business.id",
                     "operator": "=",
                     "value": `${id}`
                 },
@@ -658,7 +680,7 @@ export const getRoutinesTopBar =async(id)=> {
         },
         sort: "-createdDate",
     });
-    return await getFilterEntityCount("RoutineRegister", raw);
+    return await getFilterEntityCount("RoutineMarcation", raw);
 
 }
 
@@ -839,11 +861,6 @@ export const inputSelectThemeAudit = async (selectId, currentSelect, _inputEleme
     select.addEventListener('click', () => {
         inputParent.classList.toggle('select_active');
     });
-    document.addEventListener('pointerdown', (event) => {
-        if (!inputParent.contains(event.target)) {
-            inputParent.classList.remove('select_active');
-        }
-    });
     options.forEach((option) => {
         option.addEventListener('click', () => {
             select.value = option.innerText;
@@ -854,8 +871,16 @@ export const inputSelectThemeAudit = async (selectId, currentSelect, _inputEleme
             //_inputElements.entityElement.removeAttribute('data-optionid');
             //service.removeAttribute('value');
             //service.removeAttribute('data-optionid');
-            _inputElements.divAllCustomer.style.display = "block";
-            _inputElements.divCustomer.style.display = "grid";
+            if (option.getAttribute('value') === "RUTINA DE GUARDIA" || option.getAttribute('value') === "RUTINA DE CONSOLA") {
+                //console.log("es cliente")
+                _inputElements.divAllCustomer.style.display = "none";
+                _inputElements.divCustomer.style.display = "none";
+            }
+            else {
+                //console.log("no es cliente")
+                _inputElements.divAllCustomer.style.display = "block";
+                _inputElements.divCustomer.style.display = "block";//"flex";
+            }
         });
     });
 };
@@ -1244,48 +1269,46 @@ function esMenorOIgualA5Minutos(timestamp, registerTime) {
     //const timestamp = 5 * 60 * 1000; // 5 minutos = 300000 ms
     return registerTime <= timestamp;
 }
-function calcularMarcacionesPorFrecuencia(inicio, fin, horaInicio, horaFin, frecuenciaMinutos, filtroHoraInicio = '00:00:00', filtroHoraFin = '23:59:59') {
-    const rangoInicio = new Date(`${inicio}T${filtroHoraInicio}`);
-    const rangoFin = new Date(`${fin}T${filtroHoraFin}`);
-    const frecuencia = Number(frecuenciaMinutos);
-    const marcaciones = [];
-
-    if (Number.isNaN(rangoInicio.getTime()) || Number.isNaN(rangoFin.getTime()) || rangoInicio > rangoFin || frecuencia <= 0) {
-        return { detalle: marcaciones, totalEsperado: 0 };
-    }
-
-    const esTurnoNocturno = horaFin <= horaInicio;
-    const fechaActual = new Date(`${inicio}T00:00:00`);
-    const fechaLimite = new Date(`${fin}T00:00:00`);
-    if (esTurnoNocturno) {
-        fechaActual.setDate(fechaActual.getDate() - 1);
-    }
-
+function calcularMarcacionesPorFrecuencia(inicio, fin, hEntrada, hSalida, frecuenciaMinutos) {
+    const fechaActual = new Date(inicio + 'T00:00:00');
+    const fechaLimite = new Date(fin + 'T00:00:00');
+    const todasLasMarcaciones = [];
     while (fechaActual <= fechaLimite) {
-        const fechaBase = `${fechaActual.getFullYear()}-${String(fechaActual.getMonth() + 1).padStart(2, '0')}-${String(fechaActual.getDate()).padStart(2, '0')}`;
-        const inicioTurno = new Date(`${fechaBase}T${horaInicio}`);
-        const finTurno = new Date(`${fechaBase}T${horaFin}`);
-        if (esTurnoNocturno) {
-            finTurno.setDate(finTurno.getDate() + 1);
+        let marcacionesDia = [];
+        const fechaBaseStr = fechaActual.toISOString().split('T')[0];
+        //console.log(`Generando marcaciones para el día: ${fechaBaseStr}`);
+
+        // Definir punto de inicio (Entrada) y punto final (Salida)
+        let mEntrada = new Date(`${fechaBaseStr}T${hEntrada}`);
+        let mSalida = new Date(`${fechaBaseStr}T${hSalida}`);
+
+        // Ajuste de turno nocturno: Si la salida es menor a la entrada, es el día siguiente
+        if (hSalida <= hEntrada) {
+            mSalida.setDate(mSalida.getDate() + 1);
         }
 
-        for (let inicioVentana = new Date(inicioTurno); inicioVentana < finTurno; inicioVentana.setMinutes(inicioVentana.getMinutes() + frecuencia)) {
-            const finVentana = new Date(Math.min(inicioVentana.getTime() + (frecuencia * 60 * 1000), finTurno.getTime()));
-            if (finVentana > rangoInicio && inicioVentana <= rangoFin) {
-                marcaciones.push({
-                    fechaHora: new Date(inicioVentana),
-                    fechaHoraFin: finVentana,
-                    count: 0
-                });
-            }
+        // Generar marcaciones según la frecuencia dentro de esa jornada
+        let marcaIterada = new Date(mEntrada);
+        
+        while (marcaIterada < mSalida) { //<=
+            marcacionesDia.push({
+                fechaHora: new Date(marcaIterada), // Clonamos la fecha
+                display: marcaIterada.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }),
+                count: 0 // Contador inicializado en 0
+            });
+
+            // Sumar la frecuencia en minutos
+            marcaIterada.setMinutes(marcaIterada.getMinutes() + frecuenciaMinutos);
         }
 
+        // Avanzar al siguiente día calendario
         fechaActual.setDate(fechaActual.getDate() + 1);
+        todasLasMarcaciones.push(marcacionesDia);
     }
 
     return {
-        detalle: marcaciones,
-        totalEsperado: marcaciones.length
+        detalle: todasLasMarcaciones,
+        totalEsperado: todasLasMarcaciones.flat().length
     };
 }
 const generarRangosTiempo = (inicio, fin, intervaloMinutos) => {
@@ -1409,13 +1432,13 @@ export const auditResponse = (conditions) => {
                         }
                     }
                 });
-                const cumplimiento = ((variables.totalAlertasRespondidasATiempo / conditions.registersNot.length) * 100).toFixed(2);
+                const cumplimiento = ((variables.totalAlertasRespondidasATiempo / conditions.registersNot.length/*variables.totalAlertasGeneradas*/) * 100).toFixed(2);
                 const averageDate = averageTime(averageConsole);
                 const obj = {
                     "Usuario": `${objects[0]['consoleUserId']['firstName'] ?? ''} ${objects[0]['consoleUserId']['lastName'] ?? ''} ${objects[0]['consoleUserId']['secondLastName'] ?? ''}`,
                     //"Total Intentos Marcacion": variables.totalIntentosMarcacion,
                     "Total Marcaciones Hechas": variables.totalMarcacionesHechas,
-                    "Total Alertas Generadas": conditions.registersNot.length,
+                    "Total Alertas Generadas": conditions.registersNot.length,//variables.totalAlertasGeneradas,
                     //"Total Alertas No Marcadas": variables.totalAlertasNoMarcadas,
                     "Total Alertas Respondidas": variables.totalAlertasRespondidas,
                     "Total Alertas Respondidas A Tiempo": variables.totalAlertasRespondidasATiempo,
@@ -1455,15 +1478,7 @@ export const auditResponse = (conditions) => {
 
                             const exisRoutineScheduleG = routineScheduleG.some(data => data.id === element2['routineSchedule']['id']);
                             if (!exisRoutineScheduleG) {
-                                const esperadas = calcularMarcacionesPorFrecuencia(
-                                    conditions.filterStartDate,
-                                    conditions.filterEndDate,
-                                    element2['routineSchedule']['scheduleTime'],
-                                    element2['routineSchedule']['scheduleTimeEnd'],
-                                    element2['routineSchedule']['frequency'],
-                                    conditions.filterStartTime,
-                                    conditions.filterEndTime
-                                );
+                                const esperadas = calcularMarcacionesPorFrecuencia(conditions.filterStartDate, conditions.filterEndDate, element2['routineSchedule']['scheduleTime'], element2['routineSchedule']['scheduleTimeEnd'], element2['routineSchedule']['frequency']);
                                 routineScheduleG.push({...element2["routineSchedule"], "rangos": esperadas.detalle});
                                 variables.totalEsperadas += esperadas.totalEsperado;
                             }
@@ -1479,26 +1494,32 @@ export const auditResponse = (conditions) => {
                                 variables.totalRealizadas += 1;
                                 const creationDateTime = new Date(`${element2["creationDate"]}T${element2["creationTime"]}`);
                                 const indice = routineScheduleG.findIndex(data => data.id === element2['routineSchedule']['id']);
-                                const ventana = routineScheduleG[indice]?.rangos.find((rango) => (
-                                    creationDateTime >= rango.fechaHora && creationDateTime < rango.fechaHoraFin
-                                ));
-                                if (ventana && ventana.count === 0) {
-                                    ventana.count += 1;
-                                    variables.totalValidas += 1;
+                                for (let r = 0; r < routineScheduleG[indice].rangos.length; r++) {
+                                    let horaRango = routineScheduleG[indice].rangos[r];
+                                    for (let m = 0; m < horaRango.length; m++) {
+                                        if (horaRango[m + 1] != undefined) {
+                                            if((creationDateTime.getTime() >= horaRango[m].fechaHora.getTime()) && (creationDateTime.getTime() < horaRango[m + 1].fechaHora.getTime())) {
+                                                if (horaRango[m].count == 0) {
+                                                    // si tiene marcacion en ese rango de tiempo
+                                                    horaRango[m].count += 1;
+                                                    variables.totalValidas += 1;
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     });
                 }
                 const existUser = audits.some(data => data.id === routineUser['user']['id']);
-                const company = routineUser['customer']?.name ?? routineUser['routine']?.customer?.name ?? '';
                 if (!existUser) {
                     const ponderado = ((variables.totalValidas / variables.totalEsperadas) * 100).toFixed(2);
                     audits.push({
                         id: routineUser['user']['id'],
                         name: `${routineUser['user']['firstName'] ?? ''} ${routineUser['user']['lastName'] ?? ''} ${routineUser['user']['secondLastName'] ?? ''}`,
                         username: routineUser['user']['username'],
-                        empresa: company,
                         totalRutinas: variables.totalRutinas,
                         totalUbicaciones: variables.totalUbicaciones,
                         totalRealizadas: variables.totalRealizadas,
@@ -1509,9 +1530,6 @@ export const auditResponse = (conditions) => {
                 }else{
                     audits.map(data => {
                         if(data.id == routineUser['user']['id']){
-                            const companies = data.empresa.split(' | ').filter(Boolean);
-                            if (company && !companies.includes(company)) companies.push(company);
-                            data.empresa = companies.join(' | ');
                             data.totalRutinas += variables.totalRutinas;
                             data.totalUbicaciones += variables.totalUbicaciones;
                             data.totalRealizadas += variables.totalRealizadas;
@@ -1731,7 +1749,7 @@ export const reportToStimate = (conditions, rawReports) => {
     return users;
 }
 
-export const generateFileSimpleXls = (ar, title, extension) => {
+export const generateFileSimpleCsv = (ar, title, extension) => {
     //comprobamos compatibilidad
     if (window.Blob && (window.URL || window.webkitURL)) {
         var contenido = "", d = new Date(), blob, reader, save, clicEvent;
@@ -1783,6 +1801,85 @@ export const generateFileSimpleXls = (ar, title, extension) => {
     else {
         //el navegador no admite esta opción
         alert("Su navegador no permite esta acción");
+    }
+};
+
+export const generateFileSimpleXls = async (ar, title, extension = 'xlsx') => {
+    if (!Array.isArray(ar) || ar.length === 0) {
+        alert("No hay datos para exportar");
+        return;
+    }
+
+    // Si ExcelJS está disponible, lo usamos para asegurar compatibilidad con .xlsx real
+    // @ts-ignore
+    if (typeof ExcelJS !== 'undefined') {
+        // @ts-ignore
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet("Datos");
+
+        const keys = Object.keys(ar[0]);
+        const header = sheet.addRow(keys);
+        header.font = { bold: true };
+        header.alignment = { horizontal: "center" };
+        // @ts-ignore
+        header.eachCell(cell => {
+            cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD9D9D9" } };
+        });
+
+        ar.forEach(item => {
+            const values = keys.map(key => item[key] !== undefined && item[key] !== null ? item[key] : "");
+            const row = sheet.addRow(values);
+            // @ts-ignore
+            row.eachCell(cell => {
+                cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+                cell.alignment = { horizontal: "center" };
+            });
+        });
+
+        sheet.columns = keys.map(() => ({ width: 25 }));
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8' });
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        const d = new Date();
+        // ExcelJS siempre genera un formato moderno (.xlsx), por lo que debemos forzar la extensión a .xlsx para evitar alertas de incompatibilidad en Excel
+        const actualExtension = extension === 'xls' ? 'xlsx' : extension;
+        link.download = "Doc_" + title + "_" + d.getDate() + "_" + (d.getMonth() + 1) + "_" + d.getFullYear() + `.${actualExtension}`;
+        link.click();
+        window.URL.revokeObjectURL(blobUrl);
+    } else {
+        // Fallback robusto usando formato XML/HTML compatible con Excel (.xls / .xlsx) si ExcelJS no está cargado o para soporte de .xls antiguo
+        const d = new Date();
+        const keys = Object.keys(ar[0]);
+
+        let html = `<table><thead><tr>`;
+        keys.forEach(key => {
+            html += `<th style="background-color: #D9D9D9; font-weight: bold; border: 1px solid #000000; text-align: center;">${key}</th>`;
+        });
+        html += `</tr></thead><tbody>`;
+
+        ar.forEach(item => {
+            html += `<tr>`;
+            keys.forEach(key => {
+                const val = item[key] !== undefined && item[key] !== null ? item[key] : "";
+                html += `<td style="border: 1px solid #000000; text-align: center;">${val}</td>`;
+            });
+            html += `</tr>`;
+        });
+        html += `</tbody></table>`;
+
+        const template = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Datos</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--><meta charset="UTF-8"></head><body>${html}</body></html>`;
+
+        const blob = new Blob([template], { type: 'application/vnd.ms-excel;charset=utf-8' });
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = "Doc_" + title + "_" + d.getDate() + "_" + (d.getMonth() + 1) + "_" + d.getFullYear() + `.${extension}`;
+        link.click();
+        window.URL.revokeObjectURL(blobUrl);
     }
 };
 

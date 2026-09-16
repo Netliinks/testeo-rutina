@@ -297,11 +297,16 @@ export class Vehiculars {
                     startTime: document.getElementById('marking-start-time'),
                     startGuardID: document.getElementById('marking-start-guard-id'),
                     startGuardName: document.getElementById('marking-start-guard-name'),
+                    startDocument: document.getElementById('marking-start-document'),
+                    startReference: document.getElementById('marking-start-reference'),
                     // End marking
                     endDate: document.getElementById('marking-end-date'),
                     endTime: document.getElementById('marking-end-time'),
                     endGuardID: document.getElementById('marking-end-guard-id'),
-                    endGuardName: document.getElementById('marking-end-guard-name')
+                    endGuardName: document.getElementById('marking-end-guard-name'),
+                    endDocument: document.getElementById('marking-end-document'),
+                    endReference: document.getElementById('marking-end-reference'),
+                    ruc: document.getElementById('marking-ruc')
                 };
                 _values.status.innerText = markingData.visitState.name;
                 _values.name.value = markingData?.driver ?? '';
@@ -319,11 +324,16 @@ export class Vehiculars {
                 _values.startTime.value = markingData?.ingressTime ?? '';
                 _values.startGuardID.value = markingData.ingressIssued?.username ?? '';
                 _values.startGuardName.value = markingData.ingressIssued?.firstName ?? '' + ' ' + markingData.ingressIssued?.lastName ?? '';
+                _values.startDocument.value = markingData?.typeDocument ?? '';
+                _values.startReference.value = markingData?.referenceDocument ?? '';
                 // End marking
                 _values.endDate.value = markingData?.egressDate ?? '';
                 _values.endTime.value = markingData?.egressTime ?? '';
                 _values.endGuardID.value = markingData.egressIssued?.username ?? '';
                 _values.endGuardName.value = markingData.egressIssued?.firstName ?? '' + ' ' + markingData.egressIssued?.lastName ?? '';
+                _values.endDocument.value = markingData?.typeDocumentOut ?? '';
+                _values.endReference.value = markingData?.referenceDocumentOut ?? '';
+                _values.ruc.value = markingData?.ruc ?? '';
                 if (markingData?.image !== undefined || markingData?.image2 !== undefined || markingData?.image3 !== undefined || markingData?.image4 !== undefined || markingData?.image5 !== undefined || markingData?.image6 !== undefined) {
                     let images = [];
                     if (markingData?.image !== undefined) {
@@ -398,7 +408,48 @@ export class Vehiculars {
                 //drawTagsIntoTables();
                 this.closeRightSidebar();
                 //drawTagsIntoTables();
+                this.renderRelationTags(entity);
             };
+        };
+        this.renderRelationTags = async (entityId) => {
+            const tagsContainer = document.getElementById('tags-container');
+            if (!tagsContainer) return;
+            let raw = JSON.stringify({
+                "filter": {
+                    "conditions": [
+                        {
+                            "property": "vehicular.id",
+                            "operator": "=",
+                            "value": `${entityId}`
+                        },
+                        {
+                            "property": "customer.id",
+                            "operator": "=",
+                            "value": `${customerId}`
+                        },
+                        {
+                            "property": "business.id",
+                            "operator": "=",
+                            "value": `${Config.currentUser.business.id}`
+                        }
+                    ]
+                },
+                "fetchPlan": "full"
+            });
+            const relationTags = await getFilterEntityData("RelationTag", raw);
+            relationTags.forEach(rel => {
+                const tagSpan = document.createElement('span');
+                tagSpan.innerText = rel.tag?.name;
+                tagSpan.style.backgroundColor = rel.tag?.color || '#4654d3';
+                tagSpan.style.color = '#FFFFFF';
+                tagSpan.style.padding = '4px 8px';
+                tagSpan.style.borderRadius = '4px';
+                tagSpan.style.fontSize = '10px';
+                tagSpan.style.fontWeight = '700';
+                tagSpan.style.margin = '2px';
+                tagSpan.style.display = 'inline-block';
+                tagsContainer.appendChild(tagSpan);
+            });
         };
         this.closeRightSidebar = () => {
             const closeButton = document.getElementById('close');
@@ -469,12 +520,6 @@ export class Vehiculars {
                             </label>
                         </div>
 
-                        <div class="input_checkbox">
-                            <label for="exportPdf">
-                                <input type="radio" class="checkbox" id="exportPdf" name="exportOption" value="pdf" /> PDF
-                            </label>
-                        </div>
-
                     </div>
                     <!-- END EDITOR BODY -->
 
@@ -483,6 +528,11 @@ export class Vehiculars {
                     </div>
                     </div>
                 `;
+                /*<div class="input_checkbox">
+                            <label for="exportPdf">
+                                <input type="radio" class="checkbox" id="exportPdf" name="exportOption" value="pdf" /> PDF
+                            </label>
+                        </div>*/
                 inputObserver();
                 this.selectCustomer();
                 let fecha = new Date(); //Fecha actual
@@ -628,10 +678,10 @@ export class Vehiculars {
                                             // @ts-ignore
                                             await exportVehicularCsv(vehiculars, _values.start.value, _values.end.value);
                                         }
-                                        else if (ele.value == "pdf") {
+                                        //else if (ele.value == "pdf") {
                                             // @ts-ignore
-                                            await exportVehicularPdf(vehiculars, _values.start.value, _values.end.value);
-                                        }
+                                            //await exportVehicularPdf(vehiculars, _values.start.value, _values.end.value);
+                                        //}
                                         const _dialog = document.getElementById('dialog-content');
                                         new CloseDialog().x(_dialog);
                                     }

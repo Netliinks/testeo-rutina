@@ -49,6 +49,69 @@ $TableBorder: 1px solid darken($gray, 10%);
       font-size: 32px;
       color: $dark;
     }
+
+    p {
+      font-size: 14px;
+      color: $slategray;
+      margin-top: 8px;
+    }
+  }
+
+  &_tabs_container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px 16px 16px;
+  }
+
+  .filter_tabs {
+    display: flex;
+    gap: 8px;
+
+    .tab_button {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid $gray;
+      background-color: $white;
+      color: $dark;
+      font-weight: $bold;
+
+      &.active {
+        background-color: $blue;
+        color: $white;
+        border-color: $blue;
+      }
+
+      &:hover:not(.active) {
+        background-color: $gray;
+      }
+    }
+  }
+
+  .search_container {
+    .search_input_wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+
+      i {
+        position: absolute;
+        left: 10px;
+        color: $slategray;
+      }
+
+      .search_input {
+        padding: 8px 8px 8px 32px;
+        border: 1px solid $gray;
+        border-radius: 8px;
+        width: 250px;
+        outline: none;
+
+        &:focus {
+          border-color: $blue;
+        }
+      }
+    }
   }
 
   &_tools {
@@ -175,6 +238,14 @@ $TableBorder: 1px solid darken($gray, 10%);
           &:last-child {
             text-align: center;
             white-space: nowrap;
+          }
+
+          .color_circle {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
           }
         }
       }

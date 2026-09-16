@@ -6,7 +6,7 @@
 import { getFilterEntityCount, getFilterEntityData, updateEntity } from "../../endpoints.js";
 import { drawTagsIntoTables, inputObserver, CloseDialog, inputSelectThemeAudit, inputSelectTypeAudit, verifyUserType, averageTime, sleep } from "../../tools.js";
 import { Config } from "../../Configs.js";
-import { tableLayout, UIProgress } from "./Layout.js";
+import { tableLayout } from "./Layout.js";
 //import { exportAuditPdf } from "../../exportFiles/audit.js";
 import { exportAuditV2Xls } from "../../exportFiles/auditv2.js";
 import { generarReportVisitXls } from "../../exportFiles/visits.js";
@@ -19,59 +19,6 @@ let infoPage = {
     endDate: "",
     onPressed: false
 };
-
-const normalizeTime = (value, fallback) => {
-    const time = value || fallback;
-    return time.length === 5 ? `${time}:00` : time;
-};
-
-const formatDateTime = (date, time) => date ? `${date} ${normalizeTime(time, '').replace(/:00$/, '')}`.trim() : '';
-
-const buildDateAndTimeRange = (dateProperty, timeProperty, startDate, startTime, endDate, endTime) => {
-    if (startDate === endDate) {
-        return {
-            group: 'AND',
-            conditions: [
-                { property: dateProperty, operator: '=', value: startDate },
-                { property: timeProperty, operator: '>=', value: startTime },
-                { property: timeProperty, operator: '<=', value: endTime }
-            ]
-        };
-    }
-    return {
-        group: 'OR',
-        conditions: [
-            { group: 'AND', conditions: [{ property: dateProperty, operator: '=', value: startDate }, { property: timeProperty, operator: '>=', value: startTime }] },
-            { group: 'AND', conditions: [{ property: dateProperty, operator: '>', value: startDate }, { property: dateProperty, operator: '<', value: endDate }] },
-            { group: 'AND', conditions: [{ property: dateProperty, operator: '=', value: endDate }, { property: timeProperty, operator: '<=', value: endTime }] }
-        ]
-    };
-};
-
-const buildTimestampRange = (property, startDate, startTime, endDate, endTime) => ([
-    { property, operator: '>=', value: `${startDate}T${startTime}` },
-    { property, operator: '<=', value: `${endDate}T${endTime}` }
-]);
-
-const getSelectedCustomerIds = (element) => {
-    const ids = element?.dataset?.optionids ?? element?.dataset?.optionid ?? '';
-    return [...new Set(ids.split(',').map((id) => id.trim()).filter(Boolean))];
-};
-
-const getSelectedCustomers = (element) => {
-    try {
-        const savedCustomers = JSON.parse(element?.dataset?.optionselection ?? '[]');
-        if (Array.isArray(savedCustomers)) {
-            return savedCustomers.filter(({ id, name }) => id && name);
-        }
-    }
-    catch (_) {
-        // Compatibilidad con selecciones guardadas antes de la selección múltiple.
-    }
-    const id = element?.dataset?.optionid;
-    return id ? [{ id, name: element.value }] : [];
-};
-
 export class Audits {
     constructor() {
         this.dialogContainer = document.getElementById('app-dialogs');
@@ -262,43 +209,6 @@ export class Audits {
             }
         }*/
     }
-    showProgress(title) {
-        this.dialogContainer.style.display = 'block';
-        this.dialogContainer.innerHTML = UIProgress;
-        document.getElementById('progress-title').innerText = title;
-        const closeBtn = document.getElementById('close-progress');
-        closeBtn.addEventListener('click', () => {
-            new CloseDialog().x(document.getElementById('dialog-progress'));
-        });
-    }
-
-    updateProgress(percentage) {
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        if (progressBar && progressText) {
-            progressBar.style.width = `${percentage}%`;
-            progressText.innerText = `${Math.round(percentage)}%`;
-        }
-    }
-
-    showProgressError(message, cause) {
-        const errorContainer = document.getElementById('error-container');
-        const errorMsg = document.getElementById('error-message');
-        const errorCause = document.getElementById('error-cause');
-        const footer = document.getElementById('progress-footer');
-        if (errorContainer) {
-            errorContainer.style.display = 'block';
-            errorMsg.innerText = message;
-            errorCause.innerText = cause;
-            footer.style.display = 'flex';
-        }
-    }
-
-    finishProgress() {
-        const footer = document.getElementById('progress-footer');
-        if (footer) footer.style.display = 'flex';
-    }
-
     async render(startDate, endDate) {
         infoPage.startDate = startDate;
         infoPage.endDate = endDate;
@@ -314,8 +224,6 @@ export class Audits {
             //entityService: document.getElementById('entity-service'),
             filterStartDate: document.getElementById("start-date"),
             filterEndDate: document.getElementById("end-date"),
-            filterStartTime: document.getElementById("start-time"),
-            filterEndTime: document.getElementById("end-time"),
             //checkDate: document.getElementById("entity-check-date"),
             calculateButton: document.getElementById('calculate-entity')
         };
@@ -323,70 +231,15 @@ export class Audits {
         this.import();
         this.selectElement();
         //this.selectService()
-        await this.load(_inputElements);
-        this.setupReportPresentation(_inputElements);
+        this.load(_inputElements);
         this.generateReport(_inputElements);
     }
-    async load(_inputElements) {
+    load(_inputElements) {
         _inputElements.filterStartDate.value = infoPage.startDate;
         _inputElements.filterEndDate.value = infoPage.endDate;
-        _inputElements.filterStartTime.value = '00:00:00';
-        _inputElements.filterEndTime.value = '23:59:59';
         //_inputElements.checkDate.checked = true
-        await inputSelectThemeAudit('entity-theme', 'INGRESO EMERGENTE', _inputElements);
-        const customerSelectorButton = document.getElementById('btn-select-element');
-        const syncCustomerScope = () => {
-            const allCustomersSelected = _inputElements.checkAllCustomer.checked;
-            customerSelectorButton.disabled = allCustomersSelected;
-            _inputElements.divCustomer.classList.toggle('scope_disabled', allCustomersSelected);
-            if (allCustomersSelected) {
-                _inputElements.customerElement.value = '';
-                _inputElements.customerElement.removeAttribute('data-optionid');
-                _inputElements.customerElement.removeAttribute('data-optionids');
-                _inputElements.customerElement.removeAttribute('data-optionselection');
-                _inputElements.customerElement.removeAttribute('value');
-                _inputElements.customerElement.classList.remove('input_filled');
-            }
-        };
-        _inputElements.checkAllCustomer.addEventListener('change', syncCustomerScope);
-        syncCustomerScope();
+        inputSelectThemeAudit('entity-theme', 'INGRESO EMERGENTE', _inputElements);
         //inputSelectTypeAudit('entity-type', 'GUARDIA', _inputElements);
-    }
-    setupReportPresentation(_inputElements) {
-        const descriptions = {
-            'INGRESO EMERGENTE': ['Ingresos emergentes', 'Detalle de ingresos emergentes registrados por la operación.', 'fa-person-walking'],
-            'INGRESO VEHICULAR': ['Ingresos vehiculares', 'Movimientos vehiculares registrados en el periodo seleccionado.', 'fa-car'],
-            'RUTINA': ['Rutinas', 'Cumplimiento general de las rutinas configuradas.', 'fa-route'],
-            'CONSIGNAS (REPORTES)': ['Consignas', 'Consignas y novedades registradas durante el periodo.', 'fa-clipboard-list'],
-            'RUTINA DE GUARDIA': ['Cumplimiento por guardia', 'Indicadores de rutinas, ubicaciones y marcaciones por guardia.', 'fa-shield-halved'],
-            'RUTINA DE CONSOLA': ['Cumplimiento de consola', 'Alertas atendidas y tiempos de respuesta por operador.', 'fa-headset']
-        };
-        const title = document.getElementById('stats-report-title');
-        const description = document.getElementById('stats-report-description');
-        const icon = document.getElementById('stats-report-icon');
-        const summary = document.getElementById('stats-summary');
-        const buttonText = document.getElementById('btn-text');
-        const scopeStep = document.getElementById('stats-scope-step');
-        const dateStepTitle = document.getElementById('stats-date-step-title');
-        const refresh = () => {
-            const theme = _inputElements.objetiveTheme.value || 'INGRESO EMERGENTE';
-            const current = descriptions[theme] || descriptions['INGRESO EMERGENTE'];
-            const requiresScope = true;
-            if (title) title.textContent = current[0];
-            if (description) description.textContent = current[1];
-            if (icon) icon.innerHTML = `<i class="fa-solid ${current[2]}"></i>`;
-            if (summary) summary.textContent = `${current[0]} · Excel · ${formatDateTime(_inputElements.filterStartDate.value, _inputElements.filterStartTime.value) || 'sin fecha inicial'} — ${formatDateTime(_inputElements.filterEndDate.value, _inputElements.filterEndTime.value) || 'sin fecha final'}`;
-            if (buttonText) buttonText.textContent = `Descargar Excel de ${current[0]}`;
-            if (scopeStep) scopeStep.style.display = requiresScope ? 'block' : 'none';
-            if (dateStepTitle) dateStepTitle.textContent = `${requiresScope ? '4' : '3'} · Rango de fecha y hora`;
-        };
-        document.getElementById('input-options').addEventListener('click', () => setTimeout(refresh, 0));
-        _inputElements.filterStartDate.addEventListener('change', refresh);
-        _inputElements.filterEndDate.addEventListener('change', refresh);
-        _inputElements.filterStartTime.addEventListener('change', refresh);
-        _inputElements.filterEndTime.addEventListener('change', refresh);
-        _inputElements.checkAllCustomer.addEventListener('change', refresh);
-        refresh();
     }
     import() {
         const importClients = document.getElementById('import-entities');
@@ -605,7 +458,7 @@ export class Audits {
             _fileHandler.addEventListener('change', () => {
                 readFile(_fileHandler.files[0]);
             });
-            const readFile = async (file) => {
+            async function readFile(file) {
                 //const customer = await getEntitiesData('Customer');
                 //const citadel = await getEntitiesData('Citadel');
                 //const deparment = await getEntitiesData('Department');
@@ -631,73 +484,68 @@ export class Audits {
                     }
                     const importToBackend = document.getElementById('button-import');
                     importToBackend.addEventListener('click', async () => {
-                        let cont = 0;
-                        let successCount = 0;
-                        let failCount = 0;
-                        const importErrors = [];
-
+                        let cont = 0
                         const dialogContainer = document.getElementById('app-dialogs');
-                        const progressTitle = "Importando Requerimientos";
-                        this.showProgress(progressTitle);
+                        dialogContainer.style.display = 'block';
+                        dialogContainer.innerHTML = `
+                        <div class="dialog_content" id="dialog-content">
+                            <div class="dialog">
+                                <div class="dialog_container padding_8">
+                                    <div class="dialog_header">
+                                        <h2>Importando...</h2>
+                                    </div>
 
-                        for (const el of elem) {
-                            cont++;
-                            this.updateProgress((cont / elem.length) * 100);
-                            document.getElementById('progress-text').innerText = `${cont} / ${elem.length} - ${el["nombre"]}`;
+                                    <div class="dialog_message padding_8">
+                                        <div class="material_input">
+                                            <input type="text" id="import-total" class="input_filled" value="..." readonly>
+                                            <label for="import-total"><i class="fa-solid fa-cloud-arrow-up"></i>Cargando datos</label>
+                                        </div>
 
-                            try {
-                                const entityId = el["id"];
-                                if (entityId && entityId.trim() !== "" && !isNaN(el["reqNroVisitEmer"]) && !isNaN(el["reqNroVehicle"]) && !isNaN(el["reqNroReport"]) && !isNaN(el["reqNroRoutine"])) {
-                                    // Verificar si el cliente existe mediante conteo (más eficiente)
-                                    const rawCheck = JSON.stringify({
-                                        "filter": {
-                                            "conditions": [{ "property": "id", "operator": "=", "value": entityId }]
-                                        }
-                                    });
-                                    const count = await getFilterEntityCount('Customer', rawCheck);
+                                        <div class="input_detail">
+                                            <label for="message-import"><i class="fa-solid fa-file-import"></i></label>
+                                            <p id="message-import" class="input_filled" readonly></p>
+                                        </div>
+                                    </div>
 
-                                    if (count > 0) {
-                                        const raw = JSON.stringify({
-                                            "reqNroVisitEmer": `${el["reqNroVisitEmer"]}`,
-                                            "reqNroVehicle": `${el["reqNroVehicle"]}`,
-                                            "reqNroReport": `${el["reqNroReport"]}`,
-                                            "reqNroRoutine": `${el["reqNroRoutine"]}`,
-                                        });
-                                        await updateEntity('Customer', entityId, raw);
-                                        successCount++;
-                                    } else {
-                                        failCount++;
-                                        importErrors.push(`ID no encontrado: ${entityId} (${el["nombre"]})`);
-                                    }
-                                } else {
-                                    failCount++;
-                                    if (!entityId || entityId.trim() === "") {
-                                        importErrors.push(`Fila ${cont + 1}: ID de empresa vacío.`);
-                                    } else {
-                                        importErrors.push(`Fila ${cont + 1}: Valores no numéricos en ${el["nombre"]}.`);
-                                    }
-                                }
-                                // Pausa para throttling
-                                await sleep(50);
-                            } catch (error) {
-                                failCount++;
-                                importErrors.push(`Error en ${el["nombre"]}: ${error.message}`);
+                                    <div class="dialog_footer">
+                                        <button class="btn btn_primary" id="btn-cancelImport">Cancelar</button>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                        const message1 = document.getElementById("import-total");
+                        const message2 = document.getElementById("message-import");
+                        const btnCancelModal = document.getElementById("btn-cancelImport");
+                        btnCancelModal.onclick = () => {
+                            const _dialog = document.getElementById('dialog-content');
+                            new CloseDialog().x(_dialog);
+                        };
+                        await elem.forEach(async (el) => {
+                            message1.value = `${cont += 1} / ${elem.length}`
+                            message2.innerText = `${el["nombre"]}`
+                            const entityId = el["id"];
+                            if(!isNaN(el["reqNroVisitEmer"]) && !isNaN(el["reqNroVehicle"]) && !isNaN(el["reqNroReport"]) && !isNaN(el["reqNroRoutine"])){
+                                const raw = JSON.stringify({
+                                    "reqNroVisitEmer": `${el["reqNroVisitEmer"]}`,
+                                    "reqNroVehicle": `${el["reqNroVehicle"]}`,
+                                    "reqNroReport": `${el["reqNroReport"]}`,
+                                    "reqNroRoutine": `${el["reqNroRoutine"]}`,
+                                });
+                                await updateEntity('Customer', entityId, raw)
+                                    .then((res) => {
+                                    setTimeout(async () => {
+                                    }, 2000);
+                                });
                             }
-                        }
-
-                        this.updateProgress(100);
-                        if (failCount > 0) {
-                            document.getElementById('progress-title').innerText = `Finalizado con ${failCount} errores`;
-                            this.showProgressError(`Se procesaron ${successCount} registros correctamente.`, importErrors.join('\n'));
-                        } else {
-                            document.getElementById('progress-title').innerText = "Importación Finalizada";
-                            this.finishProgress();
-                            await sleep(1000);
-                            new CloseDialog().x(document.getElementById('dialog-progress'));
-                        }
-
-                        // Cierra el editor de importación al terminar
-                        new CloseDialog().x(this.entityDialogContainer);
+                        });
+                        setTimeout(async () => {
+                            alert("Proceso terminado");
+                            new CloseDialog().x(dialogContainer);
+                            const entityDialogContainer = document.getElementById('entity-editor-container');
+                            new CloseDialog().x(entityDialogContainer)
+                        }, 1000);
                     });
                 });
             }
@@ -712,21 +560,7 @@ export class Audits {
     generateReport(_inputElements) {
         _inputElements.calculateButton.addEventListener('click', async () => {
             if (!infoPage.onPressed) {
-                const startDate = _inputElements.filterStartDate.value;
-                const endDate = _inputElements.filterEndDate.value;
-                const startTime = normalizeTime(_inputElements.filterStartTime.value, '00:00:00');
-                const endTime = normalizeTime(_inputElements.filterEndTime.value, '23:59:59');
-                if (!startDate || !endDate || !startTime || !endTime) {
-                    alert('Seleccione la fecha y hora inicial y final.');
-                    return;
-                }
-                if (`${startDate}T${startTime}` > `${endDate}T${endTime}`) {
-                    alert('La fecha y hora inicial no puede ser mayor que la fecha y hora final.');
-                    return;
-                }
-                _inputElements.filterStartTime.value = startTime;
-                _inputElements.filterEndTime.value = endTime;
-                infoPage.onPressed = true;
+                    infoPage.onPressed = true;
                 this.dialogContainer.style.display = 'block';
                 this.dialogContainer.innerHTML = `
                 <div class="dialog_content" id="dialog-content">
@@ -743,7 +577,7 @@ export class Audits {
                                 </div>
 
                                 <div class="material_input">
-                                    <input type="text" id="modal-calendar" class="input_filled" value="${formatDateTime(startDate, startTime)} - ${formatDateTime(endDate, endTime)}" readonly>
+                                    <input type="text" id="modal-calendar" class="input_filled" value="${_inputElements.filterStartDate.value} - ${_inputElements.filterEndDate.value}" readonly>
                                     <label modal-calendar"><i class="fa-solid fa-calendar"></i> Fecha</label>
                                 </div>
 
@@ -776,10 +610,8 @@ export class Audits {
                 };
                 let error = 0;
                 const conditions = {
-                    filterStartDate: startDate,
-                    filterEndDate: endDate,
-                    filterStartTime: startTime,
-                    filterEndTime: endTime,
+                    filterStartDate: _inputElements.filterStartDate.value,
+                    filterEndDate: _inputElements.filterEndDate.value,
                     property: '',
                     operator: '',
                     value: '',
@@ -788,39 +620,37 @@ export class Audits {
                     value2: '',
                 }
                 if(_inputElements.checkAllCustomer.checked){
-                    conditions.customerScope = [{
-                        property: 'business.id',
-                        operator: '=',
-                        value: Config.currentUser.business.id
-                    }, {
-                        property: 'customer.state.name',
-                        operator: '=',
-                        value: 'Enabled'
-                    }];
+                    conditions.property= 'business.id';
+                    conditions.operator= '=';
+                    conditions.value= Config.currentUser.business.id;
+                    conditions.property2= 'customer.state.name';
+                    conditions.operator2= '=';
+                    conditions.value2= 'Enabled';
+
                 }
-                else {
-                    const selectedCustomerIds = getSelectedCustomerIds(_inputElements.customerElement);
-                    if (selectedCustomerIds.length) {
-                        conditions.customerScope = [{
-                            group: 'OR',
-                            conditions: selectedCustomerIds.map((id) => ({
-                                property: 'customer.id',
-                                operator: '=',
-                                value: id
-                            }))
-                        }];
-                    }
-                    else {
+                else if(_inputElements.customerElement.dataset.optionid != undefined){
+                    conditions.property= 'customer.id';
+                    conditions.operator= '=';
+                    conditions.value= _inputElements.customerElement.dataset.optionid;
+                    conditions.property2= 'customer.state.name';
+                    conditions.operator2= '<>';
+                    conditions.value2= '';
+                }else{
+                    if(_inputElements.objetiveTheme.value == 'RUTINA DE GUARDIA' || _inputElements.objetiveTheme.value == 'RUTINA DE CONSOLA'){
+                        error = 0;
+                    }else{
                         error = 1;
                     }
                 }
-                if (!conditions.customerScope?.length) {
-                    error = 1;
-                }
                 if(error == 0){
                     if (_inputElements.objetiveTheme.value == 'RUTINA DE GUARDIA' || _inputElements.objetiveTheme.value == 'RUTINA DE CONSOLA') {
-                        Object.assign(conditions, {
+                        const conditions = {
                             objetive: _inputElements.objetiveTheme.value,
+                            filterStartDate: _inputElements.filterStartDate.value,
+                            filterEndDate: _inputElements.filterEndDate.value,
+                            operator: '',
+                            property: '',
+                            value: '',
                             name: '',
                             countCumplido: 0,
                             countLibre: 0,
@@ -841,38 +671,54 @@ export class Audits {
                             average2: '',
                             allRoutines: [],
                             allUsersRoutines: []
-                        });
-                        const customerScope = conditions.customerScope;
-                        if (!customerScope.length) {
-                            infoPage.onPressed = false;
-                            const _dialog = document.getElementById('dialog-content');
-                            new CloseDialog().x(_dialog);
-                            alert('No hay empresas activas asociadas a la empresa de seguridad.');
-                            return;
-                        }
+                        };
                         let status = [];
                         if (_inputElements.objetiveTheme.value == 'RUTINA DE GUARDIA') {
+                            //conditions.property = 'user.id'
+                            conditions.property = 'routine.name';
+                            conditions.operator = '<>';
                             status = ["Cumplido", "No cumplido", "Libre"];
                         }
                         else if (_inputElements.objetiveTheme.value == 'RUTINA DE CONSOLA') {
+                            //conditions.property = 'consoleUserId.id'
+                            conditions.property = 'routine.name';
+                            conditions.operator = '<>';
                             status = ["No cumplido"];
                         }
-                        const rawToModify = (offset, status) => {
+                        else {
+                            conditions.property = 'customer.id';
+                            conditions.operator = '=';
+                            status = ["Cumplido", "No cumplido"];
+                        }
+                        const rawToModify = (offset, property, operator, value, status) => {
                             const rawToCount = JSON.stringify({
                                 "filter": {
                                     "conditions": [
-                                        ...customerScope,
                                         {
-                                            "property": "routine.name",
-                                            "operator": "<>",
-                                            "value": ""
+                                            "property": `customer.id`,
+                                            "operator": "=",
+                                            "value": `${customerId}`
+                                        },
+                                        {
+                                            "property": `${property}`,
+                                            "operator": `${operator}`,
+                                            "value": `${value}`
                                         },
                                         {
                                             "property": "routineState.name",
                                             "operator": `=`,
                                             "value": `${status}`
                                         },
-                                        buildDateAndTimeRange('creationDate', 'creationTime', conditions.filterStartDate, conditions.filterStartTime, conditions.filterEndDate, conditions.filterEndTime)
+                                        {
+                                            "property": "creationDate",
+                                            "operator": `>=`,
+                                            "value": `${conditions.filterStartDate}`
+                                        },
+                                        {
+                                            "property": "creationDate",
+                                            "operator": `<=`,
+                                            "value": `${conditions.filterEndDate}`
+                                        }
                                     ],
                                 },
                                 sort: "-createdDate",
@@ -883,7 +729,7 @@ export class Audits {
                             return rawToCount;
                         };
                         for (let i = 0; i < status.length; i++) {
-                            const rawToCount = rawToModify(0, status[i]);
+                            const rawToCount = rawToModify(0, conditions.property, conditions.operator, conditions.value, status[i]);
                             if (status[i] == "Cumplido") {
                                 conditions.countCumplido = await getFilterEntityCount("RoutineRegister", rawToCount);
                             }
@@ -916,7 +762,7 @@ export class Audits {
                                 if (status[i] == "Cumplido") {
                                     for (let x = 0; x < pages; x++) {
                                         if (infoPage.onPressed) {
-                                            const rawToCount = rawToModify(offset, status[i]);
+                                            const rawToCount = rawToModify(offset, conditions.property, conditions.operator, conditions.value, status[i]);
                                             array[x] = await getFilterEntityData("RoutineRegister", rawToCount); //await getEvents();
                                             for (let y = 0; y < array[x].length; y++) {
                                                 conditions.registers.push(array[x][y]);
@@ -934,7 +780,7 @@ export class Audits {
                                 else if (status[i] == "No cumplido") {
                                     for (let x = 0; x < pages; x++) {
                                         if (infoPage.onPressed) {
-                                            const rawToCount = rawToModify(offset, status[i]);
+                                            const rawToCount = rawToModify(offset, conditions.property, conditions.operator, conditions.value, status[i]);
                                             array[x] = await getFilterEntityData("RoutineRegister", rawToCount); //await getEvents();
                                             for (let y = 0; y < array[x].length; y++) {
                                                 conditions.registersNot.push(array[x][y]);
@@ -951,7 +797,7 @@ export class Audits {
                                 }else if (status[i] == "Libre") {
                                     for (let x = 0; x < pages; x++) {
                                         if (infoPage.onPressed) {
-                                            const rawToCount = rawToModify(offset, status[i]);
+                                            const rawToCount = rawToModify(offset, conditions.property, conditions.operator, conditions.value, status[i]);
                                             array[x] = await getFilterEntityData("RoutineRegister", rawToCount); //await getEvents();
                                             for (let y = 0; y < array[x].length; y++) {
                                                 conditions.registersLibre.push(array[x][y]);
@@ -997,7 +843,11 @@ export class Audits {
                                         return JSON.stringify({
                                             "filter": {
                                                 "conditions": [
-                                                    ...customerScope,
+                                                    {
+                                                        "property": `customer.id`,
+                                                        "operator": "=",
+                                                        "value": `${customerId}`
+                                                    },
                                                     {
                                                         "property": `routine.id`,
                                                         "operator": `=`,
@@ -1165,17 +1015,35 @@ export class Audits {
                             
                         }
                     }else if (_inputElements.objetiveTheme.value == 'RUTINA') {
-                        const rawToModify = (offset) => {
+                        const rawToModify = (offset, property, operator, value, property2, operator2, value2) => {
                             const rawToCount = JSON.stringify({
                                 "filter": {
                                     "conditions": [
-                                        ...conditions.customerScope,
+                                        {
+                                            "property": `${property}`,
+                                            "operator": `${operator}`,
+                                            "value": `${value}`
+                                        },
+                                        {
+                                            "property": `${property2}`,
+                                            "operator": `${operator2}`,
+                                            "value": `${value2}`
+                                        },
                                         {
                                             "property": `routineState.name`,
                                             "operator": `<>`,
                                             "value": `No cumplido`
                                         },
-                                        buildDateAndTimeRange('creationDate', 'creationTime', conditions.filterStartDate, conditions.filterStartTime, conditions.filterEndDate, conditions.filterEndTime)
+                                        {
+                                            "property": "creationDate",
+                                            "operator": `>=`,
+                                            "value": `${_inputElements.filterStartDate.value}`
+                                        },
+                                        {
+                                            "property": "creationDate",
+                                            "operator": `<=`,
+                                            "value": `${_inputElements.filterEndDate.value}`
+                                        }
                                     ],
                                 },
                                 sort: "+customer.name",
@@ -1185,7 +1053,7 @@ export class Audits {
                             });
                             return rawToCount;
                         };
-                        const rawToCount = rawToModify(0);
+                        const rawToCount = rawToModify(0, conditions.property, conditions.operator, conditions.value, conditions.property2, conditions.operator2, conditions.value2);
                         let totalRoutine = await getFilterEntityCount("RoutineRegister", rawToCount);
                         if(totalRoutine != 0){
                             subtitleModal.value = `0 / ${totalRoutine}`;
@@ -1195,7 +1063,7 @@ export class Audits {
                             let offset = 0;
                             for (let x = 0; x < pages; x++) {
                                 if (infoPage.onPressed) {
-                                    const rawToCount = rawToModify(offset);
+                                    const rawToCount = rawToModify(offset, conditions.property, conditions.operator, conditions.value, conditions.property2, conditions.operator2, conditions.value2);
                                     array[x] = await getFilterEntityData("RoutineRegister", rawToCount); //await getEvents();
                                     for (let y = 0; y < array[x].length; y++) {
                                         routines.push(array[x][y]);
@@ -1218,17 +1086,35 @@ export class Audits {
                             new CloseDialog().x(_dialog);
                         }
                     }else if(_inputElements.objetiveTheme.value == 'INGRESO EMERGENTE'){
-                        const rawToModify = (offset) => {
+                        const rawToModify = (offset, property, operator, value, property2, operator2, value2) => {
                             const rawToCount = JSON.stringify({
                                 "filter": {
                                     "conditions": [
-                                        ...conditions.customerScope,
+                                        {
+                                            "property": `${property}`,
+                                            "operator": `${operator}`,
+                                            "value": `${value}`
+                                        },
+                                        {
+                                            "property": `${property2}`,
+                                            "operator": `${operator2}`,
+                                            "value": `${value2}`
+                                        },
                                         {
                                             "property": `type`,
                                             "operator": `=`,
                                             "value": `Guardia`
                                         },
-                                        buildDateAndTimeRange('creationDate', 'creationTime', conditions.filterStartDate, conditions.filterStartTime, conditions.filterEndDate, conditions.filterEndTime)
+                                        {
+                                            "property": "creationDate",
+                                            "operator": `>=`,
+                                            "value": `${_inputElements.filterStartDate.value}`
+                                        },
+                                        {
+                                            "property": "creationDate",
+                                            "operator": `<=`,
+                                            "value": `${_inputElements.filterEndDate.value}`
+                                        }
                                     ],
                                 },
                                 sort: "+customer.name",
@@ -1238,7 +1124,7 @@ export class Audits {
                             });
                             return rawToCount;
                         };
-                        const rawToCount = rawToModify(0);
+                        const rawToCount = rawToModify(0, conditions.property, conditions.operator, conditions.value, conditions.property2, conditions.operator2, conditions.value2);
                         let totalVisits = await getFilterEntityCount("Visit", rawToCount);
                         if(totalVisits != 0){
                             subtitleModal.value = `0 / ${totalVisits}`;
@@ -1248,7 +1134,7 @@ export class Audits {
                             let offset = 0;
                             for (let x = 0; x < pages; x++) {
                                 if (infoPage.onPressed) {
-                                    const rawToCount = rawToModify(offset);
+                                    const rawToCount = rawToModify(offset, conditions.property, conditions.operator, conditions.value, conditions.property2, conditions.operator2, conditions.value2);
                                     array[x] = await getFilterEntityData("Visit", rawToCount); //await getEvents();
                                     for (let y = 0; y < array[x].length; y++) {
                                         visits.push(array[x][y]);
@@ -1271,12 +1157,30 @@ export class Audits {
                             new CloseDialog().x(_dialog);
                         }
                     }else if(_inputElements.objetiveTheme.value == 'INGRESO VEHICULAR'){
-                        const rawToModify = (offset) => {
+                        const rawToModify = (offset, property, operator, value, property2, operator2, value2) => {
                             const rawToCount = JSON.stringify({
                                 "filter": {
                                     "conditions": [
-                                        ...conditions.customerScope,
-                                        buildDateAndTimeRange('ingressDate', 'ingressTime', conditions.filterStartDate, conditions.filterStartTime, conditions.filterEndDate, conditions.filterEndTime)
+                                        {
+                                            "property": `${property}`,
+                                            "operator": `${operator}`,
+                                            "value": `${value}`
+                                        },
+                                        {
+                                            "property": `${property2}`,
+                                            "operator": `${operator2}`,
+                                            "value": `${value2}`
+                                        },
+                                        {
+                                            "property": "ingressDate",
+                                            "operator": `>=`,
+                                            "value": `${_inputElements.filterStartDate.value}`
+                                        },
+                                        {
+                                            "property": "ingressDate",
+                                            "operator": `<=`,
+                                            "value": `${_inputElements.filterEndDate.value}`
+                                        }
                                     ],
                                 },
                                 sort: "+customer.name",
@@ -1286,7 +1190,7 @@ export class Audits {
                             });
                             return rawToCount;
                         };
-                        const rawToCount = rawToModify(0);
+                        const rawToCount = rawToModify(0, conditions.property, conditions.operator, conditions.value, conditions.property2, conditions.operator2, conditions.value2);
                         let totalVehiculars = await getFilterEntityCount("Vehicular", rawToCount);
                         if(totalVehiculars != 0){
                             subtitleModal.value = `0 / ${totalVehiculars}`;
@@ -1296,7 +1200,7 @@ export class Audits {
                             let offset = 0;
                             for (let x = 0; x < pages; x++) {
                                 if (infoPage.onPressed) {
-                                    const rawToCount = rawToModify(offset);
+                                    const rawToCount = rawToModify(offset, conditions.property, conditions.operator, conditions.value, conditions.property2, conditions.operator2, conditions.value2);
                                     array[x] = await getFilterEntityData("Vehicular", rawToCount); //await getEvents();
                                     for (let y = 0; y < array[x].length; y++) {
                                         vehiculars.push(array[x][y]);
@@ -1319,12 +1223,30 @@ export class Audits {
                             new CloseDialog().x(_dialog);
                         }
                     }else if(_inputElements.objetiveTheme.value == 'CONSIGNAS (REPORTES)'){
-                        const rawToModify = (offset) => {
+                        const rawToModify = (offset, property, operator, value, property2, operator2, value2) => {
                             const rawToCount = JSON.stringify({
                                 "filter": {
                                     "conditions": [
-                                        ...conditions.customerScope,
-                                        ...buildTimestampRange('creationDate', conditions.filterStartDate, conditions.filterStartTime, conditions.filterEndDate, conditions.filterEndTime)
+                                        {
+                                            "property": `${property}`,
+                                            "operator": `${operator}`,
+                                            "value": `${value}`
+                                        },
+                                        {
+                                            "property": `${property2}`,
+                                            "operator": `${operator2}`,
+                                            "value": `${value2}`
+                                        },
+                                        {
+                                            "property": "creationDate",
+                                            "operator": `>=`,
+                                            "value": `${_inputElements.filterStartDate.value}T00:00:00`
+                                        },
+                                        {
+                                            "property": "creationDate",
+                                            "operator": `<=`,
+                                            "value": `${_inputElements.filterEndDate.value}T23:59:59`
+                                        }
                                     ],
                                 },
                                 sort: "+customer.name",
@@ -1334,7 +1256,7 @@ export class Audits {
                             });
                             return rawToCount;
                         };
-                        const rawToCount = rawToModify(0);
+                        const rawToCount = rawToModify(0, conditions.property, conditions.operator, conditions.value, conditions.property2, conditions.operator2, conditions.value2);
                         let totalNotes = await getFilterEntityCount("Note", rawToCount);
                         if(totalNotes != 0){
                             subtitleModal.value = `0 / ${totalNotes}`;
@@ -1344,7 +1266,7 @@ export class Audits {
                             let offset = 0;
                             for (let x = 0; x < pages; x++) {
                                 if (infoPage.onPressed) {
-                                    const rawToCount = rawToModify(offset);
+                                    const rawToCount = rawToModify(offset, conditions.property, conditions.operator, conditions.value, conditions.property2, conditions.operator2, conditions.value2);
                                     array[x] = await getFilterEntityData("Note", rawToCount); //await getEvents();
                                     for (let y = 0; y < array[x].length; y++) {
                                         notes.push(array[x][y]);
@@ -1374,7 +1296,7 @@ export class Audits {
                         new CloseDialog().x(_dialog);
                     }
                 }else{
-                    alert("Marque todos los clientes activos o seleccione al menos uno.")
+                    alert("Marque todos los clientes activos o seleccione uno.")
                     infoPage.onPressed = false;
                     const _dialog = document.getElementById('dialog-content');
                     new CloseDialog().x(_dialog);
@@ -1384,18 +1306,12 @@ export class Audits {
     }
     selectElement() {
         const btnElement = document.getElementById('btn-select-element');
-        const isRoutineReport = () => ['RUTINA DE GUARDIA', 'RUTINA DE CONSOLA']
-            .includes(document.getElementById('entity-theme')?.value);
         //let offset = 0
         btnElement.addEventListener('click', async () => {
-            if (document.getElementById('entity-allcustomer').checked) return;
             const element = document.getElementById('entity-customer');
-            const selectedCustomers = new Map(
-                getSelectedCustomers(element).map((customer) => [customer.id, customer])
-            );
-            modalTable(0, "", element, selectedCustomers);
+            modalTable(0, "", element);
         });
-        async function modalTable(offset, search, element, selectedCustomers) {
+        async function modalTable(offset, search, element) {
             const dialogContainer = document.getElementById('app-dialogs');
             //const objetiveType = document.getElementById('entity-type');
             const options = {
@@ -1471,7 +1387,6 @@ export class Audits {
                     }
                 ];
             //}
-            const routineReport = isRoutineReport();
             const raw = JSON.stringify({
                 "filter": {
                     "conditions": [
@@ -1484,32 +1399,22 @@ export class Audits {
                             "operator": "=",
                             "value": `${Config.currentUser.business.id}`
                         },
-                        ...(routineReport ? [{
-                            "property": "state.name",
-                            "operator": "=",
-                            "value": "Enabled"
-                        }] : []),
                         ...options.raw
                     ],
                 },
                 sort: options.order,
-                // El selector de alcance debe permitir elegir cualquiera de los
-                // clientes de la empresa de seguridad, no solo la primera página.
                 limit: Config.modalRows,
                 offset: offset,
                 //fetchPlan: 'full',
             });
             const dataModal = await getFilterEntityData(options.table, raw);
-            const totalDataModal = await getFilterEntityCount(options.table, raw);
-            const firstVisibleRow = totalDataModal === 0 ? 0 : offset + 1;
-            const lastVisibleRow = Math.min(offset + dataModal.length, totalDataModal);
             dialogContainer.style.display = 'block'; // ${objetiveType.value}
             dialogContainer.innerHTML = `
                 <div class="dialog_content" id="dialog-content">
                     <div class="dialog">
                         <div class="dialog_container padding_8">
                             <div class="dialog_header">
-                                <h2>SELECCIONAR CLIENTES</h2>
+                                <h2>SELECCIONAR EMPRESA</h2>
                             </div>
 
                             <div class="dialog_message padding_8">
@@ -1528,26 +1433,22 @@ export class Audits {
                                     <table class="datatable_content margin_t_16">
                                     <thead>
                                         <tr>
-                                        <th>Seleccionar</th>
                                         <th>${options.header[0]}</th>
                                         <th>${options.header[1]}</th>
                                         <th>${options.header[2]}</th>
+                                        <th></th>
                                         </tr>
                                     </thead>
                                     <tbody id="datatable-modal-body">
                                     </tbody>
                                     </table>
                                 </div>
-                                <div class="table_summary" id="modal-results-summary">Mostrando ${firstVisibleRow}-${lastVisibleRow} de ${totalDataModal}${routineReport ? ' clientes activos' : ''}. ${selectedCustomers.size} seleccionados.</div>
                                 <br>
                             </div>
 
                             <div class="dialog_footer">
-                                <div class="modal_pagination">
-                                    <button class="btn btn_primary" id="prevModal" ${offset === 0 ? 'disabled' : ''} aria-label="Página anterior"><i class="fa-solid fa-arrow-left"></i></button>
-                                    <button class="btn btn_primary" id="nextModal" ${offset + dataModal.length >= totalDataModal ? 'disabled' : ''} aria-label="Página siguiente"><i class="fa-solid fa-arrow-right"></i></button>
-                                </div>
-                                <button class="btn btn_primary" id="confirm-customer-selection" ${selectedCustomers.size === 0 ? 'disabled' : ''}>Seleccionar (${selectedCustomers.size})</button>
+                                <button class="btn btn_primary" id="prevModal"><i class="fa-solid fa-arrow-left"></i></button>
+                                <button class="btn btn_primary" id="nextModal"><i class="fa-solid fa-arrow-right"></i></button>
                                 <button class="btn btn_danger" id="cancel">Cancelar</button>
                             </div>
                         </div>
@@ -1571,12 +1472,15 @@ export class Audits {
                     let register = dataModal[i];
                     let row = document.createElement('tr');
                     const nameUser = `${register?.firstName ?? ''} ${register?.lastName ?? ''} ${register?.secondLastName ?? ''}`;
-                    const entityName = options.table == 'User' ? register?.username ?? '' : register?.name ?? '';
                     row.innerHTML += `
-                        <td class="entity_options"><input type="checkbox" class="customer-selection" data-entity-id="${register.id}" data-entity-name="${entityName}" ${selectedCustomers.has(register.id) ? 'checked' : ''}></td>
-                        <td>${entityName}</td>
+                        <td>${options.table == 'User' ? register?.username ?? '' : register?.name ?? ''}</td>
                         <td>${options.table == 'User' ? nameUser : register?.ruc ?? ''}</td>
                         <td>${options.table == 'User' ? verifyUserType(register?.userType ?? '') : ''}</td>
+                        <td class="entity_options">
+                            <button class="button" id="edit-entity" data-entityId="${register.id}" data-entityName="${options.table == 'User' ? register?.username ?? '' : register?.name ?? ''}">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </button>
+                        </td>
                     `;
                     datetableBody.appendChild(row);
                     drawTagsIntoTables();
@@ -1584,58 +1488,35 @@ export class Audits {
             }
             const txtSearch = document.getElementById('search-modal');
             const btnSearchModal = document.getElementById('btnSearchModal');
-            const customerSelections = document.querySelectorAll('.customer-selection');
+            const _selectCustomer = document.querySelectorAll('#edit-entity');
             const _closeButton = document.getElementById('cancel');
             const _dialog = document.getElementById('dialog-content');
             const prevModalButton = document.getElementById('prevModal');
             const nextModalButton = document.getElementById('nextModal');
-            const confirmSelectionButton = document.getElementById('confirm-customer-selection');
             txtSearch.value = search ?? '';
-            customerSelections.forEach((selection) => {
-                selection.addEventListener('change', () => {
-                    const { entityId, entityName } = selection.dataset;
-                    if (selection.checked) {
-                        selectedCustomers.set(entityId, { id: entityId, name: entityName });
-                    }
-                    else {
-                        selectedCustomers.delete(entityId);
-                    }
-                    confirmSelectionButton.disabled = selectedCustomers.size === 0;
-                    confirmSelectionButton.textContent = `Seleccionar (${selectedCustomers.size})`;
-                    document.getElementById('modal-results-summary').textContent = `Mostrando ${firstVisibleRow}-${lastVisibleRow} de ${totalDataModal}${routineReport ? ' clientes activos' : ''}. ${selectedCustomers.size} seleccionados.`;
+            _selectCustomer.forEach((edit) => {
+                const entityId = edit.dataset.entityid;
+                const entityName = edit.dataset.entityname;
+                edit.addEventListener('click', () => {
+                    element.setAttribute('data-optionid', entityId);
+                    element.setAttribute('value', `${entityName}`);
+                    element.classList.add('input_filled');
+                    new CloseDialog().x(_dialog);
                 });
             });
             btnSearchModal.onclick = () => {
-                modalTable(0, txtSearch.value, element, selectedCustomers);
-            };
-            confirmSelectionButton.onclick = () => {
-                const customers = [...selectedCustomers.values()];
-                const customerIds = customers.map(({ id }) => id);
-                element.dataset.optionids = customerIds.join(',');
-                element.dataset.optionselection = JSON.stringify(customers);
-                if (customers.length === 1) {
-                    element.dataset.optionid = customers[0].id;
-                    element.value = customers[0].name;
-                }
-                else {
-                    element.removeAttribute('data-optionid');
-                    element.value = `${customers.length} clientes seleccionados`;
-                }
-                element.classList.add('input_filled');
-                new CloseDialog().x(_dialog);
+                modalTable(0, txtSearch.value, element);
             };
             _closeButton.onclick = () => {
                 new CloseDialog().x(_dialog);
             };
             nextModalButton.onclick = () => {
-                if (offset + dataModal.length < totalDataModal) {
-                    modalTable(offset + Config.modalRows, search, element, selectedCustomers);
-                }
+                offset = Config.modalRows + (offset);
+                modalTable(offset, search, element);
             };
             prevModalButton.onclick = () => {
-                if (offset > 0) {
-                    modalTable(Math.max(0, offset - Config.modalRows), search, element, selectedCustomers);
-                }
+                offset = Config.modalRows - (offset);
+                modalTable(offset, search, element);
             };
         }
     }

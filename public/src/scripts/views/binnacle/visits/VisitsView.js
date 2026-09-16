@@ -168,7 +168,6 @@ export class Visits {
                 //this.fixCreatedDate();
             }
         };
-        //<td id="table-time" style="white-space: nowrap">${visit.creationTime}</td>
         this.searchVisit = async (tableBody /*, visits: any*/) => {
             const search = document.getElementById('search');
             const btnSearch = document.getElementById('btnSearch');
@@ -290,6 +289,7 @@ export class Visits {
             });
             const renderInterface = async (entity) => {
                 let entityData = await getEntityData('Visit', entity);
+                console.log(entityData);
                 renderRightSidebar(UIRightSidebar);
                 const controlImages = document.getElementById('galeria');
                 const visitName = document.getElementById('visit-name');
@@ -328,6 +328,14 @@ export class Visits {
                 const egressGuardName = document.getElementById('egress-guard-name');
                 egressGuardName.value = `${entityData?.egressIssuedId?.firstName ?? ''} ${entityData?.egressIssuedId?.lastName ?? ''}`;
                 const checkboxBlackList = document.getElementById('entity-blacklist');
+                const markingStartDocument = document.getElementById('marking-start-document');
+                markingStartDocument.value = entityData?.typeDocument ?? '';
+                const markingStartReference = document.getElementById('marking-start-reference');
+                markingStartReference.value = entityData?.referenceDocument ?? '';
+                const markingEndDocument = document.getElementById('marking-end-document');
+                markingEndDocument.value = entityData?.typeDocumentOut ?? '';
+                const markingEndReference = document.getElementById('marking-end-reference');
+                markingEndReference.value = entityData?.referenceDocumentOut ?? '';
                 if (entityData?.checkBlacklist === true) {
                     checkboxBlackList?.setAttribute('checked', 'true');
                 }
@@ -460,7 +468,48 @@ export class Visits {
                 }
                 this.closeRightSidebar();
                 //drawTagsIntoTables();
+                this.renderRelationTags(entity);
             };
+        };
+        this.renderRelationTags = async (entityId) => {
+            const tagsContainer = document.getElementById('tags-container');
+            if (!tagsContainer) return;
+            let raw = JSON.stringify({
+                "filter": {
+                    "conditions": [
+                        {
+                            "property": "visit.id",
+                            "operator": "=",
+                            "value": `${entityId}`
+                        },
+                        {
+                            "property": "customer.id",
+                            "operator": "=",
+                            "value": `${customerId}`
+                        },
+                        {
+                            "property": "business.id",
+                            "operator": "=",
+                            "value": `${Config.currentUser.business.id}`
+                        }
+                    ]
+                },
+                "fetchPlan": "full"
+            });
+            const relationTags = await getFilterEntityData("RelationTag", raw);
+            relationTags.forEach(rel => {
+                const tagSpan = document.createElement('span');
+                tagSpan.innerText = rel.tag?.name;
+                tagSpan.style.backgroundColor = rel.tag?.color || '#4654d3';
+                tagSpan.style.color = '#FFFFFF';
+                tagSpan.style.padding = '4px 8px';
+                tagSpan.style.borderRadius = '4px';
+                tagSpan.style.fontSize = '10px';
+                tagSpan.style.fontWeight = '700';
+                tagSpan.style.margin = '2px';
+                tagSpan.style.display = 'inline-block';
+                tagsContainer.appendChild(tagSpan);
+            });
         };
         this.closeRightSidebar = () => {
             const closeButton = document.getElementById('close');

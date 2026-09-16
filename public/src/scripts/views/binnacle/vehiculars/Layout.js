@@ -93,6 +93,11 @@ export const UIRightSidebar = `
     </div>
     <br>
     <div class="input_detail">
+        <label for="marking-ruc"><i class="fa-solid fa-binary-circle-check"></i> RUC:</label>
+        <input type="text" id="marking-ruc" class="input_filled" readonly>
+    </div>
+    <br>
+    <div class="input_detail">
         <label for="marking-license"><i class="fa-solid fa-object-group"></i> Licencia:</label>
         <input type="text" id="marking-license" class="input_filled" readonly>
     </div>
@@ -155,6 +160,16 @@ export const UIRightSidebar = `
         <input type="text" id="marking-start-guard-name" class="input_filled" readonly>
     </div>
     <br>
+    <div class="input_detail">
+        <label for="marking-start-document"><i class="fa-solid fa-book-blank"></i></label>
+        <input type="text" id="marking-start-document" class="input_filled" readonly>
+    </div>
+    <br>
+    <div class="input_detail">
+        <label for="marking-start-reference"><i class="fa-solid fa-hashtag"></i></label>
+        <input type="text" id="marking-start-reference" class="input_filled" readonly>
+    </div>
+    <br>
     <!-- End marking -->
     <h3>Salida</h3>
     <br>
@@ -177,6 +192,19 @@ export const UIRightSidebar = `
         <label for="marking-end-guard-name"><i class="fa-solid fa-user-police"></i></label>
         <input type="text" id="marking-end-guard-name" class="input_filled" readonly>
     </div>
+    <br>
+    <div class="input_detail">
+        <label for="marking-end-document"><i class="fa-solid fa-book-blank"></i></label>
+        <input type="text" id="marking-end-document" class="input_filled" readonly>
+    </div>
+    <br>
+    <div class="input_detail">
+        <label for="marking-end-reference"><i class="fa-solid fa-hashtag"></i></label>
+        <input type="text" id="marking-end-reference" class="input_filled" readonly>
+    </div>
+    <br>
+    <h3>Etiquetas</h3>
+    <div id="tags-container" class="tag" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
     <br>
     <h3>Galería</h3>
 

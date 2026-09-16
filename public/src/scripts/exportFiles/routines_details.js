@@ -1,6 +1,5 @@
 //import {generateFile } from "../tools";
-import { routineToStimate } from "../tools.js";
-import { exportNetGuardStatisticalReport } from "./statisticalReport.js";
+import { routineToStimate, generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
 export const exportRoutineDetailPdf = (ar, start, end) => {
     // @ts-ignore
     window.jsPDF = window.jspdf.jsPDF;
@@ -71,14 +70,7 @@ export const exportRoutineDetailPdf = (ar, start, end) => {
         var pdfInMM = 160; //210;  // width of A4 in mm
         var paragraph = doc.splitTextToSize(register.usuario, (pdfInMM - lMargin - rMargin));
         doc.text(lMargin, row, paragraph);
-        rowAtt.usuario = calculateRow(register.usuario.length,"usuario");
-
-        lMargin = 160; //left margin in mm
-        rMargin = 5; //right margin in mm
-        pdfInMM = 210; //210;  // width of A4 in mm
-        paragraph = doc.splitTextToSize(register.observacion, (pdfInMM - lMargin - rMargin));
-        doc.text(lMargin, row, paragraph);
-        rowAtt.observacion = calculateRow(register.observacion.length,"observacion");
+        rowAtt.usuario = calculateRow(register.usuario.length, "usuario");
 
         row += Math.max(rowAtt.rutina, rowAtt.ubicacion, rowAtt.usuario, rowAtt.observacion);
         if(register.imagen != ''){
@@ -125,24 +117,28 @@ export const exportRoutineDetailCsv = (ar, start, end) => {
         // @ts-ignore
         //if (noteCreationDate >= start && noteCreationDate <= end) {
             let obj = {
-                "Empresa": `${register.customer?.name.split("\n").join("(salto)")}`,
+                "Empresa": `${register.routineRelation?.customer?.name.split("\n").join("(salto)")}`,
                 "Fecha": `${register.creationDate}`,
                 "Hora": `${register.creationTime}`,
                 "Estado": `${register?.routineState?.name ?? ''}`,
-                "Rutina": `${register?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                "Ubicación": `${register?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Rutina": `${register.routineRelation?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Horario": `${register.routineRelation?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Ubicación": `${register.routineRelation?.qrPoint?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
                 "Nombre": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
                 "Usuario": `${register.user?.username ?? ''}`,
                 "Latitud": `${register?.latitude ?? ''}`,
                 "Longitud": `${register?.longitude ?? ''}`,
-                "Fecha desde:": `${register?.targetDate ?? ''} ${register?.targetTime ?? ''}`,
-                "Fecha hasta:": `${register?.targetDate2 ?? ''} ${register?.targetTime2 ?? ''}`,
+                "Fecha desde": `${register?.targetDate ?? ''} ${register?.targetTime ?? ''}`,
+                "Fecha hasta": `${register?.targetDate2 ?? ''} ${register?.targetTime2 ?? ''}`,
+                "Validado por": `${register?.consoleUser ?? ''}`,
+                "Fecha Val.": `${register?.consoleDate ?? ''}`,
+                "Hora Val.": `${register?.consoleTime ?? ''}`,
                 "Observación": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
             };
             rows.push(obj);
         //}
     }
-    generateFile(rows, "DetallesRutinas", "csv");
+    generateFileSimpleCsv(rows, "DetallesRutinas", "csv");
 };
 export const exportRoutineDetailXls = (ar, start, end) => {
     let rows = [];
@@ -151,24 +147,28 @@ export const exportRoutineDetailXls = (ar, start, end) => {
         // @ts-ignore
         //if (noteCreationDate >= start && noteCreationDate <= end) {
             let obj = {
-                "Empresa": `${register.customer?.name.split("\n").join("(salto)")}`,
+                "Empresa": `${register.routineRelation?.customer?.name.split("\n").join("(salto)")}`,
                 "Fecha": `${register.creationDate}`,
                 "Hora": `${register.creationTime}`,
                 "Estado": `${register?.routineState?.name ?? ''}`,
-                "Rutina": `${register?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                "Ubicación": `${register?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Rutina": `${register.routineRelation?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Horario": `${register.routineRelation?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Ubicación": `${register.routineRelation?.qrPoint?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
                 "Nombre": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
                 "Usuario": `${register.user?.username ?? ''}`,
                 "Latitud": `${register?.latitude ?? ''}`,
                 "Longitud": `${register?.longitude ?? ''}`,
-                "Fecha desde:": `${register?.targetDate ?? ''} ${register?.targetTime ?? ''}`,
-                "Fecha hasta:": `${register?.targetDate2 ?? ''} ${register?.targetTime2 ?? ''}`,
+                "Fecha desde": `${register?.targetDate ?? ''} ${register?.targetTime ?? ''}`,
+                "Fecha hasta": `${register?.targetDate2 ?? ''} ${register?.targetTime2 ?? ''}`,
+                "Validado por": `${register?.consoleUser ?? ''}`,
+                "Fecha Val.": `${register?.consoleDate ?? ''}`,
+                "Hora Val.": `${register?.consoleTime ?? ''}`,
                 "Observación": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
             };
             rows.push(obj);
         //}
     }
-    generateFile(rows, "DetallesRutinas", "xls");
+    generateFileSimpleXls(rows, "DetallesRutinas", "xls");
 };
 const generateFile = (ar, title, extension) => {
     //comprobamos compatibilidad
@@ -264,18 +264,6 @@ const newDataBlock = (array, index) => {
 }
 
 export const generarReportRoutineXls = async (conditions, routines) => {
-    const statisticalRows = await routineToStimate(conditions, routines);
-    return exportNetGuardStatisticalReport({
-        title: 'REPORTE DE RUTINAS',
-        filename: 'Cumplimiento_Rutina.xlsx',
-        conditions,
-        rows: statisticalRows.map((user) => ({ customer: user.customer, user: `[${user.username}] ${user.name}`, required: user.requerido, completed: user.routines, compliance: user.cumplimiento })),
-        glossary: [
-            { term: 'Requeridos', definition: 'Cantidad de rutinas esperadas para el usuario durante el período seleccionado.' },
-            { term: 'Realizados', definition: 'Cantidad de rutinas registradas durante el período seleccionado.' },
-            { term: 'Cumplimiento', definition: 'Porcentaje calculado por NetGuard: realizados / requeridos.' }
-        ]
-    });
     // @ts-ignore
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Personal");

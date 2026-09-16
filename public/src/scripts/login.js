@@ -53,7 +53,7 @@ export class SignIn {
                     }else{
                         this.signOut();
                         alert('Usuario no tiene asignado empresa.');
-                    }    
+                    }
                 }
                 if (currentUser.isSuper !== true) {
                     this.signOut();
@@ -97,7 +97,7 @@ export class SignIn {
                     this.showVerified(currentUser.id, currentUser?.hashSuper);
                 }
             }
-            
+
         };
         if (accessToken) {
             checkUser();

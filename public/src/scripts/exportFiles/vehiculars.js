@@ -1,6 +1,4 @@
-//import {generateFile } from "../tools";
-import { vehicleToStimate } from "../tools.js";
-import { exportNetGuardStatisticalReport } from "./statisticalReport.js";
+import { vehicleToStimate, generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
 
 export const exportVehicularPdf = (ar, start, end) => {
     // @ts-ignore
@@ -90,140 +88,144 @@ export const exportVehicularPdf = (ar, start, end) => {
     var title = "log_Vehicular_" + d.getDate() + "_" + (d.getMonth() + 1) + "_" + d.getFullYear() + `.pdf`;
     doc.save(title);
 };
+const parseEntradaSalida = (text) => {
+    let entrada = '';
+    let salida = '';
+    if (text) {
+        const textStr = String(text);
+        const entradaMatch = textStr.match(/\[ENTRADA\]:\s*([\s\S]*?)(?=\[SALIDA\]|$)/i);
+        const salidaMatch = textStr.match(/\[SALIDA\]:\s*([\s\S]*?)$/i);
+
+        if (entradaMatch) {
+            entrada = entradaMatch[1].trim().split("\n").join("(salto)");
+        }
+        if (salidaMatch) {
+            salida = salidaMatch[1].trim().split("\n").join("(salto)");
+        }
+
+        if (!entradaMatch && !salidaMatch) {
+            entrada = textStr.trim().split("\n").join("(salto)");
+            salida = '';//entrada
+        }
+    }
+    return { entrada, salida };
+};
+
 export const exportVehicularCsv = (ar, start, end) => {
     let rows = [];
     for (let i = 0; i < ar.length; i++) {
         let vehicular = ar[i];
-        // @ts-ignore
-        //if (vehicular.ingressDate >= start && vehicular.ingressDate <= end) {
-            let obj = {
-                "Empresa": `${vehicular.customer?.name.split("\n").join("(salto)")}`,
-                "Placa": `${vehicular?.licensePlate.split("\n").join("(salto)") ?? ''}`,
-                "Conductor": `${vehicular?.driver.split("\n").join("(salto)") ?? ''}`,
-                "DNI": `${vehicular?.dni ?? ''}`,
-                "Fecha Ingreso": `${vehicular?.ingressDate ?? ''}`,
-                "Hora Ingreso": `${vehicular?.ingressTime ?? ''}`,
-                "Emitido Ingreso": `${vehicular.ingressIssued?.firstName ?? ''} ${vehicular.ingressIssued?.lastName ?? ''}`,
-                "Guardia Ingreso": `${vehicular.ingressIssued?.username ?? ''}`,
-                "Fecha Salida": `${vehicular?.egressDate ?? ''}`,
-                "Hora Salida": `${vehicular?.egressTime ?? ''}`,
-                "Emitido Salida": `${vehicular.egressIssued?.firstName ?? ''} ${vehicular.egressIssued?.lastName ?? ''}`,
-                "Guardia Salida": `${vehicular.egressIssued?.username ?? ''}`,
-                "Producto": `${vehicular?.product.split("\n").join("(salto)") ?? ''}`,
-                "Nro Guía": `${vehicular?.noGuide.split("\n").join("(salto)") ?? ''}`,
-                "Proveedor": `${vehicular?.supplier.split("\n").join("(salto)") ?? ''}`,
-                "Tipo": `${vehicular?.type.split("\n").join("(salto)") ?? ''}`,
-                "Estado": `${vehicular.visitState?.name ?? ''}`,
-                "Encargado Diurno": `${vehicular?.dayManager.split("\n").join("(salto)") ?? ''}`,
-                "Encargado Nocturno": `${vehicular?.nightManager.split("\n").join("(salto)") ?? ''}`,
-                "Observación": `${vehicular?.observation.split("\n").join("(salto)") ?? ''}`,
-              }
-              rows.push(obj);
-        //}
+        const rucParse = parseEntradaSalida(vehicular?.ruc);
+        const dniParse = parseEntradaSalida(vehicular?.dni);
+        const conductorParse = parseEntradaSalida(vehicular?.driver);
+        const productoParse = parseEntradaSalida(vehicular?.product);
+        const nroGuiaParse = parseEntradaSalida(vehicular?.noGuide);
+        const proveedorParse = parseEntradaSalida(vehicular?.supplier);
+        const tipoParse = parseEntradaSalida(vehicular?.type);
+        const encargadoDiurnoParse = parseEntradaSalida(vehicular?.dayManager);
+        const encargadoNocturnoParse = parseEntradaSalida(vehicular?.nightManager);
+        const observacionParse = parseEntradaSalida(vehicular?.observation);
+
+        let obj = {
+            "Empresa": `${vehicular.customer?.name.split("\n").join("(salto)")}`,
+            "Placa": `${vehicular?.licensePlate.split("\n").join("(salto)") ?? ''}`,
+            "RUC Entrada": rucParse.entrada,
+            "RUC Salida": rucParse.salida,
+            "Tipo Documento Entrada": `${vehicular?.typeDocument ?? ''}`,
+            "Referencia Documento Entrada": `${vehicular?.referenceDocument ?? ''}`,
+            "Tipo Documento Salida": `${vehicular?.typeDocumentOut ?? ''}`,
+            "Referencia Documento Salida": `${vehicular?.referenceDocumentOut ?? ''}`,
+            "Conductor Entrada": conductorParse.entrada,
+            "Conductor Salida": conductorParse.salida,
+            "DNI Entrada": dniParse.entrada,
+            "DNI Salida": dniParse.salida,
+            "Fecha Ingreso": `${vehicular?.ingressDate ?? ''}`,
+            "Hora Ingreso": `${vehicular?.ingressTime ?? ''}`,
+            "Emitido Ingreso": `${vehicular.ingressIssued?.firstName ?? ''} ${vehicular.ingressIssued?.lastName ?? ''}`,
+            "Guardia Ingreso": `${vehicular.ingressIssued?.username ?? ''}`,
+            "Fecha Salida": `${vehicular?.egressDate ?? ''}`,
+            "Hora Salida": `${vehicular?.egressTime ?? ''}`,
+            "Emitido Salida": `${vehicular.egressIssued?.firstName ?? ''} ${vehicular.egressIssued?.lastName ?? ''}`,
+            "Guardia Salida": `${vehicular.egressIssued?.username ?? ''}`,
+            "Producto Entrada": productoParse.entrada,
+            "Producto Salida": productoParse.salida,
+            "Nro Guía Entrada": nroGuiaParse.entrada,
+            "Nro Guía Salida": nroGuiaParse.salida,
+            "Proveedor Entrada": proveedorParse.entrada,
+            "Proveedor Salida": proveedorParse.salida,
+            "Tipo Entrada": tipoParse.entrada,
+            "Tipo Salida": tipoParse.salida,
+            "Estado": `${vehicular.visitState?.name ?? ''}`,
+            "Encargado Diurno Entrada": encargadoDiurnoParse.entrada,
+            "Encargado Diurno Salida": encargadoDiurnoParse.salida,
+            "Encargado Nocturno Entrada": encargadoNocturnoParse.entrada,
+            "Encargado Nocturno Salida": encargadoNocturnoParse.salida,
+            "Observación Entrada": observacionParse.entrada,
+            "Observación Salida": observacionParse.salida,
+        };
+        rows.push(obj);
     }
-    generateFile(rows, "Vehicular", "csv");
+    generateFileSimpleCsv(rows, "Vehicular", "csv");
 };
+
 export const exportVehicularXls = (ar, start, end) => {
     let rows = [];
     for (let i = 0; i < ar.length; i++) {
         let vehicular = ar[i];
-        // @ts-ignore
-        //if (vehicular.ingressDate >= start && vehicular.ingressDate <= end) {
-            let obj = {
-                "Empresa": `${vehicular.customer?.name.split("\n").join("(salto)")}`,
-                "Placa": `${vehicular?.licensePlate.split("\n").join("(salto)") ?? ''}`,
-                "Conductor": `${vehicular?.driver.split("\n").join("(salto)") ?? ''}`,
-                "DNI": `${vehicular?.dni ?? ''}`,
-                "Fecha Ingreso": `${vehicular?.ingressDate ?? ''}`,
-                "Hora Ingreso": `${vehicular?.ingressTime ?? ''}`,
-                "Emitido Ingreso": `${vehicular.ingressIssued?.firstName ?? ''} ${vehicular.ingressIssued?.lastName ?? ''}`,
-                "Guardia Ingreso": `${vehicular.ingressIssued?.username ?? ''}`,
-                "Fecha Salida": `${vehicular?.egressDate ?? ''}`,
-                "Hora Salida": `${vehicular?.egressTime ?? ''}`,
-                "Emitido Salida": `${vehicular.egressIssued?.firstName ?? ''} ${vehicular.egressIssued?.lastName ?? ''}`,
-                "Guardia Salida": `${vehicular.egressIssued?.username ?? ''}`,
-                "Producto": `${vehicular?.product.split("\n").join("(salto)") ?? ''}`,
-                "Nro Guía": `${vehicular?.noGuide.split("\n").join("(salto)") ?? ''}`,
-                "Proveedor": `${vehicular?.supplier.split("\n").join("(salto)") ?? ''}`,
-                "Tipo": `${vehicular?.type.split("\n").join("(salto)") ?? ''}`,
-                "Estado": `${vehicular.visitState?.name ?? ''}`,
-                "Encargado Diurno": `${vehicular?.dayManager.split("\n").join("(salto)") ?? ''}`,
-                "Encargado Nocturno": `${vehicular?.nightManager.split("\n").join("(salto)") ?? ''}`,
-                "Observación": `${vehicular?.observation.split("\n").join("(salto)") ?? ''}`,
-            };
-            rows.push(obj);
-        //}
-    }
-    generateFile(rows, "Vehicular", "xls");
-};
-const generateFile = (ar, title, extension) => {
-    //comprobamos compatibilidad
-    if (window.Blob && (window.URL || window.webkitURL)) {
-        var contenido = "", d = new Date(), blob, reader, save, clicEvent;
-        //creamos contenido del archivo
-        for (var i = 0; i < ar.length; i++) {
-            //construimos cabecera del csv
-            if (i == 0)
-                contenido += Object.keys(ar[i]).join(";") + "\n";
-            //resto del contenido
-            contenido += Object.keys(ar[i]).map(function (key) {
-                return ar[i][key];
-            }).join(";") + "\n";
-        }
-        //creamos el blob
-        blob = new Blob(["\ufeff", contenido], { type: `text/${extension}` });
-        //creamos el reader
-        // @ts-ignore
-        var reader = new FileReader();
-        reader.onload = function (event) {
-            //escuchamos su evento load y creamos un enlace en dom
-            save = document.createElement('a');
-            // @ts-ignore
-            save.href = event.target.result;
-            save.target = '_blank';
-            //aquí le damos nombre al archivo
-            save.download = "log_" + title + "_" + d.getDate() + "_" + (d.getMonth() + 1) + "_" + d.getFullYear() + `.${extension}`;
-            try {
-                //creamos un evento click
-                clicEvent = new MouseEvent('click', {
-                    'view': window,
-                    'bubbles': true,
-                    'cancelable': true
-                });
-            }
-            catch (e) {
-                //si llega aquí es que probablemente implemente la forma antigua de crear un enlace
-                clicEvent = document.createEvent("MouseEvent");
-                // @ts-ignore
-                clicEvent.click();
-            }
-            //disparamos el evento
-            save.dispatchEvent(clicEvent);
-            //liberamos el objeto window.URL
-            (window.URL || window.webkitURL).revokeObjectURL(save.href);
+        const rucParse = parseEntradaSalida(vehicular?.ruc);
+        const dniParse = parseEntradaSalida(vehicular?.dni);
+        const conductorParse = parseEntradaSalida(vehicular?.driver);
+        const productoParse = parseEntradaSalida(vehicular?.product);
+        const nroGuiaParse = parseEntradaSalida(vehicular?.noGuide);
+        const proveedorParse = parseEntradaSalida(vehicular?.supplier);
+        const tipoParse = parseEntradaSalida(vehicular?.type);
+        const encargadoDiurnoParse = parseEntradaSalida(vehicular?.dayManager);
+        const encargadoNocturnoParse = parseEntradaSalida(vehicular?.nightManager);
+        const observacionParse = parseEntradaSalida(vehicular?.observation);
+
+        let obj = {
+            "Empresa": `${vehicular.customer?.name.split("\n").join("(salto)")}`,
+            "Placa": `${vehicular?.licensePlate.split("\n").join("(salto)") ?? ''}`,
+            "RUC Entrada": rucParse.entrada,
+            "RUC Salida": rucParse.salida,
+            "Tipo Documento Entrada": `${vehicular?.typeDocument ?? ''}`,
+            "Referencia Documento Entrada": `${vehicular?.referenceDocument ?? ''}`,
+            "Tipo Documento Salida": `${vehicular?.typeDocumentOut ?? ''}`,
+            "Referencia Documento Salida": `${vehicular?.referenceDocumentOut ?? ''}`,
+            "Conductor Entrada": conductorParse.entrada,
+            "Conductor Salida": conductorParse.salida,
+            "DNI Entrada": dniParse.entrada,
+            "DNI Salida": dniParse.salida,
+            "Fecha Ingreso": `${vehicular?.ingressDate ?? ''}`,
+            "Hora Ingreso": `${vehicular?.ingressTime ?? ''}`,
+            "Emitido Ingreso": `${vehicular.ingressIssued?.firstName ?? ''} ${vehicular.ingressIssued?.lastName ?? ''}`,
+            "Guardia Ingreso": `${vehicular.ingressIssued?.username ?? ''}`,
+            "Fecha Salida": `${vehicular?.egressDate ?? ''}`,
+            "Hora Salida": `${vehicular?.egressTime ?? ''}`,
+            "Emitido Salida": `${vehicular.egressIssued?.firstName ?? ''} ${vehicular.egressIssued?.lastName ?? ''}`,
+            "Guardia Salida": `${vehicular.egressIssued?.username ?? ''}`,
+            "Producto Entrada": productoParse.entrada,
+            "Producto Salida": productoParse.salida,
+            "Nro Guía Entrada": nroGuiaParse.entrada,
+            "Nro Guía Salida": nroGuiaParse.salida,
+            "Proveedor Entrada": proveedorParse.entrada,
+            "Proveedor Salida": proveedorParse.salida,
+            "Tipo Entrada": tipoParse.entrada,
+            "Tipo Salida": tipoParse.salida,
+            "Estado": `${vehicular.visitState?.name ?? ''}`,
+            "Encargado Diurno Entrada": encargadoDiurnoParse.entrada,
+            "Encargado Diurno Salida": encargadoDiurnoParse.salida,
+            "Encargado Nocturno Entrada": encargadoNocturnoParse.entrada,
+            "Encargado Nocturno Salida": encargadoNocturnoParse.salida,
+            "Observación Entrada": observacionParse.entrada,
+            "Observación Salida": observacionParse.salida,
         };
-        //leemos como url
-        reader.readAsDataURL(blob);
+        rows.push(obj);
     }
-    else {
-        //el navegador no admite esta opción
-        alert("Su navegador no permite esta acción");
-    }
+    generateFileSimpleXls(rows, "Vehicular", "xls");
 };
 
 export const generarReportVehicularXls = async (conditions, vehiculars) => {
-    const statisticalRows = await vehicleToStimate(conditions, vehiculars);
-    return exportNetGuardStatisticalReport({
-        title: 'REPORTE DE INGRESO VEHICULAR',
-        filename: 'Cumplimiento_Vehicular.xlsx',
-        conditions,
-        rows: statisticalRows.map((user) => ({ customer: user.customer, user: `[${user.username}] ${user.name}`, required: user.requerido, completed: user.vehicles, compliance: user.cumplimiento })),
-        glossary: [
-            { term: 'Requeridos', definition: 'Cantidad de registros vehiculares esperados durante el período seleccionado.' },
-            { term: 'Realizados', definition: 'Cantidad de ingresos vehiculares registrados durante el período seleccionado.' },
-            { term: 'Cumplimiento', definition: 'Porcentaje calculado por NetGuard: realizados / requeridos.' }
-        ]
-    });
     // @ts-ignore
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Vehicular");

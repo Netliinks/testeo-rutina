@@ -1,3 +1,4 @@
+import { generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
 export const exportSuperPdf = (ar) => {
     let fecha = new Date(); //Fecha actual
     let mes = fecha.getMonth() + 1; //obteniendo mes
@@ -103,7 +104,7 @@ export const exportSuperCsv = (ar) => {
         };
         rows.push(obj);
     }
-    generateFile(rows, "Superusuarios", "csv");
+    generateFileSimpleCsv(rows, "Superusuarios", "csv");
 };
 export const exportSuperXls = (ar) => {
     let rows = [];
@@ -123,7 +124,7 @@ export const exportSuperXls = (ar) => {
         };
         rows.push(obj);
     }
-    generateFile(rows, "Superusuarios", "xls");
+    generateFileSimpleXls(rows, "Superusuarios", "xls");
 };
 const generateFile = (ar, title, extension) => {
     //comprobamos compatibilidad

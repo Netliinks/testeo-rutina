@@ -9,6 +9,11 @@ export const tableLayoutTemplate = `
         <th colspan="2"></th>
         <td>Cargando</td>
         <td>Cargando</td>
+        <td>Cargando</td>
+        <td>Cargando</td>
+        <td>Cargando</td>
+        <td>Cargando</td>
+        <td>Cargando</td>
         <td class="entity_options">
             <button class="button" id="edit-data">
                 <i class="table_icon fa-solid fa-pencil"></i>

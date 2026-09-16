@@ -1,5 +1,4 @@
-import { visitToStimate } from "../tools.js";
-import { exportNetGuardStatisticalReport } from "./statisticalReport.js";
+import { visitToStimate, generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
 
 export const exportVisitPdf = (ar, start, end) => {
     // @ts-ignore
@@ -97,6 +96,10 @@ export const exportVisitCsv = (ar, start, end) => {
                 "Empresa": `${visit.customer?.name.split("\n").join("(salto)")}`,
                 "Nombre": `${visit.firstName} ${visit.firstLastName} ${visit.secondLastName}`,
                 "DNI": `${visit.dni}`,
+                "Tipo Documento Entrada": `${visit?.typeDocument ?? ''}`,
+                "Referencia Documento Entrada": `${visit?.referenceDocument ?? ''}`,
+                "Tipo Documento Salida": `${visit?.typeDocumentOut ?? ''}`,
+                "Referencia Documento Salida": `${visit?.referenceDocumentOut ?? ''}`,
                 "Fecha Creación": `${visit.creationDate}`,
                 "Hora Creación": `${visit.creationTime}`,
                 "Nombre Usuario": `${visit.user?.firstName ?? ''} ${visit.user?.lastName ?? ''}`,
@@ -121,7 +124,7 @@ export const exportVisitCsv = (ar, start, end) => {
             rows.push(obj);
         //}
     }
-    generateFile(rows, "Visitas", "csv");
+    generateFileSimpleCsv(rows, "Visitas", "csv");
 };
 export const exportVisitXls = (ar, start, end) => {
     let rows = [];
@@ -133,6 +136,10 @@ export const exportVisitXls = (ar, start, end) => {
                 "Empresa": `${visit.customer?.name.split("\n").join("(salto)")}`,
                 "Nombre": `${visit.firstName} ${visit.firstLastName} ${visit.secondLastName}`,
                 "DNI": `${visit.dni}`,
+                "Tipo Documento Entrada": `${visit?.typeDocument ?? ''}`,
+                "Referencia Documento Entrada": `${visit?.referenceDocument ?? ''}`,
+                "Tipo Documento Salida": `${visit?.typeDocumentOut ?? ''}`,
+                "Referencia Documento Salida": `${visit?.referenceDocumentOut ?? ''}`,
                 "Fecha Creación": `${visit.creationDate}`,
                 "Hora Creación": `${visit.creationTime}`,
                 "Nombre Usuario": `${visit.user?.firstName ?? ''} ${visit.user?.lastName ?? ''}`,
@@ -157,7 +164,7 @@ export const exportVisitXls = (ar, start, end) => {
             rows.push(obj);
         //}
     }
-    generateFile(rows, "Visitas", "xls");
+    generateFileSimpleXls(rows, "Visitas", "xls");
 };
 const generateFile = (ar, title, extension) => {
     //comprobamos compatibilidad
@@ -264,18 +271,6 @@ const splitText = (doc, field, lMargin, rMargin, pdfInMM) => {
 }
 
 export const generarReportVisitXls = async (conditions, visits) => {
-    const statisticalRows = await visitToStimate(conditions, visits);
-    return exportNetGuardStatisticalReport({
-        title: 'REPORTE DE INGRESO DE PERSONAS (VISITAS EMERGENTES)',
-        filename: 'Cumplimiento_Visita.xlsx',
-        conditions,
-        rows: statisticalRows.map((user) => ({ customer: user.customer, user: `[${user.username}] ${user.name}`, required: user.requerido, completed: user.visits, compliance: user.cumplimiento })),
-        glossary: [
-            { term: 'Requeridos', definition: 'Cantidad de ingresos emergentes esperados para el usuario durante el período seleccionado.' },
-            { term: 'Realizados', definition: 'Cantidad de ingresos emergentes registrados por el usuario durante el período seleccionado.' },
-            { term: 'Cumplimiento', definition: 'Porcentaje calculado por NetGuard: realizados / requeridos.' }
-        ]
-    });
     // @ts-ignore
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Personal");

@@ -1,3 +1,5 @@
+import { generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
+
 export const exportContractorPdf = (ar) => {
     let fecha = new Date(); //Fecha actual
     let mes = fecha.getMonth() + 1; //obteniendo mes
@@ -99,7 +101,7 @@ export const exportContractorCsv = (ar) => {
         };
         rows.push(obj);
     }
-    generateFile(rows, "Contratistas", "csv");
+    generateFileSimpleCsv(rows, "Contratistas", "csv");
 };
 export const exportContractorXls = (ar) => {
     let rows = [];
@@ -118,7 +120,7 @@ export const exportContractorXls = (ar) => {
         };
         rows.push(obj);
     }
-    generateFile(rows, "Contratistas", "xls");
+    generateFileSimpleXls(rows, "Contratistas", "xls");
 };
 const generateFile = (ar, title, extension) => {
     //comprobamos compatibilidad
