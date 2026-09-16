@@ -14,7 +14,7 @@ const currentPage = Config.currentPage;
 let currentUserInfo; 
 let currentCustomer;
 const customerId = localStorage.getItem('customer_id');
-let isSame = Config.isDepartmentEnabled(customerId);
+//let isSame = Config.isDepartmentEnabled(customerId);
 let infoPage = {
     count: 0,
     offset: Config.offset,
@@ -337,7 +337,7 @@ export class Employees {
             renderInterface('User');
         });
         const renderInterface = async (entities) => {
-            isSame = Config.isDepartmentEnabled(customerId);
+            const isSame = Config.isDepartmentEnabled(customerId);
             const naDepartment = await searchUniversalValue("name", "=", "N/A", "Department");
             this.entityDialogContainer.innerHTML = '';
             this.entityDialogContainer.style.display = 'flex';
@@ -726,7 +726,7 @@ export class Employees {
             });
         });
         const RInterface = async (entities, entityID) => {
-            isSame = Config.isDepartmentEnabled(customerId);
+            const isSame = Config.isDepartmentEnabled(customerId);
             const data = await getEntityData(entities, entityID);
             this.entityDialogContainer.innerHTML = '';
             this.entityDialogContainer.style.display = 'flex';
