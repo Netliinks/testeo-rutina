@@ -230,12 +230,21 @@ export class Events {
                 for (let i = 0; i < paginatedItems.length; i++) {
                     let event = paginatedItems[i]; // getting note items
                     let row = document.createElement('TR');
+                    const latitude = Number(event.latitude);
+                    const longitude = Number(event.longitude);
+                    const hasLocation = event.latitude !== null && event.latitude !== undefined
+                        && event.longitude !== null && event.longitude !== undefined
+                        && Number.isFinite(latitude) && Number.isFinite(longitude);
+                    const locationCell = hasLocation
+                        ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${latitude},${longitude}`)}" target="_blank" rel="noopener" title="Abrir ubicación en Google Maps">${latitude}, ${longitude}</a>`
+                        : '-';
                     row.innerHTML += `
                     <td>${calculateLine(event?.customer?.name, 40)}</td>
                     <td>${calculateLine(event?.title ?? '', 40)}</td>
                     <td>${calculateLine(event?.description ?? '', 40)}</td>
                     <td>[${event?.user?.username ?? ''}] ${event?.user?.firstName ?? ''} ${event?.user?.lastName ?? ''}</td>
                     <td id="table-date">${event.creationDate}</td>
+                    <td>${locationCell}</td>
                     <td id="td-alert-${event.id}"></td>
                     <td>
                         <button class="button" id="entity-details" data-entityId="${event.id}">
@@ -325,6 +334,10 @@ export class Events {
                     content: document.getElementById('event-content'),
                     author: document.getElementById('event-author'),
                     authorId: document.getElementById('event-author-id'),
+                    installation: document.getElementById('event-installation'),
+                    locationContainer: document.getElementById('event-location-container'),
+                    locationSeparator: document.getElementById('event-location-separator'),
+                    location: document.getElementById('event-location'),
                     date: document.getElementById('creation-date'),
                     time: document.getElementById('creation-time')
                 };
@@ -335,8 +348,20 @@ export class Events {
                 _details.content.innerText = event.description;
                 _details.author.value = `${event.user.firstName} ${event.user.lastName}`;
                 _details.authorId.value = event.createdBy;
+                _details.installation.textContent = event.customer?.name ?? event.user?.customer?.name ?? 'No disponible';
                 _details.date.value = event.creationDate;
                 _details.time.value = event.creationTime;
+                const latitude = Number(event.latitude);
+                const longitude = Number(event.longitude);
+                const hasLocation = event.latitude !== null && event.latitude !== undefined
+                    && event.longitude !== null && event.longitude !== undefined
+                    && Number.isFinite(latitude) && Number.isFinite(longitude);
+                _details.locationContainer.hidden = !hasLocation;
+                _details.locationSeparator.hidden = !hasLocation;
+                if (hasLocation) {
+                    _details.location.textContent = `Latitud: ${latitude} · Longitud: ${longitude}`;
+                    _details.location.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${latitude},${longitude}`)}`;
+                }
                 if (event.attachment !== undefined) {
                     const image = await getFile(event.attachment);
                     _details.picture.innerHTML = `

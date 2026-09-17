@@ -1,4 +1,5 @@
 import { getEntitiesData, getUserInfo, getFilterEntityData, getEntityData, registerEntity, _userAgent, updateEntity, getFile } from "../endpoints.js"
+import { createModernPdf } from "./modernPdfLayout.js";
 //import { getDetails, getSearch } from "../tools.js";
 export const exportRoutinePdf = async (ar, start, end) => {
     // @ts-ignore
@@ -235,7 +236,7 @@ export const exportRoutinePdf2 = async (ar, users, flipImage) => {
     //doc.text(164, 10, ar[0].code);
     //doc.text(164, 17, ar[0].version);
     //doc.text(164, 26, ar[0].date);
-    doc.addImage("./public/src/assets/pictures/report-logo.png", "PNG", 10, 14, 40, 8);
+    doc.addImage("./public/src/assets/pictures/report.png", "PNG", 10, 13, 40, 10);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(12);
@@ -466,5 +467,33 @@ const newDataBlock = (array, index, doc) => {
         row += calculateRow(paragraph);
     }
     return row;
+};
+
+export const exportRoutinePdfModern = (registers, start = '', end = '') => {
+    const userCounts = registers.reduce((counts, register) => {
+        const user = String(register?.usuario ?? register?.user?.username ?? '').trim() || 'Sin usuario';
+        counts[user] = (counts[user] || 0) + 1;
+        return counts;
+    }, {});
+    const value = (register, key, relationKey) => register?.[key] ?? register?.routineRelation?.[relationKey]?.name ?? '';
+    createModernPdf({
+        title: 'REPORTE DE RUTINA', subtitle: 'Bitácora Digital · Evidencia de rutina', origin: 'NetGuard · Control de Rutinas', start, end,
+        users: Object.entries(userCounts).map(([name, count]) => `${name} (${count})`), evidenceLabel: 'Evidencias de rutina',
+        columns: [
+            { key: 'number', label: '#', width: 8 }, { key: 'dateTime', label: 'FECHA / HORA', width: 30 }, { key: 'location', label: 'UBICACIÓN', width: 45 },
+            { key: 'guard', label: 'GUARDIA', width: 50 }, { key: 'detail', label: 'DETALLE', width: 80 }, { key: 'state', label: 'MARCACIÓN', width: 25 }, { key: 'coordinates', label: 'COORDENADAS GPS', width: 39 },
+        ],
+        rows: registers.map((register, index) => ({
+            number: register?.imageTag ?? index + 1, dateTime: `${register?.fecha ?? register?.creationDate ?? ''} ${register?.hora ?? register?.creationTime ?? ''}`,
+            location: value(register, 'ubicacion', 'qrPoint') || value(register, 'ubicacion', 'routineSchedule'),
+            guard: register?.usuario ?? `${register?.user?.firstName ?? ''} ${register?.user?.lastName ?? ''}`,
+            detail: register?.observacion ?? register?.observation,
+            state: register?.estado ?? register?.routineState?.name,
+            coordinates: register?.cords ?? `${register?.latitude ?? ''}, ${register?.longitude ?? ''}`,
+            image: register?.imagen ?? register?.image,
+            caption: `Registro ${register?.imageTag ?? index + 1} · ${String(register?.fecha ?? register?.creationDate ?? '-')}`,
+        })),
+        filename: `Reporte_de_Rutina_${new Date().getDate()}_${new Date().getMonth() + 1}_${new Date().getFullYear()}.pdf`,
+    });
 };
 

@@ -26,6 +26,13 @@ let infoPage = {
     timeColorNoti: null,
     audioNoti: new Audio("./public/src/assets/sounds/alarm.mp3")
 };
+const panicSoundMaximumDelayMs = 30000;
+const isFreshPanicAlert = (notificationData) => {
+    if (notificationData?.data?.alertType !== 'panic') return false;
+    const createdAt = Number(notificationData.data.panicCreatedAtEpochMs);
+    if (!Number.isFinite(createdAt)) return false;
+    return Math.max(0, Date.now() - createdAt) <= panicSoundMaximumDelayMs;
+};
 export class RenderApplicationUI {
     constructor() {
         this.loginContainer = document.getElementById('login-container');
@@ -159,8 +166,11 @@ export class RenderApplicationUI {
             //const audio = document.getElementById("audio");
             const button = document.getElementById("okNotification");
             const titleNotify = document.getElementById("titleNotify");
-            infoPage.audioNoti.play();
-            infoPage.audioNoti.loop = true;
+            if (isFreshPanicAlert(notificationData)) {
+                infoPage.audioNoti.currentTime = 0;
+                infoPage.audioNoti.loop = true;
+                infoPage.audioNoti.play().catch((error) => console.warn('No se pudo reproducir la alarma de pánico.', error));
+            }
             let counter = 1000;
             let color = 1;
             let change = async () => {

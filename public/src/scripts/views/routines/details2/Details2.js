@@ -8,7 +8,8 @@ import { getEntityData, getUserInfo, getFile, getFilterEntityData, getFilterEnti
 import { CloseDialog, renderRightSidebar, drawTagsIntoTables, filterDataByHeaderType, inputObserver, pageNumbers, fillBtnPagination, calculateLine, searchUniversalSingle, currentDateTime, sleep } from "../../../tools.js";
 import { UIContentLayout, UIRightSidebar } from "./Layout.js";
 import { UITableSkeletonTemplate } from "./Template.js";
-import { exportRoutineDetailCsv, exportRoutineDetailPdf, exportRoutineDetailXls } from "../../../exportFiles/routines_details.js";
+import { exportRoutineDetailCsv, exportRoutineDetailXls } from "../../../exportFiles/routines_details.js";
+import { exportRoutinePdfModern } from "../../../exportFiles/extraRoutine.js";
 // Local configs
 const tableRows = Config.tableRows;
 let currentPage = Config.currentPage;
@@ -858,7 +859,7 @@ export class RoutineRegisters {
                                
                                 for (let i = 0; i < _values.exportOption.length; i++) {
                                     let ele = _values.exportOption[i];
-                                    if (ele.type = "radio") {
+                                    if (ele.type === "radio") {
                                         if (ele.checked) {
                                             message2.innerText = `Generando archivo ${ele.value},\nesto puede tomar un momento.`;
                                             if (ele.value == "xls") {
@@ -873,28 +874,17 @@ export class RoutineRegisters {
                                                 let rows = [];
                                                 for (let i = 0; i < registers.length; i++) {
                                                     let register = registers[i];
-                                                    // @ts-ignore
-                                                    //if (noteCreationDate >= _values.start.value && noteCreationDate <= _values.end.value) {
-                                                        let image = '';
-                                                        if (register.attachment !== undefined) {
+                                                    let image = '';
+                                                    if (register?.attachment) {
+                                                        try {
                                                             image = await getFile(register.attachment);
+                                                        } catch (error) {
+                                                            console.warn('No se pudo cargar un adjunto de rutina para el PDF.', error);
                                                         }
-                                                        let obj = {
-                                                            "rutina": `${register?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                                                            "ubicacion": `${register?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                                                            "fecha": `${register.creationDate}`,
-                                                            "hora": `${register.creationTime}`,
-                                                            "estado": `${register?.routineState?.name ?? ''}`,
-                                                            "cords": `${register?.cords ?? ''}`,
-                                                            "usuario": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
-                                                            "observacion": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
-                                                            "imagen": `${image}`
-                                                        };
-                                                        rows.push(obj);
-                                                    //}
+                                                    }
+                                                    rows.push({ ...register, image });
                                                 }
-                                                // @ts-ignore
-                                                await exportRoutineDetailPdf(rows, _values.start.value, _values.end.value);
+                                                await exportRoutinePdfModern(rows, _values.start.value, _values.end.value);
                                             }
                                             const _dialog = document.getElementById('dialog-content');
                                             new CloseDialog().x(_dialog);

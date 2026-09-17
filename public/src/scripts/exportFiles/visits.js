@@ -1,4 +1,5 @@
 import { visitToStimate, generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
+import { createModernPdf } from "./modernPdfLayout.js";
 
 export const exportVisitPdf = (ar, start, end) => {
     // @ts-ignore
@@ -85,6 +86,38 @@ export const exportVisitPdf = (ar, start, end) => {
     var d = new Date();
     var title = "log_Visitas_" + d.getDate() + "_" + (d.getMonth() + 1) + "_" + d.getFullYear() + `.pdf`;
     doc.save(title);
+};
+
+export const exportVisitPdfModern = (visits, start, end) => {
+    const userCounts = visits.reduce((counts, visit) => {
+        const user = `${visit?.user?.firstName ?? ''} ${visit?.user?.lastName ?? ''}`.trim() || visit?.user?.username || 'Sistema';
+        counts[user] = (counts[user] || 0) + 1;
+        return counts;
+    }, {});
+    createModernPdf({
+        title: 'REGISTRO DE VISITAS', subtitle: 'Bitácora Digital · Historial de accesos', origin: 'NetGuard · Control de Visitas', start, end,
+        summary: [
+            { label: 'TOTAL REGISTROS', value: visits.length, color: [0, 32, 96] },
+            { label: 'FINALIZADO', value: visits.filter(visit => visit?.visitState?.name === 'Finalizado').length, color: [27, 138, 65] },
+            { label: 'EN CURSO', value: visits.filter(visit => visit?.visitState?.name === 'En Curso').length, color: [25, 100, 190] },
+            { label: 'PENDIENTE', value: visits.filter(visit => visit?.visitState?.name === 'Pendiente').length, color: [188, 130, 0] },
+            { label: 'EMERGENTE', value: visits.filter(visit => visit?.visitState?.name === 'Emergente').length, color: [200, 45, 60] },
+        ],
+        users: Object.entries(userCounts).map(([name, count]) => `${name} (${count})`),
+        columns: [
+            { key: 'number', label: '#', width: 7 }, { key: 'visitor', label: 'VISITANTE', width: 49 }, { key: 'dni', label: 'DNI', width: 22 },
+            { key: 'department', label: 'DEPARTAMENTO VISITADO', width: 52 }, { key: 'entry', label: 'ENTRADA', width: 27 }, { key: 'entryBy', label: 'REGISTRA ENTRADA', width: 32 },
+            { key: 'exit', label: 'SALIDA', width: 27 }, { key: 'exitBy', label: 'REGISTRA SALIDA', width: 32 }, { key: 'state', label: 'ESTADO', width: 29 },
+        ],
+        rows: visits.map((visit, index) => ({
+            number: index + 1, visitor: `${visit?.firstName ?? ''} ${visit?.firstLastName ?? ''} ${visit?.secondLastName ?? ''}`,
+            dni: visit?.dni, department: visit?.department?.name,
+            entry: `${visit?.ingressDate ?? ''} ${visit?.ingressTime ?? ''}`, entryBy: `${visit?.ingressIssuedId?.firstName ?? ''} ${visit?.ingressIssuedId?.lastName ?? ''}`,
+            exit: `${visit?.egressDate ?? ''} ${visit?.egressTime ?? ''}`, exitBy: `${visit?.egressIssuedId?.firstName ?? ''} ${visit?.egressIssuedId?.lastName ?? ''}`,
+            state: visit?.visitState?.name,
+        })),
+        filename: `log_Visitas_${new Date().getDate()}_${new Date().getMonth() + 1}_${new Date().getFullYear()}.pdf`,
+    });
 };
 export const exportVisitCsv = (ar, start, end) => {
     let rows = [];

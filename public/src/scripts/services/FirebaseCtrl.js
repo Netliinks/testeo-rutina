@@ -2,7 +2,7 @@ import { firebaseConfig, applicationServerKey } from "../firebaseConfig.js";
 // @ts-ignore
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 // @ts-ignore
-import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+import { getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 export class FirebaseCtrl {
     constructor() {
         // @ts-ignore
@@ -13,6 +13,7 @@ export class FirebaseCtrl {
         this.onErrorCb = undefined;
         // @ts-ignore
         this.onGetTokenCb = undefined;
+        this.messageListenerRegistered = false;
     }
     async initApp() {
         const savedToken = window.localStorage.getItem("libreriasjs-notification-token");
@@ -48,6 +49,7 @@ export class FirebaseCtrl {
                 serviceWorkerSuscription;
                 const app = initializeApp(firebaseConfig);
                 const messaging = getMessaging(app);
+                this.registerMessageListener(messaging);
                 try {
                     // @ts-ignore
                     this.token = await getToken(messaging, {
@@ -105,18 +107,19 @@ export class FirebaseCtrl {
                         },
                     );
                 });
-                navigator.serviceWorker.addEventListener("message", (event) => {
-                    console.log("FROM ON SERVICEWORKER MESSAGE", event);
-                    // @ts-ignore
-                    if (typeof this.onRecieveNotificationCb === "function") {
-                        // @ts-ignore
-                        this.onRecieveNotificationCb(event.data);
-                    }
-                });
             }else{
                 console.error("Service workers are not supported.");
             }
         }
+    }
+    registerMessageListener(messaging) {
+        if (this.messageListenerRegistered) return;
+        this.messageListenerRegistered = true;
+        onMessage(messaging, (payload) => this.emitNotification(payload));
+        navigator.serviceWorker.addEventListener("message", (event) => this.emitNotification(event.data));
+    }
+    emitNotification(payload) {
+        if (typeof this.onRecieveNotificationCb === "function") this.onRecieveNotificationCb(payload);
     }
     onGetToken(cb) {
         if (typeof cb === "function") {

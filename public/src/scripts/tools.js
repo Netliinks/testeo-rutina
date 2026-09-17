@@ -1820,7 +1820,7 @@ export const generateFileSimpleXls = async (ar, title, extension = 'xlsx') => {
         const keys = Object.keys(ar[0]);
         const header = sheet.addRow(keys);
         header.font = { bold: true };
-        header.alignment = { horizontal: "center" };
+        header.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
         // @ts-ignore
         header.eachCell(cell => {
             cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
@@ -1833,11 +1833,16 @@ export const generateFileSimpleXls = async (ar, title, extension = 'xlsx') => {
             // @ts-ignore
             row.eachCell(cell => {
                 cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
-                cell.alignment = { horizontal: "center" };
+                cell.alignment = { horizontal: "left", vertical: "top", wrapText: true };
             });
         });
 
-        sheet.columns = keys.map(() => ({ width: 25 }));
+        sheet.columns = keys.map(key => {
+            const longest = Math.max(key.length, ...ar.map(item => String(item[key] ?? '').split('\n').reduce((max, line) => Math.max(max, line.length), 0)));
+            return { width: Math.min(42, Math.max(14, longest + 2)) };
+        });
+        sheet.views = [{ state: 'frozen', ySplit: 1 }];
+        sheet.autoFilter = { from: 'A1', to: { row: header.number, column: keys.length } };
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8' });
@@ -1883,6 +1888,93 @@ export const generateFileSimpleXls = async (ar, title, extension = 'xlsx') => {
     }
 };
 
+/**
+ * Genera el reporte de rutinas con el mismo formato XLSX de Producción.
+ * Se mantiene separado del exportador genérico para no afectar otros Excel.
+ */
+export const generateRoutineReportXlsx = async (rows, {
+    title = 'REPORTE DE RUTINA',
+    customerName = '',
+    startDate = '',
+    endDate = '',
+    startTime = '',
+    endTime = '',
+    filename = 'Reporte_Rutina.xlsx',
+} = {}) => {
+    if (!Array.isArray(rows) || rows.length === 0) {
+        alert('No hay datos para exportar');
+        return;
+    }
+    // @ts-ignore
+    if (typeof ExcelJS === 'undefined') {
+        await generateFileSimpleXls(rows, 'Reporte_Rutina', 'xlsx');
+        return;
+    }
+    const excludedFields = new Set(['inicio', 'fin', 'imagen', 'imageTag', 'cords', 'intervaloInicio', 'intervaloFin', 'fechaObjetivo', 'horaObjetivo']);
+    const keys = Object.keys(rows[0]).filter((key) => !excludedFields.has(key));
+    const widths = {
+        cliente: 20, rutina: 28, ubicacion: 24, fecha: 13, hora: 12,
+        'INTERVALO DESDE': 21, 'INTERVALO HASTA': 21, 'NOVEDAD REVISADA EN': 23,
+        'OBSERVACION DE CONSOLA': 34, 'USUARIO DE CONSOLA': 22, estado: 15,
+        latitud: 17, longitud: 17, usuario: 22, observacion: 34,
+    };
+    // @ts-ignore
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'NetGuard';
+    workbook.created = new Date();
+    const sheet = workbook.addWorksheet('Reporte de Rutina', {
+        views: [{ state: 'frozen', ySplit: 6 }],
+        pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+    });
+    const lastColumn = Math.max(keys.length, 1);
+    sheet.mergeCells(1, 1, 1, lastColumn);
+    const titleCell = sheet.getCell(1, 1);
+    titleCell.value = title;
+    titleCell.font = { bold: true, size: 14, color: { argb: 'FF002060' } };
+    titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
+    sheet.getRow(1).height = 22;
+    const addInfo = (row, label, value) => {
+        sheet.getCell(row, 1).value = label;
+        sheet.getCell(row, 1).font = { bold: true, color: { argb: 'FF002060' } };
+        sheet.mergeCells(row, 2, row, lastColumn);
+        sheet.getCell(row, 2).value = value || '-';
+        sheet.getCell(row, 2).alignment = { horizontal: 'left' };
+    };
+    addInfo(2, 'Cliente:', customerName);
+    addInfo(3, 'Periodo:', `${startDate || '-'} al ${endDate || '-'}`);
+    addInfo(4, 'Horario:', `${startTime || '-'} a ${endTime || '-'}`);
+    const header = sheet.getRow(6);
+    keys.forEach((key, index) => {
+        const cell = header.getCell(index + 1);
+        cell.value = key.toUpperCase();
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        cell.border = { top: { style: 'thin', color: { argb: 'FFB8C2D1' } }, left: { style: 'thin', color: { argb: 'FFB8C2D1' } }, bottom: { style: 'thin', color: { argb: 'FFB8C2D1' } }, right: { style: 'thin', color: { argb: 'FFB8C2D1' } } };
+    });
+    header.height = 30;
+    rows.forEach((item, rowIndex) => {
+        const row = sheet.getRow(rowIndex + 7);
+        keys.forEach((key, columnIndex) => {
+            const cell = row.getCell(columnIndex + 1);
+            cell.value = String(item[key] ?? '').replace(/[\n\r]+/g, ' ').trim();
+            cell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
+            cell.border = { top: { style: 'thin', color: { argb: 'FFE1E6ED' } }, left: { style: 'thin', color: { argb: 'FFE1E6ED' } }, bottom: { style: 'thin', color: { argb: 'FFE1E6ED' } }, right: { style: 'thin', color: { argb: 'FFE1E6ED' } } };
+            if (rowIndex % 2 === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F9FC' } };
+        });
+        row.height = 28;
+    });
+    sheet.columns = keys.map((key) => ({ width: widths[key] ?? Math.min(Math.max(key.length + 4, 16), 28) }));
+    if (keys.length > 0) sheet.autoFilter = { from: { row: 6, column: 1 }, to: { row: 6, column: keys.length } };
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
+};
 // Función para pausar
 export const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 

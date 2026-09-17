@@ -41,6 +41,10 @@ export const UIContentLayout = `
             Fecha <i class="fa-regular fa-filter"></i>
             </span></th>
 
+            <th class="thead_centered">
+            Coordenadas
+            </th>
+
             <th class="header_filled"></th>
             <th class="thead_centered" width=130><span data-type="details">
             Detalles
@@ -89,6 +93,22 @@ export const UIRightSidebar = `
             <input type="text" id="event-author" class="input_filled" readonly>
         </div>
         <br>
+        <div id="event-installation-container" style="display:flex; align-items:flex-start; gap:10px; color:#706F8E;">
+            <i class="fa-solid fa-building" style="margin-top:3px;"></i>
+            <div style="min-width:0;">
+                <strong style="display:block; color:#4b496a; font-size:13px; margin-bottom:3px;">Instalación</strong>
+                <span id="event-installation" style="display:block; font-size:14px; line-height:1.4; overflow-wrap:anywhere;"></span>
+            </div>
+        </div>
+        <br>
+        <div id="event-location-container" hidden style="display:flex; align-items:flex-start; gap:10px; color:#706F8E;">
+            <i class="fa-solid fa-location-dot" style="margin-top:3px;"></i>
+            <div style="min-width:0;">
+                <strong style="display:block; color:#4b496a; font-size:13px; margin-bottom:3px;">Ubicación</strong>
+                <a id="event-location" target="_blank" rel="noopener" style="display:block; color:#5764b8; font-size:14px; line-height:1.4; overflow-wrap:anywhere;"></a>
+            </div>
+        </div>
+        <br id="event-location-separator" hidden>
         <div class="input_detail">
             <label for="event-author-id"><i class="fa-solid fa-at"></i></label>
             <input type="text" id="event-author-id" class="input_filled" readonly>

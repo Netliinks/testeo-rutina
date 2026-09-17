@@ -8,7 +8,7 @@ import { getEntityData, getFilterEntityData, getFile, getFilterEntityCount } fro
 import { CloseDialog, drawTagsIntoTables, renderRightSidebar, filterDataByHeaderType, verifyUserType, inputObserver, pageNumbers, fillBtnPagination, sleep, formatearFechaPorZona } from "../../../tools.js";
 import { UIContentLayout, UIRightSidebar } from "./Layout.js";
 import { UITableSkeletonTemplate } from "./Template.js";
-import { exportVisitCsv, exportVisitPdf, exportVisitXls } from "../../../exportFiles/visits.js";
+import { exportVisitCsv, exportVisitPdfModern, exportVisitXls } from "../../../exportFiles/visits.js";
 // Local configs
 const tableRows = Config.tableRows;
 let currentPage = Config.currentPage;
@@ -872,7 +872,7 @@ export class Visits {
                                         }
                                         else if (ele.value == "pdf") {
                                             // @ts-ignore
-                                            await exportVisitPdf(visits, _values.start.value, _values.end.value);
+                                            await exportVisitPdfModern(visits, _values.start.value, _values.end.value);
                                         }
                                         const _dialog = document.getElementById('dialog-content');
                                         new CloseDialog().x(_dialog);

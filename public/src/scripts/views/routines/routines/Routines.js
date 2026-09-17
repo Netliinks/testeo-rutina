@@ -6,7 +6,7 @@ import { tableLayout } from "./Layout.js";
 import { tableLayoutTemplate } from "./Template.js";
 import { Schedules } from "./schedules/Schedules.js";
 import { RoutineUsers } from "../routines/users/Users.js";
-import { exportRoutinePdf, exportRoutinePdf2 } from "../../../exportFiles/extraRoutine.js";
+import { exportRoutinePdfModern } from "../../../exportFiles/extraRoutine.js";
 const tableRows = Config.tableRows;
 const currentPage = Config.currentPage;
 const customerId = localStorage.getItem('customer_id');
@@ -794,7 +794,14 @@ export class Routines {
                         //}
                       }
                       // @ts-ignore
-                      await exportRoutinePdf(rows, _values.start.value, _values.end.value);
+                      try {
+                          await exportRoutinePdfModern(rows, _values.start.value, _values.end.value);
+                      } catch (error) {
+                          console.error('No se pudo generar el PDF de rutina.', error);
+                          message2.innerText = 'No se pudo generar el PDF. Revise los adjuntos e intente nuevamente.';
+                          onPressed = false;
+                          return;
+                      }
                       const _dialog = document.getElementById('dialog-content');
                       new CloseDialog().x(_dialog);
                       onPressed = false;
@@ -1058,7 +1065,14 @@ export class Routines {
                             //}
                         }
                         // @ts-ignore
-                        await exportRoutinePdf2(rows, users, flipImage.checked ? true : false);
+                        try {
+                            await exportRoutinePdfModern(rows, _values.start.value, _values.end.value);
+                        } catch (error) {
+                            console.error('No se pudo generar el PDF de rutina.', error);
+                            message2.innerText = 'No se pudo generar el PDF. Revise los adjuntos e intente nuevamente.';
+                            onPressed = false;
+                            return;
+                        }
                         const _dialog = document.getElementById('dialog-content');
                         new CloseDialog().x(_dialog);
                         onPressed = false;

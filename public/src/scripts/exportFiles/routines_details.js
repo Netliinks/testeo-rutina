@@ -1,5 +1,5 @@
 //import {generateFile } from "../tools";
-import { routineToStimate, generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
+import { routineToStimate, generateFileSimpleXls, generateFileSimpleCsv, generateRoutineReportXlsx } from "../tools.js";
 export const exportRoutineDetailPdf = (ar, start, end) => {
     // @ts-ignore
     window.jsPDF = window.jspdf.jsPDF;
@@ -141,6 +141,42 @@ export const exportRoutineDetailCsv = (ar, start, end) => {
     generateFileSimpleCsv(rows, "DetallesRutinas", "csv");
 };
 export const exportRoutineDetailXls = (ar, start, end) => {
+    const clean = (value) => String(value ?? '')
+        .split("\n").join(". ")
+        .replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '')
+        .trim();
+    const routineRows = ar.map((register) => ({
+        cliente: clean(register.routineRelation?.customer?.name),
+        rutina: clean(register.routineRelation?.routine?.name),
+        ubicacion: clean(register.routineRelation?.qrPoint?.name),
+        fecha: `${register?.creationDate ?? ''}`,
+        hora: `${register?.creationTime ?? ''}`,
+        intervaloInicio: `${register?.routineRelation?.routineSchedule?.scheduleTime ?? ''}`,
+        intervaloFin: `${register?.routineRelation?.routineSchedule?.scheduleTimeEnd ?? ''}`,
+        'INTERVALO DESDE': `${register?.targetDate ?? ''} ${register?.targetTime ?? ''}`.trim(),
+        'INTERVALO HASTA': `${register?.targetDate2 ?? ''} ${register?.targetTime2 ?? ''}`.trim(),
+        'NOVEDAD REVISADA EN': `${register?.consoleDate ?? ''} ${register?.consoleTime ?? ''}`.trim(),
+        'OBSERVACION DE CONSOLA': clean(register?.consoleObservation ?? register?.observationConsole ?? ''),
+        'USUARIO DE CONSOLA': `${register?.consoleUser ?? register?.consoleUserId?.username ?? ''}`,
+        estado: `${register?.routineState?.name ?? ''}`,
+        latitud: `${register?.latitude ?? ''}`,
+        longitud: `${register?.longitude ?? ''}`,
+        usuario: clean(`${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`),
+        observacion: clean(register?.observation),
+    }));
+    const customers = [...new Set(routineRows.map((row) => row.cliente).filter(Boolean))];
+    const customerName = customers.length === 1 ? customers[0] : (customers.length > 1 ? 'Todas las empresas' : '');
+    const schedules = [...new Set(ar.map((register) => {
+        const schedule = register.routineRelation?.routineSchedule;
+        return schedule ? `${schedule.scheduleTime ?? ''}|${schedule.scheduleTimeEnd ?? ''}` : '';
+    }).filter(Boolean))];
+    const [startTime = '', endTime = ''] = schedules.length === 1 ? schedules[0].split('|') : [];
+    const d = new Date();
+    return generateRoutineReportXlsx(routineRows, {
+        title: 'REPORTE DE RUTINA', customerName, startDate: start, endDate: end, startTime, endTime,
+        filename: `Reporte_Rutina_${customerName.replace(/\s+/g, '_') || 'Registros'}_${d.getDate()}_${d.getMonth() + 1}.xlsx`,
+    });
+
     let rows = [];
     for (let i = 0; i < ar.length; i++) {
         let register = ar[i];

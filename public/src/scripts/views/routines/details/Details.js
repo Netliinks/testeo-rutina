@@ -8,7 +8,8 @@ import { getEntityData, getUserInfo, getFile, getFilterEntityData, getFilterEnti
 import { CloseDialog, renderRightSidebar, drawTagsIntoTables, filterDataByHeaderType, inputObserver, pageNumbers, fillBtnPagination, calculateLine, searchUniversalSingle, currentDateTime, sleep } from "../../../tools.js";
 import { UIContentLayout, UIRightSidebar } from "./Layout.js";
 import { UITableSkeletonTemplate } from "./Template.js";
-import { exportRoutineDetailCsv, exportRoutineDetailPdf, exportRoutineDetailXls } from "../../../exportFiles/routines_details.js";
+import { exportRoutineDetailCsv, exportRoutineDetailXls } from "../../../exportFiles/routines_details.js";
+import { exportRoutinePdfModern } from "../../../exportFiles/extraRoutine.js";
 // Local configs
 const tableRows = Config.tableRows;
 let currentPage = Config.currentPage;
@@ -708,6 +709,11 @@ export class RoutineRegisters {
                                     <input type="radio" class="checkbox" id="exportXls" name="exportOption" value="xls" checked /> XLS
                                 </label>
                             </div>
+                            <div class="input_checkbox">
+                                <label for="exportPdf">
+                                    <input type="radio" class="checkbox" id="exportPdf" name="exportOption" value="pdf" /> PDF
+                                </label>
+                            </div>
 
 
                         </div>
@@ -875,7 +881,7 @@ export class RoutineRegisters {
                                
                                 for (let i = 0; i < _values.exportOption.length; i++) {
                                     let ele = _values.exportOption[i];
-                                    if (ele.type = "radio") {
+                                    if (ele.type === "radio") {
                                         if (ele.checked) {
                                             message2.innerText = `Generando archivo ${ele.value},\nesto puede tomar un momento.`;
                                             if (ele.value == "xls") {
@@ -886,16 +892,23 @@ export class RoutineRegisters {
                                                 // @ts-ignore
                                                 await exportRoutineDetailCsv(registers, _values.start.value, _values.end.value);
                                             }
-                                            /*else if (ele.value == "pdf") {
+                                            else if (ele.value == "pdf") {
                                                 let rows = [];
                                                 for (let i = 0; i < registers.length; i++) {
                                                     let register = registers[i];
-                                                    // @ts-ignore
-                                                    //if (noteCreationDate >= _values.start.value && noteCreationDate <= _values.end.value) {
-                                                        let image = '';
-                                                        if (register.attachment !== undefined) {
+                                                    let image = '';
+                                                    if (register?.attachment) {
+                                                        try {
                                                             image = await getFile(register.attachment);
+                                                        } catch (error) {
+                                                            console.warn('No se pudo cargar un adjunto de rutina para el PDF.', error);
                                                         }
+                                                    }
+                                                    rows.push({ ...register, image });
+                                                }
+                                                await exportRoutinePdfModern(rows, _values.start.value, _values.end.value);
+                                            }
+/*
                                                         let obj = {
                                                             "rutina": `${register?.routineRelation?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
                                                             "ubicacion": `${register?.routineRelation?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
@@ -916,7 +929,8 @@ export class RoutineRegisters {
                                                 }
                                                 // @ts-ignore
                                                 await exportRoutineDetailPdf(rows, _values.start.value, _values.end.value);
-                                            }*/
+                                            }
+*/
                                             const _dialog = document.getElementById('dialog-content');
                                             new CloseDialog().x(_dialog);
                                         }

@@ -37,7 +37,7 @@ A noun in parentheses after the type, e.g. `fix(postgres): handle null connectio
 
 Either:
 
-- append **`!`** after the type/scope: `feat(api)!: remove legacy endpoint`, or  
+- append **`!`** after the type/scope: `feat(api)!: remove legacy endpoint`, or
 - add a footer: `BREAKING CHANGE: <what changed and what to do>`.
 
 ### Examples (valid)

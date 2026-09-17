@@ -1,4 +1,5 @@
 import { reportToStimate, generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
+import { createModernPdf } from "./modernPdfLayout.js";
 
 //import {generateFile } from "../tools";
 export const exportReportPdf = (ar, start, end) => {
@@ -97,6 +98,34 @@ export const exportReportPdf = (ar, start, end) => {
     var d = new Date();
     var title = "log_Reportes_" + d.getDate() + "_" + (d.getMonth() + 1) + "_" + d.getFullYear() + `.pdf`;
     doc.save(title);
+};
+
+export const exportReportPdfModern = (reports, start, end) => {
+    const userCounts = reports.reduce((counts, report) => {
+        const user = String(report?.usuario ?? '').trim() || 'Sin usuario';
+        counts[user] = (counts[user] || 0) + 1;
+        return counts;
+    }, {});
+    createModernPdf({
+        title: 'REGISTRO DE REPORTES', subtitle: 'Bitácora Digital · Historial de reportes', origin: 'NetGuard · Registro de Reportes', start, end,
+        summary: [
+            { label: 'TOTAL REPORTES', value: reports.length, color: [0, 32, 96] },
+            { label: 'USUARIOS REGISTRADORES', value: Object.keys(userCounts).length, color: [25, 100, 190] },
+            { label: 'CON EVIDENCIA', value: reports.filter(report => Boolean(report?.imagen)).length, color: [27, 138, 65] },
+            { label: 'SIN EVIDENCIA', value: reports.filter(report => !report?.imagen).length, color: [188, 130, 0] },
+        ],
+        users: Object.entries(userCounts).map(([name, count]) => `${name} (${count})`), evidenceLabel: 'Evidencias de reportes',
+        columns: [
+            { key: 'number', label: '#', width: 7 }, { key: 'date', label: 'FECHA', width: 20 }, { key: 'time', label: 'HORA', width: 16 },
+            { key: 'user', label: 'USUARIO', width: 34 }, { key: 'title', label: 'TÍTULO', width: 42 }, { key: 'content', label: 'CONTENIDO', width: 136 }, { key: 'attachment', label: 'ADJUNTO', width: 22 },
+        ],
+        rows: reports.map((report, index) => ({
+            number: index + 1, date: report?.fecha, time: report?.hora, user: report?.usuario, title: report?.titulo, content: report?.contenido,
+            attachment: report?.imagen ? 'Ver anexo' : 'Sin adjunto', image: report?.imagen,
+            caption: `Reporte ${index + 1} · ${String(report?.fecha ?? '-')} ${String(report?.hora ?? '')}`,
+        })),
+        filename: `log_Reportes_${new Date().getDate()}_${new Date().getMonth() + 1}_${new Date().getFullYear()}.pdf`,
+    });
 };
 export const exportReportCsv = (ar, start, end) => {
     let rows = [];

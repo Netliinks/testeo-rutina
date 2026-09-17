@@ -27,3 +27,21 @@ self.addEventListener('notificationclick', function(event) {
 }, false);
 // @ts-ignore
 const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage((payload) => {
+    const alertPayload = {
+        notification: payload.notification || { title: payload.data?.title || 'ALERTA', body: payload.data?.body || '' },
+        data: payload.data || {},
+    };
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+        .then((clients) => {
+            clients.forEach((client) => client.postMessage(alertPayload));
+            if (clients.length === 0) {
+                return self.registration.showNotification(alertPayload.notification.title, {
+                    body: alertPayload.notification.body,
+                    data: alertPayload.data,
+                });
+            }
+            return undefined;
+        });
+});
