@@ -140,7 +140,7 @@ export const exportRoutineDetailCsv = (ar, start, end) => {
     }
     generateFileSimpleCsv(rows, "DetallesRutinas", "csv");
 };
-export const exportRoutineDetailXls = (ar, start, end) => {
+export const exportRoutineDetailXls = (ar, start, end, timeStart, timeEnd) => {
     const clean = (value) => String(value ?? '')
         .split("\n").join(". ")
         .replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '')
@@ -170,7 +170,7 @@ export const exportRoutineDetailXls = (ar, start, end) => {
         const schedule = register.routineRelation?.routineSchedule;
         return schedule ? `${schedule.scheduleTime ?? ''}|${schedule.scheduleTimeEnd ?? ''}` : '';
     }).filter(Boolean))];
-    const [startTime = '', endTime = ''] = schedules.length === 1 ? schedules[0].split('|') : [];
+    const [startTime = timeStart ?? '', endTime = timeEnd ?? ''] = schedules.length === 1 ? schedules[0].split('|') : [];
     const d = new Date();
     return generateRoutineReportXlsx(routineRows, {
         title: 'REPORTE DE RUTINA', customerName, startDate: start, endDate: end, startTime, endTime,

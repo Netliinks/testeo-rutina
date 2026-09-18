@@ -698,6 +698,20 @@ export class RoutineRegisters {
 
                             </div>
 
+                            <br>
+                            <div class="form_group">
+                                <div class="form_input">
+                                    <label class="form_label" for="start-time">Hora Inicio:</label>
+                                    <input type="time" class="input_time" id="start-time" name="start-time">
+                                </div>
+
+                                <div class="form_input">
+                                    <label class="form_label" for="end-time">Hora Fin:</label>
+                                    <input type="time" class="input_time" id="end-time" name="end-time">
+                                </div>
+                            </div>
+                            <br>
+
                             <div class="input_checkbox">
                                 <label for="exportCsv">
                                     <input type="radio" class="checkbox" id="exportCsv" name="exportOption" value="csv" /> CSV
@@ -743,6 +757,9 @@ export class RoutineRegisters {
 
                     document.getElementById("start-date").value = anio+"-"+mes+"-"+dia;
                     document.getElementById("end-date").value = anio+"-"+mes+"-"+dia;
+
+                    document.getElementById("start-time").value = "00:00";
+                    document.getElementById("end-time").value = "23:59";
                     const _closeButton = document.getElementById('close');
                     const exportButton = document.getElementById('export-data');
                     const exportAllCustomers = document.getElementById('exportAllCustomers');
@@ -800,7 +817,33 @@ export class RoutineRegisters {
                                 customer: document.getElementById('entity-customer'),
                                 start: document.getElementById('start-date'),
                                 end: document.getElementById('end-date'),
+                                startTime: document.getElementById('start-time'),
+                                endTime: document.getElementById('end-time'),
                                 exportOption: document.getElementsByName('exportOption')
+                            }
+                            if (_values.start.value > _values.end.value) {
+                                alert('La fecha "Desde" no puede ser mayor que la fecha "Hasta"');
+                                return;
+                            }
+                            if (_values.start.value === _values.end.value && _values.startTime.value > _values.endTime.value) {
+                                alert('La hora de inicio no puede ser mayor que la hora de fin para el mismo día');
+                                return;
+                            }
+
+                            const timeConditions = [];
+                            if (_values.startTime.value <= _values.endTime.value) {
+                                timeConditions.push(
+                                    { "property": "creationTime", "operator": ">=", "value": `${_values.startTime.value}:00` },
+                                    { "property": "creationTime", "operator": "<=", "value": `${_values.endTime.value}:59` }
+                                );
+                            } else {
+                                timeConditions.push({
+                                    "group": "OR",
+                                    "conditions": [
+                                        { "property": "creationTime", "operator": ">=", "value": `${_values.startTime.value}:00` },
+                                        { "property": "creationTime", "operator": "<=", "value": `${_values.endTime.value}:59` }
+                                    ]
+                                });
                             }
                             //console.log(_values.start.value)
                             //console.log(_values.end.value)
@@ -838,7 +881,8 @@ export class RoutineRegisters {
                                                 "property": "routineState.name",
                                                 "operator": `${conditionStatus}`,
                                                 "value": `${status ? 'No cumplido' : ""}`
-                                            }
+                                            },
+                                            ...timeConditions
                                         ],
                                     },
                                     sort: `${condition.order}`,
@@ -886,7 +930,7 @@ export class RoutineRegisters {
                                             message2.innerText = `Generando archivo ${ele.value},\nesto puede tomar un momento.`;
                                             if (ele.value == "xls") {
                                                 // @ts-ignore
-                                                await exportRoutineDetailXls(registers, _values.start.value, _values.end.value);
+                                                await exportRoutineDetailXls(registers, _values.start.value, _values.end.value, _values.startTime.value, _values.endTime.value);
                                             }
                                             else if (ele.value == "csv") {
                                                 // @ts-ignore
