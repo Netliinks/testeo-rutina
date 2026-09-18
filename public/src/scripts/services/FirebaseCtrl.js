@@ -32,11 +32,13 @@ export class FirebaseCtrl {
                 this.onErrorCb("This browser does not support the API's required to use the Firebase SDK");
                 return;
             }
-            //navigator.serviceWorker.register("./public/src/scripts/services/firebase-messaging-sw.js");
             if ("serviceWorker" in navigator) {
-                const serviceWorkerRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {scope: "/"}).catch((error) => {
-                    console.error(`Service worker registration failed: ${error}`);
-                });
+                // Use the application base path so this works both locally and when deployed under a subpath.
+                const basePath = new URL('./', document.baseURI).pathname;
+                const serviceWorkerRegistration = await navigator.serviceWorker.register(
+                    `${basePath}firebase-messaging-sw.js`,
+                    { scope: basePath },
+                );
     
                 await navigator.serviceWorker.ready;
     
