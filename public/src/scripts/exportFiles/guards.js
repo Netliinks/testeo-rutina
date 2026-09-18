@@ -52,7 +52,7 @@ export const exportGuardPdf = (ar) => {
         doc.text(100, row, `${user.username}`);
         doc.text(160, row, `${user?.email ?? ''}`);
         doc.text(220, row, `${user?.phone ?? ''}`);
-        doc.text(240, row, `${user.createdDate}`);
+        doc.text(240, row, `${user?.createdDate ?? ''}`);
         doc.text(280, row, `${user?.attendance ? 'Si' : 'No'}`);
         row += 5;
         let limitLineas = 33;
@@ -100,7 +100,7 @@ export const exportGuardCsv = (ar) => {
             "DNI": `${user?.dni ?? ''}`,
             "Email": `${user?.email ?? ''}`,
             "Teléfono": `${user?.phone ?? ''}`,
-            "Creado": `${user.createdDate}`,
+            "Creado": `${user?.createdDate ?? ''}`,
             "Asistencia": `${user?.attendance ? 'Si' : 'No'}`
         };
         rows.push(obj);
@@ -120,7 +120,7 @@ export const exportGuardXls = (ar) => {
             "DNI": `${user?.dni ?? ''}`,
             "Email": `${user?.email ?? ''}`,
             "Teléfono": `${user?.phone ?? ''}`,
-            "Creado": `${user.createdDate}`,
+            "Creado": `${user?.createdDate ?? ''}`,
             "Asistencia": `${user?.attendance ? 'Si' : 'No'}`
         };
         rows.push(obj);

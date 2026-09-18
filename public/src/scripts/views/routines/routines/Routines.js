@@ -1222,7 +1222,7 @@ export class Routines {
                         }
                     }
                 
-                    generateFileSimpleXls(dataToExport,"Rutinas","csv");
+                    generateFileSimpleXls(dataToExport,"Rutinas","xls");
                     const _dialog = document.getElementById('dialog-content');
                     new CloseDialog().x(_dialog);
                     onPressed = false;

@@ -1180,7 +1180,7 @@ export class Employees {
                                 }
                             }
                         
-                            generateFileSimpleXls(users,"Empleado","csv");
+                            generateFileSimpleXls(users,"Empleado","xls");
                             const _dialog = document.getElementById('dialog-content');
                             new CloseDialog().x(_dialog);
                             onPressed = false;

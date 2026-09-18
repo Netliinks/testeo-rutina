@@ -178,7 +178,7 @@ export class Accesses {
                 }
 
                 if (onPressed) {
-                    generateFileSimpleXls(rows, 'Accesos', 'csv');
+                    generateFileSimpleXls(rows, 'Accesos', 'xls');
                 }
                 const dialog = document.getElementById('dialog-content');
                 new CloseDialog().x(dialog);

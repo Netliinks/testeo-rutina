@@ -1129,7 +1129,7 @@ export class Contractors {
                                 }
                             }
                         
-                            generateFileSimpleXls(users,"Contratista","csv");
+                            generateFileSimpleXls(users,"Contratista","xls");
                             const _dialog = document.getElementById('dialog-content');
                             new CloseDialog().x(_dialog);
                             onPressed = false;
