@@ -43,14 +43,14 @@ export const exportVisitPdf = (ar, start, end) => {
             doc.setFont(undefined, 'normal');
             doc.setTextColor(0, 0, 0);
             doc.text(10, row, splitText(doc, `${visit?.firstName ?? ''} ${visit?.firstLastName ?? ''} ${visit?.secondLastName ?? ''}`, 10, 5, 60));
-            doc.text(60, row, `${visit.dni}`);
-            doc.text(90, row, `${visit.creationDate}`);
-            doc.text(110, row, `${visit.creationTime}`);
-            doc.text(130, row, splitText(doc, `${visit.user?.firstName ?? ''} ${visit.user?.lastName ?? ''}`, 130, 5, 180));
-            doc.text(180, row, `${visit.visitState?.name ?? ''}`);
+            doc.text(60, row, `${visit?.dni ?? ''}`);
+            doc.text(90, row, `${visit?.creationDate ?? ''}`);
+            doc.text(110, row, `${visit?.creationTime ?? ''}`);
+            doc.text(130, row, splitText(doc, `${visit?.user?.firstName ?? ''} ${visit?.user?.lastName ?? ''}`, 130, 5, 180));
+            doc.text(180, row, `${visit?.visitState?.name ?? ''}`);
 
             rowName1 = calculateRow(`${visit?.firstName ?? ''} ${visit?.firstLastName ?? ''} ${visit?.secondLastName ?? ''}`.length,"nombre");
-            rowName2 = calculateRow(`${visit.user?.firstName ?? ''} ${visit.user?.lastName ?? ''}`.length,"nombre");
+            rowName2 = calculateRow(`${visit?.user?.firstName ?? ''} ${visit?.user?.lastName ?? ''}`.length,"nombre");
             rowName1 > rowName2 ? row += rowName1 : row += rowName2
             
             doc.setDrawColor(210, 210, 210);
