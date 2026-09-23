@@ -67,7 +67,6 @@ export class Announcements {
                 _card.classList.add('card');
                 _card.innerHTML = `
                     <button class="btn btn_update_announcement" data-announcementid="${announcement.id}" id="update-announcement"><i class="fa-solid fa-search"></i></button>
-                    <button class="btn btn_remove_announcement" data-announcementid="${announcement.id}" id="remove-announcement"><i class="fa-solid fa-trash"></i></button>
                     <h3 class="card_title">${announcement.title}</h3>
                     <p class="card_content">${announcement.content}</p>
                 `;
@@ -101,7 +100,6 @@ export class Announcements {
             });
         });
         this.update();
-        this.remove();
     }
     async publish() {
         const _sidebarRightcontainer = document.getElementById('entity-editor-container');
@@ -198,21 +196,6 @@ export class Announcements {
                     }, 1000);
                 });
             }
-        });
-    }
-    async remove() {
-        // Remove Announcement
-        const _removeAnnouncementButtons = document.querySelectorAll('#remove-announcement');
-        _removeAnnouncementButtons.forEach((button) => {
-            button.addEventListener('click', () => {
-                let announcementId = button.dataset.announcementid;
-                deleteEntity('Announcement', announcementId)
-                    .then(res => {
-                    setTimeout(() => {
-                        this.render();
-                    }, 100);
-                });
-            });
         });
     }
     async update() {

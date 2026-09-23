@@ -127,16 +127,12 @@ export class Departments {
                 row.innerHTML += `
           <td>${department.name}</dt>
           <td class="entity_options">
-            <button class="button" id="remove-entity" data-entityId="${department.id}">
-              <i class="fa-solid fa-trash"></i>
-            </button>
           </dt>
         `;
                 table.appendChild(row);
             }
         }
         this.register();
-        this.remove();
     }
     pagination(items, limitRows, currentPage) {
       const tableBody = document.getElementById('datatable-body');
@@ -267,49 +263,6 @@ export class Departments {
         };
         const reg = async (raw) => {
         };
-    }
-    remove() {
-        const remove = document.querySelectorAll('#remove-entity');
-        remove.forEach((remove) => {
-            const entityId = remove.dataset.entityid;
-            remove.addEventListener('click', () => {
-                this.dialogContainer.style.display = 'flex';
-                this.dialogContainer.innerHTML = `
-          <div class="dialog_content" id="dialog-content">
-            <div class="dialog dialog_danger">
-              <div class="dialog_container">
-                <div class="dialog_header">
-                  <h2>¿Deseas eliminar este departamento?</h2>
-                </div>
-
-                <div class="dialog_message">
-                  <p>Esta acción no se puede revertir</p>
-                </div>
-
-                <div class="dialog_footer">
-                  <button class="btn btn_primary" id="cancel">Cancelar</button>
-                  <button class="btn btn_danger" id="delete">Eliminar</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-                // delete button
-                // cancel button
-                // dialog content
-                const deleteButton = document.getElementById('delete');
-                const cancelButton = document.getElementById('cancel');
-                const dialogContent = document.getElementById('dialog-content');
-                deleteButton.onclick = () => {
-                    deleteEntity('Department', entityId)
-                        .then(res => new Departments().render(infoPage.offset, infoPage.currentPage, infoPage.search));
-                    new CloseDialog().x(dialogContent);
-                };
-                cancelButton.onclick = () => {
-                    new CloseDialog().x(dialogContent);
-                };
-            });
-        });
     }
     close() {
         const closeButton = document.getElementById('close');

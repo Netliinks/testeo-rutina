@@ -228,10 +228,6 @@ export class Guards {
 
                             <button class="button" id="mobile-entity" data-entityId="${client.id}" data-entityName="${client.username}"><i class="fa-solid fa-mobile"></i></button>
 
-                            <button class="button" id="remove-entity" data-entityId="${client.id}">
-                            <i class="fa-solid fa-trash"></i>
-                            </button>
-
                         </dt>
                     `;
                     table.appendChild(row);
@@ -245,7 +241,6 @@ export class Guards {
         this.export();
         this.edit(this.entityDialogContainer, data);
         /*this.faceCamUser();*/
-        this.remove();
         this.mobileUser();
         //this.convertToSuper();
         this.changeUserPassword();
@@ -888,52 +883,6 @@ export class Guards {
                 });
                 _closeButton.onclick = () => {
                     new CloseDialog().x(_dialog);
-                };
-            });
-        });
-    }
-    remove() {
-        const remove = document.querySelectorAll('#remove-entity');
-        remove.forEach((remove) => {
-            const entityId = remove.dataset.entityid;
-            // BOOKMARK: MODAL
-            remove.addEventListener('click', () => {
-                this.dialogContainer.style.display = 'block';
-                this.dialogContainer.innerHTML = `
-                    <div class="dialog_content" id="dialog-content">
-                        <div class="dialog dialog_danger">
-                        <div class="dialog_container">
-                            <div class="dialog_header">
-                            <h2>¿Deseas eliminar este guardia?</h2>
-                            </div>
-
-                            <div class="dialog_message">
-                            <p>Esta acción no se puede revertir</p>
-                            </div>
-
-                            <div class="dialog_footer">
-                            <button class="btn btn_primary" id="cancel">Cancelar</button>
-                            <button class="btn btn_danger" id="delete">Eliminar</button>
-                            </div>
-                        </div>
-                        </div>
-                    </div>`;
-                const deleteButton = document.getElementById('delete');
-                const cancelButton = document.getElementById('cancel');
-                const dialogContent = document.getElementById('dialog-content');
-                deleteButton.onclick = async() => {
-                    deleteEntity('User', entityId)
-                    .then((res) => {
-                        setTimeout(async () => {
-                            //let data = await getUsers();
-                            const tableBody = document.getElementById('datatable-body');
-                            new CloseDialog().x(dialogContent);
-                            new Guards().render(infoPage.offset, infoPage.currentPage, infoPage.search, infoPage.showGuards);
-                        }, 1000);
-                    });
-                };
-                cancelButton.onclick = () => {
-                    new CloseDialog().x(dialogContent);
                 };
             });
         });

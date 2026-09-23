@@ -2,6 +2,7 @@
 import { visitToStimate, generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
 import { createModernPdf } from "./modernPdfLayout.js";
 import { getVisitDisplayName } from "../visitDisplayName.js";
+
 export const exportVisitPdf = (ar, start, end) => {
     // @ts-ignore
     window.jsPDF = window.jspdf.jsPDF;
@@ -27,8 +28,7 @@ export const exportVisitPdf = (ar, start, end) => {
     doc.text(90, 40, "Fecha");
     doc.text(110, 40, "Hora");
     doc.text(130, 40, "Usuario");
-    doc.text(180, 40, "Estado");
-    ;
+    doc.text(180, 40, "Estado");;
     doc.line(5, 45, 205, 45);
     let row = 50;
     let pagina = 1;
@@ -41,46 +41,47 @@ export const exportVisitPdf = (ar, start, end) => {
         let rowName2 = 0;
         // @ts-ignore
         //if (visit.creationDate >= start && visit.creationDate <= end) {
-        doc.setFontSize(9);
-        doc.setFont(undefined, 'normal');
-        doc.setTextColor(0, 0, 0);
-        doc.text(10, row, splitText(doc, getVisitDisplayName(visit), 10, 5, 60));
-        doc.text(60, row, `${visit.dni}`);
-        doc.text(90, row, `${visit.creationDate}`);
-        doc.text(110, row, `${visit.creationTime}`);
-        doc.text(130, row, splitText(doc, `${visit.user?.firstName ?? ''} ${visit.user?.lastName ?? ''}`, 130, 5, 180));
-        doc.text(180, row, `${visit.visitState?.name ?? ''}`);
-        rowName1 = calculateRow(getVisitDisplayName(visit).length, "nombre");
-        rowName2 = calculateRow(`${visit.user?.firstName ?? ''} ${visit.user?.lastName ?? ''}`.length, "nombre");
-        rowName1 > rowName2 ? row += rowName1 : row += rowName2;
-        doc.setDrawColor(210, 210, 210);
-        doc.line(5, row, 205, row);
-        if ((row + newDataBlock(ar, i)) > 280) {
-            doc.addPage();
-            row = 30;
-            pagina += 1;
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'italic');
-            doc.text(135, 10, `Fecha: Desde ${start} Hasta ${end}`);
-            doc.setFont(undefined, 'bold');
-            //construimos cabecera del csv
-            doc.setDrawColor(0, 0, 128);
-            doc.line(5, 15, 205, 15);
-            doc.setFillColor(210, 210, 210);
-            doc.rect(5, 15, 200, 10, 'F');
-            doc.text(10, 20, "Nombre");
-            doc.text(60, 20, "DNI");
-            doc.text(90, 20, "Fecha");
-            doc.text(110, 20, "Hora");
-            doc.text(130, 20, "Usuario");
-            doc.text(180, 20, "Estado");
-            doc.line(5, 25, 205, 25);
-            doc.setTextColor(0, 0, 128);
-            doc.text(10, 290, `Página ${pagina}`);
-        }
-        else {
-            row += 5;
-        }
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(0, 0, 0);
+            doc.text(10, row, splitText(doc, getVisitDisplayName(visit), 10, 5, 60));
+            doc.text(60, row, `${visit.dni}`);
+            doc.text(90, row, `${visit.creationDate}`);
+            doc.text(110, row, `${visit.creationTime}`);
+            doc.text(130, row, splitText(doc, `${visit.user?.firstName ?? ''} ${visit.user?.lastName ?? ''}`, 130, 5, 180));
+            doc.text(180, row, `${visit.visitState?.name ?? ''}`);
+
+            rowName1 = calculateRow(getVisitDisplayName(visit).length,"nombre");
+            rowName2 = calculateRow(`${visit.user?.firstName ?? ''} ${visit.user?.lastName ?? ''}`.length,"nombre");
+            rowName1 > rowName2 ? row += rowName1 : row += rowName2
+
+            doc.setDrawColor(210, 210, 210);
+            doc.line(5, row, 205, row);
+            if ((row+newDataBlock(ar,i)) > 280) {
+                doc.addPage();
+                row = 30;
+                pagina += 1;
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'italic');
+                doc.text(135, 10, `Fecha: Desde ${start} Hasta ${end}`);
+                doc.setFont(undefined, 'bold');
+                //construimos cabecera del csv
+                doc.setDrawColor(0, 0, 128);
+                doc.line(5, 15, 205, 15);
+                doc.setFillColor(210, 210, 210);
+                doc.rect(5, 15, 200, 10, 'F');
+                doc.text(10, 20, "Nombre");
+                doc.text(60, 20, "DNI");
+                doc.text(90, 20, "Fecha");
+                doc.text(110, 20, "Hora");
+                doc.text(130, 20, "Usuario");
+                doc.text(180, 20, "Estado");
+                doc.line(5, 25, 205, 25);
+                doc.setTextColor(0, 0, 128);
+                doc.text(10, 290, `Página ${pagina}`);
+            }else{
+                row += 5;
+            }
         //}
     }
     // Save the PDF
@@ -88,6 +89,7 @@ export const exportVisitPdf = (ar, start, end) => {
     var title = "log_Visitas_" + d.getDate() + "_" + (d.getMonth() + 1) + "_" + d.getFullYear() + `.pdf`;
     doc.save(title);
 };
+
 export const exportVisitPdfModern = (visits, start, end) => {
     const userCounts = visits.reduce((counts, visit) => {
         const user = `${visit?.user?.firstName ?? ''} ${visit?.user?.lastName ?? ''}`.trim() || visit?.user?.username || 'Sistema';
@@ -125,36 +127,36 @@ export const exportVisitCsv = (ar, start, end) => {
         let visit = ar[i];
         // @ts-ignore
         //if (visit.creationDate >= start && visit.creationDate <= end) {
-        let obj = {
-            "Empresa": `${visit.customer?.name.split("\n").join("(salto)")}`,
-            "Nombre": getVisitDisplayName(visit),
-            "DNI": `${visit.dni}`,
-            "Tipo Documento Entrada": `${visit?.typeDocument ?? ''}`,
-            "Referencia Documento Entrada": `${visit?.referenceDocument ?? ''}`,
-            "Tipo Documento Salida": `${visit?.typeDocumentOut ?? ''}`,
-            "Referencia Documento Salida": `${visit?.referenceDocumentOut ?? ''}`,
-            "Fecha Creación": `${visit.creationDate}`,
-            "Hora Creación": `${visit.creationTime}`,
-            "Nombre Usuario": `${visit.user?.firstName ?? ''} ${visit.user?.lastName ?? ''}`,
-            "Usuario": `${visit.user?.username ?? ''}`,
-            "Tipo": `${verifyUserType(visit.user.userType)}`,
-            "Departamento": `${visit.department?.name ?? ''}`,
-            "Estado": `${visit.visitState?.name ?? ''}`,
-            "Verificado": `${visit.verifiedDocument ? 'Si' : 'No'}`,
-            "Favorita": `${visit.favorite ? 'Si' : 'No'}`,
-            "Teléfono": `${visit.phoneNumber}`,
-            "Autorizado": `${visit.authorizer}`,
-            "Fecha Ingreso": `${visit.ingressDate}`,
-            "Hora Ingreso": `${visit.ingressTime}`,
-            "Emitido Ingreso": `${visit.ingressIssuedId?.firstName ?? ''} ${visit.ingressIssuedId?.lastName ?? ''}`,
-            "Guardia Ingreso": `${visit.ingressIssuedId?.username ?? ''}`,
-            "Fecha Salida": `${visit?.egressDate ?? ''}`,
-            "Hora Salida": `${visit?.egressTime ?? ''}`,
-            "Emitido Salida": `${visit.egressIssuedId?.firstName ?? ''} ${visit.egressIssuedId?.lastName ?? ''}`,
-            "Guardia Salida": `${visit.egressIssuedId?.username ?? ''}`,
-            "Asunto": `${visit.reason.split("\n").join("(salto)")}`,
-        };
-        rows.push(obj);
+            let obj = {
+                "Empresa": `${visit.customer?.name.split("\n").join("(salto)")}`,
+                "Nombre": getVisitDisplayName(visit),
+                "DNI": `${visit.dni}`,
+                "Tipo Documento Entrada": `${visit?.typeDocument ?? ''}`,
+                "Referencia Documento Entrada": `${visit?.referenceDocument ?? ''}`,
+                "Tipo Documento Salida": `${visit?.typeDocumentOut ?? ''}`,
+                "Referencia Documento Salida": `${visit?.referenceDocumentOut ?? ''}`,
+                "Fecha Creación": `${visit.creationDate}`,
+                "Hora Creación": `${visit.creationTime}`,
+                "Nombre Usuario": `${visit.user?.firstName ?? ''} ${visit.user?.lastName ?? ''}`,
+                "Usuario": `${visit.user?.username ?? ''}`,
+                "Tipo": `${verifyUserType(visit.user.userType)}`,
+                "Departamento": `${visit.department?.name ?? ''}`,
+                "Estado": `${visit.visitState?.name ?? ''}`,
+                "Verificado": `${visit.verifiedDocument ? 'Si' : 'No'}`,
+                "Favorita": `${visit.favorite ? 'Si' : 'No'}`,
+                "Teléfono": `${visit.phoneNumber}`,
+                "Autorizado": `${visit.authorizer}`,
+                "Fecha Ingreso": `${visit.ingressDate}`,
+                "Hora Ingreso": `${visit.ingressTime}`,
+                "Emitido Ingreso": `${visit.ingressIssuedId?.firstName ?? ''} ${visit.ingressIssuedId?.lastName ?? ''}`,
+                "Guardia Ingreso": `${visit.ingressIssuedId?.username ?? ''}`,
+                "Fecha Salida": `${visit?.egressDate ?? ''}`,
+                "Hora Salida": `${visit?.egressTime ?? ''}`,
+                "Emitido Salida": `${visit.egressIssuedId?.firstName ?? ''} ${visit.egressIssuedId?.lastName ?? ''}`,
+                "Guardia Salida": `${visit.egressIssuedId?.username ?? ''}`,
+                "Asunto": `${visit.reason.split("\n").join("(salto)")}`,
+            };
+            rows.push(obj);
         //}
     }
     generateFileSimpleCsv(rows, "Visitas", "csv");
@@ -165,36 +167,36 @@ export const exportVisitXls = (ar, start, end) => {
         let visit = ar[i];
         // @ts-ignore
         //if (visit.creationDate >= start && visit.creationDate <= end) {
-        let obj = {
-            "Empresa": `${visit.customer?.name.split("\n").join("(salto)")}`,
-            "Nombre": getVisitDisplayName(visit),
-            "DNI": `${visit.dni}`,
-            "Tipo Documento Entrada": `${visit?.typeDocument ?? ''}`,
-            "Referencia Documento Entrada": `${visit?.referenceDocument ?? ''}`,
-            "Tipo Documento Salida": `${visit?.typeDocumentOut ?? ''}`,
-            "Referencia Documento Salida": `${visit?.referenceDocumentOut ?? ''}`,
-            "Fecha Creación": `${visit.creationDate}`,
-            "Hora Creación": `${visit.creationTime}`,
-            "Nombre Usuario": `${visit.user?.firstName ?? ''} ${visit.user?.lastName ?? ''}`,
-            "Usuario": `${visit.user?.username ?? ''}`,
-            "Tipo": `${verifyUserType(visit.user.userType)}`,
-            "Departamento": `${visit.department?.name ?? ''}`,
-            "Estado": `${visit.visitState?.name ?? ''}`,
-            "Verificado": `${visit.verifiedDocument ? 'Si' : 'No'}`,
-            "Favorita": `${visit.favorite ? 'Si' : 'No'}`,
-            "Teléfono": `${visit.phoneNumber}`,
-            "Autorizado": `${visit.authorizer}`,
-            "Fecha Ingreso": `${visit.ingressDate}`,
-            "Hora Ingreso": `${visit.ingressTime}`,
-            "Emitido Ingreso": `${visit.ingressIssuedId?.firstName ?? ''} ${visit.ingressIssuedId?.lastName ?? ''}`,
-            "Guardia Ingreso": `${visit.ingressIssuedId?.username ?? ''}`,
-            "Fecha Salida": `${visit?.egressDate ?? ''}`,
-            "Hora Salida": `${visit?.egressTime ?? ''}`,
-            "Emitido Salida": `${visit.egressIssuedId?.firstName ?? ''} ${visit.egressIssuedId?.lastName ?? ''}`,
-            "Guardia Salida": `${visit.egressIssuedId?.username ?? ''}`,
-            "Asunto": `${visit.reason.split("\n").join("(salto)")}`,
-        };
-        rows.push(obj);
+            let obj = {
+                "Empresa": `${visit.customer?.name.split("\n").join("(salto)")}`,
+                "Nombre": getVisitDisplayName(visit),
+                "DNI": `${visit.dni}`,
+                "Tipo Documento Entrada": `${visit?.typeDocument ?? ''}`,
+                "Referencia Documento Entrada": `${visit?.referenceDocument ?? ''}`,
+                "Tipo Documento Salida": `${visit?.typeDocumentOut ?? ''}`,
+                "Referencia Documento Salida": `${visit?.referenceDocumentOut ?? ''}`,
+                "Fecha Creación": `${visit.creationDate}`,
+                "Hora Creación": `${visit.creationTime}`,
+                "Nombre Usuario": `${visit.user?.firstName ?? ''} ${visit.user?.lastName ?? ''}`,
+                "Usuario": `${visit.user?.username ?? ''}`,
+                "Tipo": `${verifyUserType(visit.user.userType)}`,
+                "Departamento": `${visit.department?.name ?? ''}`,
+                "Estado": `${visit.visitState?.name ?? ''}`,
+                "Verificado": `${visit.verifiedDocument ? 'Si' : 'No'}`,
+                "Favorita": `${visit.favorite ? 'Si' : 'No'}`,
+                "Teléfono": `${visit.phoneNumber}`,
+                "Autorizado": `${visit.authorizer}`,
+                "Fecha Ingreso": `${visit.ingressDate}`,
+                "Hora Ingreso": `${visit.ingressTime}`,
+                "Emitido Ingreso": `${visit.ingressIssuedId?.firstName ?? ''} ${visit.ingressIssuedId?.lastName ?? ''}`,
+                "Guardia Ingreso": `${visit.ingressIssuedId?.username ?? ''}`,
+                "Fecha Salida": `${visit?.egressDate ?? ''}`,
+                "Hora Salida": `${visit?.egressTime ?? ''}`,
+                "Emitido Salida": `${visit.egressIssuedId?.firstName ?? ''} ${visit.egressIssuedId?.lastName ?? ''}`,
+                "Guardia Salida": `${visit.egressIssuedId?.username ?? ''}`,
+                "Asunto": `${visit.reason.split("\n").join("(salto)")}`,
+            };
+            rows.push(obj);
         //}
     }
     generateFileSimpleXls(rows, "Visitas", "xls");
@@ -270,36 +272,39 @@ const verifyUserType = (userType) => {
         return userType;
     }
 };
+
 const calculateRow = (length, mode) => {
     let row = 0;
     let limit = 0; // limite de lineas
-    if (mode == "parrafo") {
+    if(mode=="parrafo"){
         limit = 47;
-    }
-    else if (mode == "nombre") {
+    }else if(mode=="nombre"){
         limit = 30;
     }
     let lineCount = Math.ceil(length / limit);
-    for (let i = 1; i <= lineCount; i++) {
-        if (length <= (limit * i)) { //124 caracteres cada linea aprox en total margen A4
-            row += (4 * i);
+    for(let i = 1; i <= lineCount; i++){
+        if(length <= (limit * i)){  //124 caracteres cada linea aprox en total margen A4
+            row += (4*i);
         }
     }
     return row;
-};
+}
+
 const newDataBlock = (array, index) => {
     let row = 0;
-    if (array[index + 1] != undefined) {
-        row += 5;
-        let rowName1 = calculateRow(getVisitDisplayName(array[index + 1]).length, "nombre");
-        let rowName2 = calculateRow(`${array[index + 1]?.user?.firstName ?? ''} ${array[index + 1]?.user?.lastName ?? ''}`.length, "nombre");
+    if(array[index+1] != undefined){
+        row+=5;
+        let rowName1 = calculateRow(getVisitDisplayName(array[index+1]).length,"nombre");
+        let rowName2 = calculateRow(`${array[index+1]?.user?.firstName ?? ''} ${array[index+1]?.user?.lastName ?? ''}`.length,"nombre");
         rowName1 > rowName2 ? row += rowName1 : row += rowName2;
     }
     return row;
-};
+}
+
 const splitText = (doc, field, lMargin, rMargin, pdfInMM) => {
     return doc.splitTextToSize(field, (pdfInMM - lMargin - rMargin));
-};
+}
+
 export const generarReportVisitXls = async (conditions, visits) => {
     // @ts-ignore
     const workbook = new ExcelJS.Workbook();
@@ -338,12 +343,12 @@ export const generarReportVisitXls = async (conditions, visits) => {
         // @ts-ignore
         row.eachCell(cell => {
             cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
-            if (cellIndex < 2) {
+            if(cellIndex < 2){
                 cell.alignment = { horizontal: "left" };
-            }
-            else {
+            }else{
                 cell.alignment = { horizontal: "center" };
             }
+
             cellIndex += 1;
         });
     });

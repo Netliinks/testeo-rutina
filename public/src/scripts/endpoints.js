@@ -217,6 +217,47 @@ export const setUserRole = async (raw) => {
         .then(result => console.log(result))
         .catch(error => console.log('error', error));
 };
+/**
+ * Provisiona un cliente de forma secuencial: crea el usuario, establece la
+ * contraseña y asigna el rol antes de devolver el control a la interfaz.
+ */
+export const createUserWithPassword = async (raw, password, roleCode) => {
+    const user = JSON.parse(raw);
+    delete user.temp;
+    const createResponse = await fetch(`${NetliinkBase}rest/entities/User`, {
+        method: 'POST', headers, body: JSON.stringify(user), redirect: 'follow'
+    });
+    if (!createResponse.ok) {
+        throw new Error(`No se pudo crear el usuario (${createResponse.status}).`);
+    }
+    const createdUser = await createResponse.json();
+    if (!createdUser?.id) {
+        throw new Error('El backend no devolvió el identificador del usuario creado.');
+    }
+    const passwordResponse = await fetch(`${NetliinkBase}rest/services/UserServiceBean/updatePassword`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ id: createdUser.id, newPassword: password }),
+        redirect: 'follow'
+    });
+    if (!passwordResponse.ok) {
+        throw new Error(`No se pudo establecer la contraseña (${passwordResponse.status}).`);
+    }
+    const roleResponse = await fetch(`${NetliinkBase}rest/services/UserServiceBean/assignRol`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ id: createdUser.id, roleCode }),
+        redirect: 'follow'
+    });
+    if (!roleResponse.ok) {
+        throw new Error(`No se pudo asignar el rol (${roleResponse.status}).`);
+    }
+    const finalizeResponse = await fetch(`${NetliinkBase}rest/entities/User/${createdUser.id}`, {
+        method: 'PUT', headers, body: JSON.stringify({ newUser: false }), redirect: 'follow'
+    });
+    if (!finalizeResponse.ok) {
+        throw new Error(`No se pudo finalizar el usuario (${finalizeResponse.status}).`);
+    }
+    return createdUser;
+};
 export const sendMail = async (raw) => {
     const req = {
         url: `${NetliinkBase}rest/services/UserServiceBean/sendByEmailInfo`,

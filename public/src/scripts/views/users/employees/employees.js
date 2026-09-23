@@ -242,10 +242,6 @@ export class Employees {
             <button class="button" id="edit-entity" data-entityId="${client.id}">
               <i class="fa-solid fa-pen"></i>
             </button>
-
-            <button class="button" id="remove-entity" data-entityId="${client.id}">
-              <i class="fa-solid fa-trash"></i>
-            </button>
           </dt>
         `;
                 table.appendChild(row);
@@ -256,7 +252,6 @@ export class Employees {
         this.import();
         this.export();
         this.edit(this.entityDialogContainer, data);
-        this.remove();
         this.changeUserPassword();
     }
     changeUserPassword() {
@@ -858,11 +853,6 @@ export class Employees {
                     </div>
   
                     <br>
-                    <div style="display:flex;justify-content:center">
-                        <img alt="Código QR ${data?.dni ?? ''}" id="qrcode">
-                        <br>
-                        <button id="btnDescargar">Descargar</button>
-                    </div>
                     <!--
                     <div class="material_input">
                     <input type="password" id="tempPass" >
@@ -888,28 +878,8 @@ export class Employees {
             this.selectDepartment();
             //inputSelect('Department', 'entity-department');
             //inputSelect('Business', 'entity-business');
-            const qr = document.getElementById("qrcode");
-            // @ts-ignore
-            new QRious({
-                element: qr,
-                value: data.id,
-                size: 250,
-                backgroundAlpha: 1,
-                foreground: "#1D4C82FF",
-                level: "H", // Puede ser L,M,Q y H (L es el de menor nivel, H el mayor)
-            });
-            download(qr, data);
             this.close();
             updateEmployee(entityID);
-        };
-        const download = (qr, data) => {
-            const btnDescargar = document.getElementById('btnDescargar');
-            btnDescargar.addEventListener('click', () => {
-                const enlace = document.createElement("a");
-                enlace.href = qr.src;
-                enlace.download = `Código QR ${data?.dni ?? ''}.png`;
-                enlace.click();
-            });
         };
         const updateEmployee = async (employeeId) => {
             let updateButton;
@@ -980,56 +950,6 @@ export class Employees {
                 });
             };
         };
-    }
-    remove() {
-        const remove = document.querySelectorAll('#remove-entity');
-        remove.forEach((remove) => {
-            const entityId = remove.dataset.entityid;
-            remove.addEventListener('click', () => {
-                this.dialogContainer.style.display = 'block';
-                this.dialogContainer.innerHTML = `
-          <div class="dialog_content" id="dialog-content">
-            <div class="dialog dialog_danger">
-              <div class="dialog_container">
-                <div class="dialog_header">
-                  <h2>¿Deseas eliminar este empleado?</h2>
-                </div>
-
-                <div class="dialog_message">
-                  <p>Esta acción no se puede revertir</p>
-                </div>
-
-                <div class="dialog_footer">
-                  <button class="btn btn_primary" id="cancel">Cancelar</button>
-                  <button class="btn btn_danger" id="delete">Eliminar</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-                // delete button
-                // cancel button
-                // dialog content
-                const deleteButton = document.getElementById('delete');
-                const cancelButton = document.getElementById('cancel');
-                const dialogContent = document.getElementById('dialog-content');
-                deleteButton.onclick = async() => {
-                    deleteEntity('User', entityId)
-                    .then((res) => {
-                        setTimeout(async () => {
-                            //let data = await getUsers();
-                            const tableBody = document.getElementById('datatable-body');
-                            new CloseDialog().x(dialogContent);
-                            new Employees().render(infoPage.offset, infoPage.currentPage, infoPage.search);
-                        }, 1000);
-                    });
-                };
-                cancelButton.onclick = () => {
-                    new CloseDialog().x(dialogContent);
-                    //this.render();
-                };
-            });
-        });
     }
     export = () => {
         const exportUsers = document.getElementById('export-entities');

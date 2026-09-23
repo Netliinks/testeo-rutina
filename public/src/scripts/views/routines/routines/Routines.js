@@ -157,10 +157,6 @@ export class Routines {
                         <button class="button" id="export2-entity" data-entityId="${routine.id}" title="Exportar detalles">
                           <i class="fa-solid fa-file-pdf"></i>
                         </button>
-
-                      <button class="button" id="remove-entity" data-entityId="${routine.id}" title="Eliminar">
-                        <i class="fa-solid fa-trash"></i>
-                      </button>
                     </dt>
                   `;
                 }else{
@@ -186,10 +182,6 @@ export class Routines {
                         <button class="button" id="export2-entity" data-entityId="${routine.id}" title="Exportar detalles">
                           <i class="fa-solid fa-file-pdf"></i>
                         </button>
-
-                      <button class="button" id="remove-entity" data-entityId="${routine.id}" title="Eliminar">
-                        <i class="fa-solid fa-trash"></i>
-                      </button>
                     </dt>
                   `;
                   
@@ -202,7 +194,6 @@ export class Routines {
         this.ex();
         this.export();
         this.export2();
-        this.remove();
         this.schedules();
         this.assignGuard();
         this.edit(this.entityDialogContainer, data);
@@ -484,97 +475,6 @@ export class Routines {
           };
         };
     }
-    remove() {
-      const remove = document.querySelectorAll('#remove-entity');
-      remove.forEach((remove) => {
-          const entityId = remove.dataset.entityid;
-          // BOOKMARK: MODAL
-          remove.addEventListener('click', async () => {
-              const checkRaw = JSON.stringify({
-                  "filter": {
-                      "conditions": [
-                          {
-                              "property": "routine.id",
-                              "operator": "=",
-                              "value": `${entityId}`
-                          }
-                      ]
-                  }
-              });
-              const count = await getFilterEntityCount("RoutineRelation", checkRaw);
-              if (count > 0) {
-                  alert("No se puede eliminar la rutina porque tiene asignaciones en la planificación.");
-                  return;
-              }
-              this.dialogContainer.style.display = 'block';
-              this.dialogContainer.innerHTML = `
-                  <div class="dialog_content" id="dialog-content">
-                      <div class="dialog dialog_danger">
-                      <div class="dialog_container">
-                          <div class="dialog_header">
-                          <h2>¿Deseas eliminar esta rutina?</h2>
-                          </div>
-
-                          <div class="dialog_message">
-                          <p>Esta acción no se puede revertir</p>
-                          </div>
-
-                          <div class="dialog_footer">
-                          <button class="btn btn_primary" id="cancel">Cancelar</button>
-                          <button class="btn btn_danger" id="delete">Eliminar</button>
-                          </div>
-                      </div>
-                      </div>
-                  </div>`;
-              const deleteButton = document.getElementById('delete');
-              const cancelButton = document.getElementById('cancel');
-              const dialogContent = document.getElementById('dialog-content');
-              deleteButton.onclick = async() => {
-                  const schedules = await getDetailsSimple('routine.id', '=', entityId, 'RoutineSchedule');
-                  if(schedules.length != 0 && schedules != undefined){
-                    for(let i=0; i<schedules.length; i++){
-                      /*let raw = JSON.stringify({
-                        "filter": {
-                            "conditions": [
-                                {
-                                  "property": "routineSchedule.id",
-                                  "operator": "=",
-                                  "value": `${schedules[i].id}`
-                                },
-                            ],
-                        },
-                        sort: "-createdDate",
-                      });
-                      let times = await getFilterEntityData("RoutineTime", raw);
-                      for(let i=0; i<times.length; i++){
-                        deleteEntity('RoutineTime', times[i].id);
-                      }*/
-                      deleteEntity('RoutineSchedule', schedules[i].id);
-                    }
-                  }
-
-                  const guards = await getDetailsSimple('routine.id', '=', entityId, 'RoutineUser');
-                  if(guards.length != 0 && guards != undefined){
-                    for(let i=0; i<guards.length; i++){
-                      deleteEntity('RoutineUser', guards[i].id);
-                    }
-                  }
-                  deleteEntity('Routine', entityId)
-                  .then((res) => {
-                      setTimeout(async () => {
-                          //let data = await getUsers();
-                          const tableBody = document.getElementById('datatable-body');
-                          new CloseDialog().x(dialogContent);
-                          new Routines().render(infoPage.offset, infoPage.currentPage, infoPage.search);
-                      }, 1000);
-                  });
-              };
-              cancelButton.onclick = () => {
-                  new CloseDialog().x(dialogContent);
-              };
-          });
-      });
-  }
   export(){
     const exportRegisters = document.querySelectorAll('#export-entity');
       exportRegisters.forEach((exports) => {

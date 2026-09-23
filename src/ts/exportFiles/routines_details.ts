@@ -40,43 +40,47 @@ export const exportRoutineDetailPdf = (ar, start, end) => {
             ubicacion: 0,
             usuario: 0,
             observacion: 0
-        };
+        }
         doc.setFontSize(8);
         doc.setFont(undefined, 'normal');
         doc.setTextColor(0, 0, 0);
         doc.text(10, row, `${register.fecha}`);
         doc.text(25, row, `${register.hora}`);
-        if (register.estado == "No cumplido") {
+        if(register.estado == "No cumplido"){
             doc.setTextColor(255, 0, 0);
         }
         doc.text(40, row, `${register.estado}`);
+
         doc.setTextColor(0, 0, 0);
         var lMargin = 60; //left margin in mm
         var rMargin = 5; //right margin in mm
         var pdfInMM = 90; //210;  // width of A4 in mm
         var paragraph = doc.splitTextToSize(register.rutina, (pdfInMM - lMargin - rMargin));
         doc.text(lMargin, row, paragraph);
-        rowAtt.rutina = calculateRow(register.rutina.length, "rutina");
+        rowAtt.rutina = calculateRow(register.rutina.length,"rutina");
+
         lMargin = 90; //left margin in mm
         rMargin = 5; //right margin in mm
         pdfInMM = 120; //210;  // width of A4 in mm
         paragraph = doc.splitTextToSize(register.ubicacion, (pdfInMM - lMargin - rMargin));
         doc.text(lMargin, row, paragraph);
-        rowAtt.ubicacion = calculateRow(register.ubicacion.length, "ubicacion");
+        rowAtt.ubicacion = calculateRow(register.ubicacion.length,"ubicacion");
+
         var lMargin = 120; //left margin in mm
         var rMargin = 5; //right margin in mm
         var pdfInMM = 160; //210;  // width of A4 in mm
         var paragraph = doc.splitTextToSize(register.usuario, (pdfInMM - lMargin - rMargin));
         doc.text(lMargin, row, paragraph);
         rowAtt.usuario = calculateRow(register.usuario.length, "usuario");
+
         row += Math.max(rowAtt.rutina, rowAtt.ubicacion, rowAtt.usuario, rowAtt.observacion);
-        if (register.imagen != '') {
+        if(register.imagen != ''){
             doc.addImage(`${register.imagen}`, "JPEG", 80, row, 50, 30);
-            row += 35;
+            row+=35
         }
         doc.setDrawColor(210, 210, 210);
         doc.line(5, row, 205, row);
-        if ((row + newDataBlock(ar, i)) > 280) {
+        if ((row+newDataBlock(ar,i)) > 280) {
             doc.addPage();
             row = 30;
             pagina += 1;
@@ -98,8 +102,7 @@ export const exportRoutineDetailPdf = (ar, start, end) => {
             doc.line(5, 25, 205, 25);
             doc.setTextColor(0, 0, 128);
             doc.text(10, 290, `Página ${pagina}`);
-        }
-        else {
+        }else{
             row += 5;
         }
     }
@@ -114,26 +117,26 @@ export const exportRoutineDetailCsv = (ar, start, end) => {
         let register = ar[i];
         // @ts-ignore
         //if (noteCreationDate >= start && noteCreationDate <= end) {
-        let obj = {
-            "Empresa": `${register.routineRelation?.customer?.name.split("\n").join("(salto)")}`,
-            "Fecha": `${register.creationDate}`,
-            "Hora": `${register.creationTime}`,
-            "Estado": `${register?.routineState?.name ?? ''}`,
-            "Rutina": `${register.routineRelation?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-            "Horario": `${register.routineRelation?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-            "Ubicación": `${register.routineRelation?.qrPoint?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-            "Nombre": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
-            "Usuario": `${register.user?.username ?? ''}`,
-            "Latitud": `${register?.latitude ?? ''}`,
-            "Longitud": `${register?.longitude ?? ''}`,
-            "Fecha desde": `${register?.targetDate ?? ''} ${register?.targetTime ?? ''}`,
-            "Fecha hasta": `${register?.targetDate2 ?? ''} ${register?.targetTime2 ?? ''}`,
-            "Validado por": `${register?.consoleUser ?? ''}`,
-            "Fecha Val.": `${register?.consoleDate ?? ''}`,
-            "Hora Val.": `${register?.consoleTime ?? ''}`,
-            "Observación": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
-        };
-        rows.push(obj);
+            let obj = {
+                "Empresa": `${register.routineRelation?.customer?.name.split("\n").join("(salto)")}`,
+                "Fecha": `${register.creationDate}`,
+                "Hora": `${register.creationTime}`,
+                "Estado": `${register?.routineState?.name ?? ''}`,
+                "Rutina": `${register.routineRelation?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Horario": `${register.routineRelation?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Ubicación": `${register.routineRelation?.qrPoint?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Nombre": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
+                "Usuario": `${register.user?.username ?? ''}`,
+                "Latitud": `${register?.latitude ?? ''}`,
+                "Longitud": `${register?.longitude ?? ''}`,
+                "Fecha desde": `${register?.targetDate ?? ''} ${register?.targetTime ?? ''}`,
+                "Fecha hasta": `${register?.targetDate2 ?? ''} ${register?.targetTime2 ?? ''}`,
+                "Validado por": `${register?.consoleUser ?? ''}`,
+                "Fecha Val.": `${register?.consoleDate ?? ''}`,
+                "Hora Val.": `${register?.consoleTime ?? ''}`,
+                "Observación": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
+            };
+            rows.push(obj);
         //}
     }
     generateFileSimpleCsv(rows, "DetallesRutinas", "csv");
@@ -169,40 +172,41 @@ export const exportRoutineDetailXls = (ar, start, end, timeStart, timeEnd) => {
     const customers = [...new Set(routineRows.map((row) => row.cliente).filter(Boolean))];
     const customerName = customers.length === 1 ? customers[0] : (customers.length > 1 ? 'Todas las empresas' : '');
     const schedules = [...new Set(ar.map((register) => {
-            const schedule = register.routineRelation?.routineSchedule;
-            return schedule ? `${schedule.scheduleTime ?? ''}|${schedule.scheduleTimeEnd ?? ''}` : '';
-        }).filter(Boolean))];
+        const schedule = register.routineRelation?.routineSchedule;
+        return schedule ? `${schedule.scheduleTime ?? ''}|${schedule.scheduleTimeEnd ?? ''}` : '';
+    }).filter(Boolean))];
     const [startTime = timeStart ?? '', endTime = timeEnd ?? ''] = schedules.length === 1 ? schedules[0].split('|') : [];
     const d = new Date();
     return generateRoutineReportXlsx(routineRows, {
         title: 'REPORTE DE RUTINA', customerName, startDate: start, endDate: end, startTime, endTime,
         filename: `Reporte_Rutina_${customerName.replace(/\s+/g, '_') || 'Registros'}_${d.getDate()}_${d.getMonth() + 1}.xlsx`,
     });
+
     let rows = [];
     for (let i = 0; i < ar.length; i++) {
         let register = ar[i];
         // @ts-ignore
         //if (noteCreationDate >= start && noteCreationDate <= end) {
-        let obj = {
-            "Empresa": `${register.routineRelation?.customer?.name.split("\n").join("(salto)")}`,
-            "Fecha": `${register.creationDate}`,
-            "Hora": `${register.creationTime}`,
-            "Estado": `${register?.routineState?.name ?? ''}`,
-            "Rutina": `${register.routineRelation?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-            "Horario": `${register.routineRelation?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-            "Ubicación": `${register.routineRelation?.qrPoint?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-            "Nombre": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
-            "Usuario": `${register.user?.username ?? ''}`,
-            "Latitud": `${register?.latitude ?? ''}`,
-            "Longitud": `${register?.longitude ?? ''}`,
-            "Fecha desde": `${register?.targetDate ?? ''} ${register?.targetTime ?? ''}`,
-            "Fecha hasta": `${register?.targetDate2 ?? ''} ${register?.targetTime2 ?? ''}`,
-            "Validado por": `${register?.consoleUser ?? ''}`,
-            "Fecha Val.": `${register?.consoleDate ?? ''}`,
-            "Hora Val.": `${register?.consoleTime ?? ''}`,
-            "Observación": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
-        };
-        rows.push(obj);
+            let obj = {
+                "Empresa": `${register.routineRelation?.customer?.name.split("\n").join("(salto)")}`,
+                "Fecha": `${register.creationDate}`,
+                "Hora": `${register.creationTime}`,
+                "Estado": `${register?.routineState?.name ?? ''}`,
+                "Rutina": `${register.routineRelation?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Horario": `${register.routineRelation?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Ubicación": `${register.routineRelation?.qrPoint?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
+                "Nombre": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
+                "Usuario": `${register.user?.username ?? ''}`,
+                "Latitud": `${register?.latitude ?? ''}`,
+                "Longitud": `${register?.longitude ?? ''}`,
+                "Fecha desde": `${register?.targetDate ?? ''} ${register?.targetTime ?? ''}`,
+                "Fecha hasta": `${register?.targetDate2 ?? ''} ${register?.targetTime2 ?? ''}`,
+                "Validado por": `${register?.consoleUser ?? ''}`,
+                "Fecha Val.": `${register?.consoleDate ?? ''}`,
+                "Hora Val.": `${register?.consoleTime ?? ''}`,
+                "Observación": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
+            };
+            rows.push(obj);
         //}
     }
     generateFileSimpleXls(rows, "DetallesRutinas", "xls");
@@ -261,45 +265,45 @@ const generateFile = (ar, title, extension) => {
         alert("Su navegador no permite esta acción");
     }
 };
+
 const calculateRow = (length, mode) => {
     let row = 0;
     let limit = 0; // limite de lineas
-    if (mode == "rutina") {
+    if(mode=="rutina"){
         limit = 16;
-    }
-    else if (mode == "ubicacion") {
+    }else if(mode=="ubicacion"){
         limit = 16;
-    }
-    else if (mode == "usuario") {
+    }else if(mode=="usuario"){
         limit = 21;
-    }
-    else if (mode == "observacion") {
+    }else if(mode=="observacion"){
         limit = 32;
     }
     let lineCount = Math.ceil(length / limit);
-    for (let i = 1; i <= lineCount; i++) {
-        if (length <= (limit * i)) { //124 caracteres cada linea aprox en total margen A4
-            row += (4 * i);
+    for(let i = 1; i <= lineCount; i++){
+        if(length <= (limit * i)){  //124 caracteres cada linea aprox en total margen A4
+            row += (4*i);
         }
     }
     return row;
-};
+}
+
 const newDataBlock = (array, index) => {
     let row = 0;
-    if (array[index + 1] != undefined) {
-        row += 5;
+    if(array[index+1] != undefined){
+        row+=5;
         let rowAtt = {
-            rutina: calculateRow(array[index + 1]?.rutina.length, "rutina"),
-            ubicacion: calculateRow(array[index + 1]?.ubicacion.length, "ubicacion"),
-            usuario: calculateRow(array[index + 1]?.usuario.length, "usuario"),
-            observacion: calculateRow(array[index + 1]?.observacion.length, "observacion")
-        };
+            rutina: calculateRow(array[index+1]?.rutina.length,"rutina"),
+            ubicacion: calculateRow(array[index+1]?.ubicacion.length,"ubicacion"),
+            usuario: calculateRow(array[index+1]?.usuario.length,"usuario"),
+            observacion: calculateRow(array[index+1]?.observacion.length,"observacion")
+        }
         row += Math.max(rowAtt.rutina, rowAtt.ubicacion, rowAtt.usuario, rowAtt.observacion);
-        if (array[index + 1]?.imagen != '')
-            row += 35;
+        if(array[index+1]?.imagen != '')
+            row+=35
     }
     return row;
-};
+}
+
 export const generarReportRoutineXls = async (conditions, routines) => {
     // @ts-ignore
     const workbook = new ExcelJS.Workbook();
@@ -338,12 +342,12 @@ export const generarReportRoutineXls = async (conditions, routines) => {
         // @ts-ignore
         row.eachCell(cell => {
             cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
-            if (cellIndex < 2) {
+            if(cellIndex < 2){
                 cell.alignment = { horizontal: "left" };
-            }
-            else {
+            }else{
                 cell.alignment = { horizontal: "center" };
             }
+
             cellIndex += 1;
         });
     });

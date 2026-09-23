@@ -230,10 +230,6 @@ export class SuperUsers {
             </button>
 
             <button class="button" id="plataform-entity" data-entityId="${client.id}" data-entityName="${client.username}"><i class="fa-solid fa-laptop"></i></button>
-
-            <button class="button" id="remove-entity" data-entityId="${client.id}">
-              <i class="fa-solid fa-trash"></i>
-            </button>
           </dt>
         `;
                 table.appendChild(row);
@@ -245,7 +241,6 @@ export class SuperUsers {
         this.export();
         this.edit(this.entityDialogContainer, data);
         this.plataformUser();
-        this.remove();
         this.convertToSuper();
         this.changeUserPassword();
     }
@@ -806,55 +801,6 @@ export class SuperUsers {
               };
           });
       });
-    }
-    remove() {
-        const remove = document.querySelectorAll('#remove-entity');
-        remove.forEach((remove) => {
-            const entityId = remove.dataset.entityid;
-            remove.addEventListener('click', () => {
-                this.dialogContainer.style.display = 'block';
-                this.dialogContainer.innerHTML = `
-          <div class="dialog_content" id="dialog-content">
-            <div class="dialog dialog_danger">
-              <div class="dialog_container">
-                <div class="dialog_header">
-                  <h2>¿Deseas eliminar este supersuario?</h2>
-                </div>
-
-                <div class="dialog_message">
-                  <p>Esta acción no se puede revertir</p>
-                </div>
-
-                <div class="dialog_footer">
-                  <button class="btn btn_primary" id="cancel">Cancelar</button>
-                  <button class="btn btn_danger" id="delete">Eliminar</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-                // delete button
-                // cancel button
-                // dialog content
-                const deleteButton = document.getElementById('delete');
-                const cancelButton = document.getElementById('cancel');
-                const dialogContent = document.getElementById('dialog-content');
-                deleteButton.onclick = async() => {
-                    deleteEntity('User', entityId)
-                    .then((res) => {
-                      setTimeout(async () => {
-                        //let data = await getUsers(SUser);
-                          const tableBody = document.getElementById('datatable-body');
-                          new CloseDialog().x(dialogContent);
-                          new SuperUsers().render(infoPage.offset, infoPage.currentPage, infoPage.search);
-                      }, 1000);
-                  });
-                };
-                cancelButton.onclick = () => {
-                    new CloseDialog().x(dialogContent);
-                };
-            });
-        });
     }
     close() {
         const closeButton = document.getElementById('close');

@@ -2,6 +2,7 @@
 import { generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
 import { getFile } from "../endpoints.js";
 import { createModernPdf } from "./modernPdfLayout.js";
+
 const exportMarcationsPdfLegacy = async (ar, start, end) => {
     // @ts-ignore
     window.jsPDF = window.jspdf.jsPDF;
@@ -39,71 +40,71 @@ const exportMarcationsPdfLegacy = async (ar, start, end) => {
         let marcation = ar[i];
         // @ts-ignore
         //if (marcation.ingressDate >= start && marcation.ingressDate <= end) {
-        doc.setFontSize(9);
-        doc.setFont(undefined, 'normal');
-        doc.setTextColor(0, 0, 0);
-        doc.text(10, row, `${marcation.user?.firstName ?? ''} ${marcation.user?.lastName ?? ''}`);
-        doc.text(50, row, `${marcation.user?.dni ?? ''}`);
-        doc.text(80, row, `${marcation.ingressDate}`);
-        doc.text(100, row, `${marcation.ingressTime}`);
-        doc.text(130, row, `${marcation?.egressDate ?? ''}`);
-        doc.text(150, row, `${marcation?.egressTime ?? ''}`);
-        doc.text(170, row, `${marcation.marcationState?.name ?? ''}`);
-        let imagesPath = [marcation?.camera1, marcation?.camera2, marcation?.camera3, marcation?.camera4, marcation?.camera5, marcation?.camera6, marcation?.camera7, marcation?.camera8];
-        let imagesTotal = 0;
-        let column = 5;
-        let countImage = 0;
-        let existImage = false;
-        for (let y = 0; y < imagesPath.length; y++) {
-            if (imagesPath[y] !== undefined) {
-                if (countImage > 3) {
-                    row += 32;
-                    column = 5;
-                    countImage = 0;
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(0, 0, 0);
+            doc.text(10, row, `${marcation.user?.firstName ?? ''} ${marcation.user?.lastName ?? ''}`);
+            doc.text(50, row, `${marcation.user?.dni ?? ''}`);
+            doc.text(80, row, `${marcation.ingressDate}`);
+            doc.text(100, row, `${marcation.ingressTime}`);
+            doc.text(130, row, `${marcation?.egressDate ?? ''}`);
+            doc.text(150, row, `${marcation?.egressTime ?? ''}`);
+            doc.text(170, row, `${marcation.marcationState?.name ?? ''}`);
+            let imagesPath = [marcation?.camera1, marcation?.camera2, marcation?.camera3, marcation?.camera4, marcation?.camera5, marcation?.camera6, marcation?.camera7, marcation?.camera8];
+            let imagesTotal = 0;
+            let column = 5;
+            let countImage = 0;
+            let existImage = false;
+            for(let y=0; y<imagesPath.length; y++){
+                if(imagesPath[y] !== undefined){
+                    if(countImage>3){
+                        row+=32;
+                        column=5;
+                        countImage = 0;
+                    }
+                    if(!existImage){
+                        existImage = true;
+                        row += 5;
+                    }
+                    let image = await getFile(imagesPath[y]);
+                    doc.addImage(`${image}`, "JPEG", column, row, 48, 30);
+                    imagesTotal+=1;
+                    countImage+=1;
+                    column+=50;
+
                 }
-                if (!existImage) {
-                    existImage = true;
-                    row += 5;
+            }
+            if(imagesTotal !== 0){
+                if(imagesTotal > 4){
+                    row+=30;
+                }else{
+                    row+=32;
                 }
-                let image = await getFile(imagesPath[y]);
-                doc.addImage(`${image}`, "JPEG", column, row, 48, 30);
-                imagesTotal += 1;
-                countImage += 1;
-                column += 50;
             }
-        }
-        if (imagesTotal !== 0) {
-            if (imagesTotal > 4) {
-                row += 30;
+            if ((row+newDataBlock(ar,i)) > 280) {
+                doc.addPage();
+                row = 30;
+                pagina += 1;
+                doc.setFont(undefined, 'bold');
+                doc.setFontSize(10);
+                //construimos cabecera del csv
+                doc.line(5, 15, 200, 15);
+                doc.setFillColor(210, 210, 210);
+                doc.rect(5, 15, 195, 10, 'F');
+                doc.text(10, 20, "Nombre");
+                doc.text(50, 20, "DNI");
+                doc.text(80, 20, "Inicio");
+                doc.text(100, 20, "Hora");
+                doc.text(130, 20, "Fin");
+                doc.text(150, 20, "Hora");
+                doc.text(170, 20, "Estado");
+                doc.line(5, 25, 200, 25);
+                doc.setTextColor(0, 0, 128);
+                doc.text(10, 290, `Página ${pagina}`);
+            }else{
+                row += 5;
             }
-            else {
-                row += 32;
-            }
-        }
-        if ((row + newDataBlock(ar, i)) > 280) {
-            doc.addPage();
-            row = 30;
-            pagina += 1;
-            doc.setFont(undefined, 'bold');
-            doc.setFontSize(10);
-            //construimos cabecera del csv
-            doc.line(5, 15, 200, 15);
-            doc.setFillColor(210, 210, 210);
-            doc.rect(5, 15, 195, 10, 'F');
-            doc.text(10, 20, "Nombre");
-            doc.text(50, 20, "DNI");
-            doc.text(80, 20, "Inicio");
-            doc.text(100, 20, "Hora");
-            doc.text(130, 20, "Fin");
-            doc.text(150, 20, "Hora");
-            doc.text(170, 20, "Estado");
-            doc.line(5, 25, 200, 25);
-            doc.setTextColor(0, 0, 128);
-            doc.text(10, 290, `Página ${pagina}`);
-        }
-        else {
-            row += 5;
-        }
+
         //}
     }
     // Save the PDF
@@ -117,22 +118,22 @@ export const exportMarcationsCsv = (ar, start, end) => {
         let marcation = ar[i];
         // @ts-ignore
         //if (marcation.ingressDate >= start && marcation.ingressDate <= end) {
-        let obj = {
-            "Empresa": `${marcation.customer?.name.split("\n").join("(salto)")}`,
-            "DNI": `${marcation.user?.dni ?? ''}`,
-            "Nombre": `${marcation.user?.firstName ?? ''} ${marcation.user?.lastName ?? ''}`,
-            "Usuario": `${marcation.user?.username ?? ''}`,
-            "Fecha Ingreso": `${marcation.ingressDate}`,
-            "Hora Ingreso": `${marcation.ingressTime}`,
-            "Emitido Ingreso": `${marcation.ingressIssued?.firstName ?? ''} ${marcation.ingressIssued?.lastName ?? ''}`,
-            "Guardia Ingreso": `${marcation.ingressIssued?.username ?? ''}`,
-            "Fecha Salida": `${marcation?.egressDate ?? ''}`,
-            "Hora Salida": `${marcation?.egressTime ?? ''}`,
-            "Emitido Salida": `${marcation.egressIssued?.firstName ?? ''} ${marcation.egressIssued?.lastName ?? ''}`,
-            "Guardia Salida": `${marcation.egressIssued?.username ?? ''}`,
-            "Estado": `${marcation.marcationState?.name ?? ''}`,
-        };
-        rows.push(obj);
+            let obj = {
+                "Empresa": `${marcation.customer?.name.split("\n").join("(salto)")}`,
+                "DNI": `${marcation.user?.dni ?? ''}`,
+                "Nombre": `${marcation.user?.firstName ?? ''} ${marcation.user?.lastName ?? ''}`,
+                "Usuario": `${marcation.user?.username ?? ''}`,
+                "Fecha Ingreso": `${marcation.ingressDate}`,
+                "Hora Ingreso": `${marcation.ingressTime}`,
+                "Emitido Ingreso": `${marcation.ingressIssued?.firstName ?? ''} ${marcation.ingressIssued?.lastName ?? ''}`,
+                "Guardia Ingreso": `${marcation.ingressIssued?.username ?? ''}`,
+                "Fecha Salida": `${marcation?.egressDate ?? ''}`,
+                "Hora Salida": `${marcation?.egressTime ?? ''}`,
+                "Emitido Salida": `${marcation.egressIssued?.firstName ?? ''} ${marcation.egressIssued?.lastName ?? ''}`,
+                "Guardia Salida": `${marcation.egressIssued?.username ?? ''}`,
+                "Estado": `${marcation.marcationState?.name ?? ''}`,
+            };
+            rows.push(obj);
         //}
     }
     generateFileSimpleCsv(rows, "Marcaciones", "csv");
@@ -143,22 +144,22 @@ export const exportMarcationsXls = (ar, start, end) => {
         let marcation = ar[i];
         // @ts-ignore
         //if (marcation.ingressDate >= start && marcation.ingressDate <= end) {
-        let obj = {
-            "Empresa": `${marcation.customer?.name.split("\n").join("(salto)")}`,
-            "DNI": `${marcation.user?.dni ?? ''}`,
-            "Nombre": `${marcation.user?.firstName ?? ''} ${marcation.user?.lastName ?? ''}`,
-            "Usuario": `${marcation.user?.username ?? ''}`,
-            "Fecha Ingreso": `${marcation.ingressDate}`,
-            "Hora Ingreso": `${marcation.ingressTime}`,
-            "Emitido Ingreso": `${marcation.ingressIssued?.firstName ?? ''} ${marcation.ingressIssued?.lastName ?? ''}`,
-            "Guardia Ingreso": `${marcation.ingressIssued?.username ?? ''}`,
-            "Fecha Salida": `${marcation?.egressDate ?? ''}`,
-            "Hora Salida": `${marcation?.egressTime ?? ''}`,
-            "Emitido Salida": `${marcation.egressIssued?.firstName ?? ''} ${marcation.egressIssued?.lastName ?? ''}`,
-            "Guardia Salida": `${marcation.egressIssued?.username ?? ''}`,
-            "Estado": `${marcation.marcationState?.name ?? ''}`,
-        };
-        rows.push(obj);
+            let obj = {
+                "Empresa": `${marcation.customer?.name.split("\n").join("(salto)")}`,
+                "DNI": `${marcation.user?.dni ?? ''}`,
+                "Nombre": `${marcation.user?.firstName ?? ''} ${marcation.user?.lastName ?? ''}`,
+                "Usuario": `${marcation.user?.username ?? ''}`,
+                "Fecha Ingreso": `${marcation.ingressDate}`,
+                "Hora Ingreso": `${marcation.ingressTime}`,
+                "Emitido Ingreso": `${marcation.ingressIssued?.firstName ?? ''} ${marcation.ingressIssued?.lastName ?? ''}`,
+                "Guardia Ingreso": `${marcation.ingressIssued?.username ?? ''}`,
+                "Fecha Salida": `${marcation?.egressDate ?? ''}`,
+                "Hora Salida": `${marcation?.egressTime ?? ''}`,
+                "Emitido Salida": `${marcation.egressIssued?.firstName ?? ''} ${marcation.egressIssued?.lastName ?? ''}`,
+                "Guardia Salida": `${marcation.egressIssued?.username ?? ''}`,
+                "Estado": `${marcation.marcationState?.name ?? ''}`,
+            };
+            rows.push(obj);
         //}
     }
     generateFileSimpleXls(rows, "Marcaciones", "xls");
@@ -217,28 +218,30 @@ const generateFile = (ar, title, extension) => {
         alert("Su navegador no permite esta acción");
     }
 };
+
 const newDataBlock = (array, index) => {
     let row = 0;
-    if (array[index + 1] != undefined) {
-        row += 5;
-        let imagesPath = [array[index + 1]?.camera1, array[index + 1]?.camera2, array[index + 1]?.camera3, array[index + 1]?.camera4, array[index + 1]?.camera5, array[index + 1]?.camera6, array[index + 1]?.camera7, array[index + 1]?.camera8];
+    if(array[index+1] != undefined){
+        row+=5;
+        let imagesPath = [array[index+1]?.camera1, array[index+1]?.camera2, array[index+1]?.camera3, array[index+1]?.camera4, array[index+1]?.camera5, array[index+1]?.camera6, array[index+1]?.camera7, array[index+1]?.camera8];
         let images = [];
-        for (let y = 0; y < imagesPath.length; y++) {
-            if (imagesPath[y] !== undefined) {
+        for(let y=0; y<imagesPath.length; y++){
+            if(imagesPath[y] !== undefined){
                 images.push(imagesPath[y]);
             }
         }
-        if (images.length !== 0) {
-            if (images.length > 4) {
-                row += 30;
-            }
-            else {
-                row += 32;
+        if(images.length !== 0){
+            if(images.length > 4){
+                row+=30;
+            }else{
+                row+=32;
             }
         }
+
     }
     return row;
-};
+}
+
 export const exportMarcationsPdf = async (marcations, start, end) => {
     const clean = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
     const rows = await Promise.all(marcations.map(async (marcation, index) => {
@@ -247,14 +250,15 @@ export const exportMarcationsPdf = async (marcations, start, end) => {
             marcation?.camera5, marcation?.camera6, marcation?.camera7, marcation?.camera8,
         ].filter(Boolean);
         const images = [];
+
         for (const path of evidencePaths) {
             try {
                 images.push(await getFile(path));
-            }
-            catch (error) {
+            } catch (error) {
                 console.warn('No se pudo cargar una evidencia de marcación para el PDF.', error);
             }
         }
+
         const name = clean(`${marcation?.user?.firstName ?? ''} ${marcation?.user?.lastName ?? ''}`)
             || marcation?.user?.username;
         return {
@@ -269,6 +273,7 @@ export const exportMarcationsPdf = async (marcations, start, end) => {
             caption: `${name || 'Marcación'} · ${marcation?.ingressDate ?? ''} ${marcation?.ingressTime ?? ''}`.trim(),
         };
     }));
+
     createModernPdf({
         title: 'REPORTE DE MARCACIONES',
         subtitle: 'Bitácora Digital · Control de asistencia',

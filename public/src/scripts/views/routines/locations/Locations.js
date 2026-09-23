@@ -139,9 +139,6 @@ export class Locations {
           <button class="button" id="edit-entity" data-entityId="${location.id}">
             <i class="fa-solid fa-pen"></i>
           </button>
-            <button class="button" id="remove-entity" data-entityId="${location.id}">
-              <i class="fa-solid fa-trash"></i>
-            </button>
           </td>
         `;
                 table.appendChild(row);
@@ -149,7 +146,6 @@ export class Locations {
         }
         this.register();
         this.edit(this.entityDialogContainer, data);
-        this.remove();
 
     }
     pagination(items, limitRows, currentPage) {
@@ -624,63 +620,6 @@ export class Locations {
               //marker2.setMap(map);
             }
         } */
-  }
-    remove() {
-        const remove = document.querySelectorAll('#remove-entity');
-        remove.forEach((remove) => {
-            const entityId = remove.dataset.entityid;
-            remove.addEventListener('click', async () => {
-                const checkRaw = JSON.stringify({
-                    "filter": {
-                        "conditions": [
-                            {
-                                "property": "qrPoint.id",
-                                "operator": "=",
-                                "value": `${entityId}`
-                            }
-                        ]
-                    }
-                });
-                const count = await getFilterEntityCount("RoutineRelation", checkRaw);
-                if (count > 0) {
-                    alert("No se puede eliminar la ubicación porque está asignada en una planificación de rutina.");
-                    return;
-                }
-                this.dialogContainer.style.display = 'flex';
-                this.dialogContainer.innerHTML = `
-          <div class="dialog_content" id="dialog-content">
-            <div class="dialog dialog_danger">
-              <div class="dialog_container">
-                <div class="dialog_header">
-                  <h2>¿Deseas eliminar esta Ubicación?</h2>
-                </div>
-                <div class="dialog_message">
-                  <p>Esta acción no se puede revertir</p>
-                </div>
-                <div class="dialog_footer">
-                  <button class="btn btn_primary" id="cancel">Cancelar</button>
-                  <button class="btn btn_danger" id="delete">Eliminar</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-                // delete button
-                // cancel button
-                // dialog content
-                const deleteButton = document.getElementById('delete');
-                const cancelButton = document.getElementById('cancel');
-                const dialogContent = document.getElementById('dialog-content');
-                deleteButton.onclick = async () => {
-                    deleteEntity('QRPoint', entityId)
-                        .then(res => new Locations().render(infoPage.offset, infoPage.currentPage, infoPage.search));
-                    new CloseDialog().x(dialogContent);
-                };
-                cancelButton.onclick = () => {
-                    new CloseDialog().x(dialogContent);
-                };
-            });
-        });
     }
     close() {
         const closeButton = document.getElementById('close');

@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
 import { createModernPdf } from "./modernPdfLayout.js";
+
 const exportMarcationsPdfLegacy = (ar, start) => {
     // @ts-ignore
     window.jsPDF = window.jspdf.jsPDF;
@@ -38,41 +39,41 @@ const exportMarcationsPdfLegacy = (ar, start) => {
         let marcation = ar[i];
         // @ts-ignore
         //if (marcation.ingressDate >= start && marcation.ingressDate <= end) {
-        doc.setFontSize(9);
-        doc.setFont(undefined, 'normal');
-        doc.setTextColor(0, 0, 0);
-        doc.text(10, row, `${marcation?.firstName ?? ''} ${marcation?.lastName ?? ''}`);
-        doc.text(70, row, `${marcation?.dni ?? ''}`);
-        doc.text(100, row, `${marcation.ingressDate}`);
-        doc.text(120, row, `${marcation.ingressTime}`);
-        doc.text(150, row, `${marcation?.egressDate ?? ''}`);
-        doc.text(170, row, `${marcation?.egressTime ?? ''}`);
-        row += 5;
-        let limitLineas = 51;
-        if (pagina == 1)
-            limitLineas = 44;
-        if (lineas >= limitLineas) {
-            doc.addPage();
-            lineas = 0;
-            row = 30;
-            pagina += 1;
-            doc.setFont(undefined, 'bold');
-            doc.setFontSize(10);
-            //construimos cabecera del csv
-            doc.line(5, 15, 200, 15);
-            doc.setFillColor(210, 210, 210);
-            doc.rect(5, 15, 195, 10, 'F');
-            doc.text(10, 20, "Nombre");
-            doc.text(70, 20, "DNI");
-            doc.text(100, 20, "Fecha");
-            doc.text(120, 20, "Primera Marc.");
-            doc.text(150, 20, "Fecha Ult.");
-            doc.text(170, 20, "Hora Ult. Marc.");
-            doc.line(5, 25, 200, 25);
-            doc.setTextColor(0, 0, 128);
-            doc.text(10, 290, `Página ${pagina}`);
-        }
-        lineas++;
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(0, 0, 0);
+            doc.text(10, row, `${marcation?.firstName ?? ''} ${marcation?.lastName ?? ''}`);
+            doc.text(70, row, `${marcation?.dni ?? ''}`);
+            doc.text(100, row, `${marcation.ingressDate}`);
+            doc.text(120, row, `${marcation.ingressTime}`);
+            doc.text(150, row, `${marcation?.egressDate ?? ''}`);
+            doc.text(170, row, `${marcation?.egressTime ?? ''}`);
+            row += 5;
+            let limitLineas = 51;
+            if (pagina == 1)
+                limitLineas = 44;
+            if (lineas >= limitLineas) {
+                doc.addPage();
+                lineas = 0;
+                row = 30;
+                pagina += 1;
+                doc.setFont(undefined, 'bold');
+                doc.setFontSize(10);
+                //construimos cabecera del csv
+                doc.line(5, 15, 200, 15);
+                doc.setFillColor(210, 210, 210);
+                doc.rect(5, 15, 195, 10, 'F');
+                doc.text(10, 20, "Nombre");
+                doc.text(70, 20, "DNI");
+                doc.text(100, 20, "Fecha");
+                doc.text(120, 20, "Primera Marc.");
+                doc.text(150, 20, "Fecha Ult.");
+                doc.text(170, 20, "Hora Ult. Marc.");
+                doc.line(5, 25, 200, 25);
+                doc.setTextColor(0, 0, 128);
+                doc.text(10, 290, `Página ${pagina}`);
+            }
+            lineas++;
         //}
     }
     // Save the PDF
@@ -86,17 +87,17 @@ export const exportMarcationsCsv = (ar, start) => {
         let marcation = ar[i];
         // @ts-ignore
         //if (marcation.ingressDate >= start && marcation.ingressDate <= end) {
-        let obj = {
-            "Empresa": `${marcation?.customer.split("\n").join("(salto)")}`,
-            "DNI": `${marcation?.dni ?? ''}`,
-            "Nombre": `${marcation?.firstName ?? ''} ${marcation?.lastName ?? ''}`,
-            "Usuario": `${marcation?.username ?? ''}`,
-            "Fecha": `${marcation.ingressDate}`,
-            "Primera Marcación": `${marcation.ingressTime}`,
-            "Fecha Ult. Marc.": `${marcation?.egressDate ?? ''}`,
-            "Hora Ult. Marc.": `${marcation?.egressTime ?? ''}`,
-        };
-        rows.push(obj);
+            let obj = {
+                "Empresa": `${marcation?.customer.split("\n").join("(salto)")}`,
+                "DNI": `${marcation?.dni ?? ''}`,
+                "Nombre": `${marcation?.firstName ?? ''} ${marcation?.lastName ?? ''}`,
+                "Usuario": `${marcation?.username ?? ''}`,
+                "Fecha": `${marcation.ingressDate}`,
+                "Primera Marcación": `${marcation.ingressTime}`,
+                "Fecha Ult. Marc.": `${marcation?.egressDate ?? ''}`,
+                "Hora Ult. Marc.": `${marcation?.egressTime ?? ''}`,
+            };
+            rows.push(obj);
         //}
     }
     generateFileSimpleCsv(rows, "GestMarc", "csv");
@@ -107,17 +108,17 @@ export const exportMarcationsXls = (ar, start) => {
         let marcation = ar[i];
         // @ts-ignore
         //if (marcation.ingressDate >= start && marcation.ingressDate <= end) {
-        let obj = {
-            "Empresa": `${marcation?.customer.split("\n").join("(salto)")}`,
-            "DNI": `${marcation?.dni ?? ''}`,
-            "Nombre": `${marcation?.firstName ?? ''} ${marcation?.lastName ?? ''}`,
-            "Usuario": `${marcation?.username ?? ''}`,
-            "Fecha": `${marcation.ingressDate}`,
-            "Primera Marcación": `${marcation.ingressTime}`,
-            "Fecha Ult. Marc.": `${marcation?.egressDate ?? ''}`,
-            "Hora Ult. Marc.": `${marcation?.egressTime ?? ''}`,
-        };
-        rows.push(obj);
+            let obj = {
+                "Empresa": `${marcation?.customer.split("\n").join("(salto)")}`,
+                "DNI": `${marcation?.dni ?? ''}`,
+                "Nombre": `${marcation?.firstName ?? ''} ${marcation?.lastName ?? ''}`,
+                "Usuario": `${marcation?.username ?? ''}`,
+                "Fecha": `${marcation.ingressDate}`,
+                "Primera Marcación": `${marcation.ingressTime}`,
+                "Fecha Ult. Marc.": `${marcation?.egressDate ?? ''}`,
+                "Hora Ult. Marc.": `${marcation?.egressTime ?? ''}`,
+            };
+            rows.push(obj);
         //}
     }
     generateFileSimpleXls(rows, "GestMarc", "xls");
@@ -176,6 +177,7 @@ const generateFile = (ar, title, extension) => {
         alert("Su navegador no permite esta acción");
     }
 };
+
 export const exportMarcationsPdf = (marcations, date) => {
     const clean = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
     createModernPdf({

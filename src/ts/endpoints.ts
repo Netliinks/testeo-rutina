@@ -201,6 +201,64 @@ export const setUserRole = async (raw: string): Endpoint => {
         .catch(error => console.log('error', error));
 }
 
+/**
+ * Provisiona un cliente de forma secuencial: crea el usuario, establece la
+ * contraseña y asigna el rol antes de devolver el control a la interfaz.
+ * Evita que la tabla tenga que inicializar credenciales pendientes al cargarse.
+ */
+export const createUserWithPassword = async (
+    raw: string,
+    password: string,
+    roleCode: string
+): Endpoint => {
+    const user = JSON.parse(raw)
+    delete user.temp
+
+    const createResponse = await fetch(`${NetliinksUrl}User`, {
+        method: 'POST', headers, body: JSON.stringify(user), redirect: 'follow'
+    })
+    if (!createResponse.ok) {
+        throw new Error(`No se pudo crear el usuario (${createResponse.status}).`)
+    }
+
+    const createdUser = await createResponse.json()
+    if (!createdUser?.id) {
+        throw new Error('El backend no devolvió el identificador del usuario creado.')
+    }
+
+    const passwordResponse = await fetch(
+        'https://backend4.netliinks.com:443/rest/services/UserServiceBean/updatePassword',
+        {
+            method: 'POST', headers,
+            body: JSON.stringify({ id: createdUser.id, newPassword: password }),
+            redirect: 'follow'
+        }
+    )
+    if (!passwordResponse.ok) {
+        throw new Error(`No se pudo establecer la contraseña (${passwordResponse.status}).`)
+    }
+
+    const roleResponse = await fetch(
+        'https://backend4.netliinks.com:443/rest/services/UserServiceBean/assignRol',
+        {
+            method: 'POST', headers,
+            body: JSON.stringify({ id: createdUser.id, roleCode }),
+            redirect: 'follow'
+        }
+    )
+    if (!roleResponse.ok) {
+        throw new Error(`No se pudo asignar el rol (${roleResponse.status}).`)
+    }
+
+    const finalizeResponse = await fetch(`${NetliinksUrl}User/${createdUser.id}`, {
+        method: 'PUT', headers, body: JSON.stringify({ newUser: false }), redirect: 'follow'
+    })
+    if (!finalizeResponse.ok) {
+        throw new Error(`No se pudo finalizar el usuario (${finalizeResponse.status}).`)
+    }
+    return createdUser
+}
+
 export const getFile = async (fileUrl: string): Endpoint => {
     const url: string = 'https://backend4.netliinks.com:443/rest/files?fileRef='
 
