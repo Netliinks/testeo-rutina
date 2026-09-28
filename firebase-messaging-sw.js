@@ -11,7 +11,7 @@ const firebaseApp = firebase.initializeApp({
     appId: "1:289160473467:web:2f208e0c101be51100abde",
     measurementId: "G-N34ECMV5Z2"
 });
-const originalUrl = "https://netguardcs.netliinks.com/";
+const originalUrl = "https://netguard.netliinks.com";
 self.addEventListener('notificationclick', function(event) {
     event.notification.close();
     // fcp_options.link field from the FCM backend service goes there, but as the host differ, it not handled by Firebase JS Client sdk, so custom handling
@@ -27,21 +27,3 @@ self.addEventListener('notificationclick', function(event) {
 }, false);
 // @ts-ignore
 const messaging = firebase.messaging();
-
-messaging.onBackgroundMessage((payload) => {
-    const alertPayload = {
-        notification: payload.notification || { title: payload.data?.title || 'ALERTA', body: payload.data?.body || '' },
-        data: payload.data || {},
-    };
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-        .then((clients) => {
-            clients.forEach((client) => client.postMessage(alertPayload));
-            if (clients.length === 0) {
-                return self.registration.showNotification(alertPayload.notification.title, {
-                    body: alertPayload.notification.body,
-                    data: alertPayload.data,
-                });
-            }
-            return undefined;
-        });
-});

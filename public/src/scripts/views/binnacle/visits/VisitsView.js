@@ -1,4 +1,3 @@
-// @ts-nocheck
 //
 //  VisitsView.ts
 //
@@ -9,8 +8,9 @@ import { getEntityData, getFilterEntityData, getFile, getFilterEntityCount } fro
 import { CloseDialog, drawTagsIntoTables, renderRightSidebar, filterDataByHeaderType, verifyUserType, inputObserver, pageNumbers, fillBtnPagination, sleep, formatearFechaPorZona } from "../../../tools.js";
 import { UIContentLayout, UIRightSidebar } from "./Layout.js";
 import { UITableSkeletonTemplate } from "./Template.js";
-import { exportVisitCsv, exportVisitPdfModern, exportVisitXls } from "../../../exportFiles/visits.js";
-import { getVisitDisplayName } from "../../../visitDisplayName.js";
+// El parámetro de versión evita que el navegador conserve un generador de PDF
+// anterior mientras se valida esta actualización en el servidor estático local.
+import { exportVisitCsv, exportVisitPdf, exportVisitXls } from "../../../exportFiles/visits.js?v=20260916-visitas-sin-usuario";
 // Local configs
 const tableRows = Config.tableRows;
 let currentPage = Config.currentPage;
@@ -65,11 +65,6 @@ const GetVisits = async () => {
                             },
                             {
                                 "property": "secondLastName",
-                                "operator": "contains",
-                                "value": `${infoPage.search.toLowerCase()}`
-                            },
-                            {
-                                "property": "legalName",
                                 "operator": "contains",
                                 "value": `${infoPage.search.toLowerCase()}`
                             },
@@ -140,9 +135,7 @@ export class Visits {
             // Show message if page is empty
             if (visits.length === 0) {
                 let mensaje = 'No existen datos';
-                if (customerId == null) {
-                    mensaje = 'Seleccione una empresa';
-                }
+                if(customerId == null){mensaje = 'Seleccione una empresa';}
                 let row = document.createElement('TR');
                 row.innerHTML = `
             <td>${mensaje}<td>
@@ -156,7 +149,7 @@ export class Visits {
                     let visit = paginatedItems[i]; // getting visit items
                     let row = document.createElement('TR');
                     row.innerHTML += `
-                    <td style="white-space: nowrap">${getVisitDisplayName(visit)}</td>
+                    <td style="white-space: nowrap">${visit.firstName} ${visit.firstLastName} ${visit.secondLastName}</td>
                     <td>${visit.dni}</td>
                     <td>[${visit?.user?.username ?? ''}] ${visit?.user?.firstName ?? ''} ${visit?.user?.lastName ?? ''}</td>
                     <td id="table-date">${visit.creationDate}</td>
@@ -177,6 +170,7 @@ export class Visits {
                 //this.fixCreatedDate();
             }
         };
+        //<td id="table-time" style="white-space: nowrap">${visit.creationTime}</td>
         this.searchVisit = async (tableBody /*, visits: any*/) => {
             const search = document.getElementById('search');
             const btnSearch = document.getElementById('btnSearch');
@@ -298,11 +292,10 @@ export class Visits {
             });
             const renderInterface = async (entity) => {
                 let entityData = await getEntityData('Visit', entity);
-                console.log(entityData);
                 renderRightSidebar(UIRightSidebar);
                 const controlImages = document.getElementById('galeria');
                 const visitName = document.getElementById('visit-name');
-                visitName.value = getVisitDisplayName(entityData);
+                visitName.value = `${entityData.firstName} ${entityData.firstLastName}`;
                 const visitReason = document.getElementById('visit-reason');
                 visitReason.value = entityData.reason;
                 const visitAutorizedBy = document.getElementById('visit-authorizedby');
@@ -337,14 +330,6 @@ export class Visits {
                 const egressGuardName = document.getElementById('egress-guard-name');
                 egressGuardName.value = `${entityData?.egressIssuedId?.firstName ?? ''} ${entityData?.egressIssuedId?.lastName ?? ''}`;
                 const checkboxBlackList = document.getElementById('entity-blacklist');
-                const markingStartDocument = document.getElementById('marking-start-document');
-                markingStartDocument.value = entityData?.typeDocument ?? '';
-                const markingStartReference = document.getElementById('marking-start-reference');
-                markingStartReference.value = entityData?.referenceDocument ?? '';
-                const markingEndDocument = document.getElementById('marking-end-document');
-                markingEndDocument.value = entityData?.typeDocumentOut ?? '';
-                const markingEndReference = document.getElementById('marking-end-reference');
-                markingEndReference.value = entityData?.referenceDocumentOut ?? '';
                 if (entityData?.checkBlacklist === true) {
                     checkboxBlackList?.setAttribute('checked', 'true');
                 }
@@ -391,7 +376,7 @@ export class Visits {
                     if (entityData?.camera1 !== undefined) {
                         let details = {
                             "image": `${await getFile(entityData.camera1)}`,
-                            "description": `CÃ¡mara 1 - ${entityData?.dni ?? ''}`,
+                            "description": `Cámara 1 - ${entityData?.dni ?? ''}`,
                             "icon": "camera",
                             "id": "camera1"
                         };
@@ -400,7 +385,7 @@ export class Visits {
                     if (entityData?.camera2 !== undefined) {
                         let details = {
                             "image": `${await getFile(entityData.camera2)}`,
-                            "description": `CÃ¡mara 2 - ${entityData?.dni ?? ''}`,
+                            "description": `Cámara 2 - ${entityData?.dni ?? ''}`,
                             "icon": "camera",
                             "id": "camera2"
                         };
@@ -409,7 +394,7 @@ export class Visits {
                     if (entityData?.camera3 !== undefined) {
                         let details = {
                             "image": `${await getFile(entityData.camera3)}`,
-                            "description": `CÃ¡mara 3 - ${entityData?.dni ?? ''}`,
+                            "description": `Cámara 3 - ${entityData?.dni ?? ''}`,
                             "icon": "camera",
                             "id": "camera3"
                         };
@@ -418,7 +403,7 @@ export class Visits {
                     if (entityData?.camera4 !== undefined) {
                         let details = {
                             "image": `${await getFile(entityData.camera4)}`,
-                            "description": `CÃ¡mara 4 - ${entityData?.dni ?? ''}`,
+                            "description": `Cámara 4 - ${entityData?.dni ?? ''}`,
                             "icon": "camera",
                             "id": "camera4"
                         };
@@ -427,7 +412,7 @@ export class Visits {
                     if (entityData?.camera5 !== undefined) {
                         let details = {
                             "image": `${await getFile(entityData.camera5)}`,
-                            "description": `CÃ¡mara 5 - ${entityData?.dni ?? ''}`,
+                            "description": `Cámara 5 - ${entityData?.dni ?? ''}`,
                             "icon": "camera",
                             "id": "camera5"
                         };
@@ -436,7 +421,7 @@ export class Visits {
                     if (entityData?.camera6 !== undefined) {
                         let details = {
                             "image": `${await getFile(entityData.camera6)}`,
-                            "description": `CÃ¡mara 6 - ${entityData?.dni ?? ''}`,
+                            "description": `Cámara 6 - ${entityData?.dni ?? ''}`,
                             "icon": "camera",
                             "id": "camera6"
                         };
@@ -445,7 +430,7 @@ export class Visits {
                     if (entityData?.camera7 !== undefined) {
                         let details = {
                             "image": `${await getFile(entityData.camera7)}`,
-                            "description": `CÃ¡mara 7 - ${entityData?.dni ?? ''}`,
+                            "description": `Cámara 7 - ${entityData?.dni ?? ''}`,
                             "icon": "camera",
                             "id": "camera7"
                         };
@@ -454,7 +439,7 @@ export class Visits {
                     if (entityData?.camera8 !== undefined) {
                         let details = {
                             "image": `${await getFile(entityData.camera8)}`,
-                            "description": `CÃ¡mara 8 - ${entityData?.dni ?? ''}`,
+                            "description": `Cámara 8 - ${entityData?.dni ?? ''}`,
                             "icon": "camera",
                             "id": "camera8"
                         };
@@ -471,55 +456,13 @@ export class Visits {
                 else {
                     controlImages.innerHTML += `
                         <div class="input_detail">
-                            <label><i class="fa-solid fa-info-circle"></i> No hay imÃ¡genes</label>
+                            <label><i class="fa-solid fa-info-circle"></i> No hay imágenes</label>
                         </div>
                     `;
                 }
                 this.closeRightSidebar();
                 //drawTagsIntoTables();
-                this.renderRelationTags(entity);
             };
-        };
-        this.renderRelationTags = async (entityId) => {
-            const tagsContainer = document.getElementById('tags-container');
-            if (!tagsContainer)
-                return;
-            let raw = JSON.stringify({
-                "filter": {
-                    "conditions": [
-                        {
-                            "property": "visit.id",
-                            "operator": "=",
-                            "value": `${entityId}`
-                        },
-                        {
-                            "property": "customer.id",
-                            "operator": "=",
-                            "value": `${customerId}`
-                        },
-                        {
-                            "property": "business.id",
-                            "operator": "=",
-                            "value": `${Config.currentUser.business.id}`
-                        }
-                    ]
-                },
-                "fetchPlan": "full"
-            });
-            const relationTags = await getFilterEntityData("RelationTag", raw);
-            relationTags.forEach(rel => {
-                const tagSpan = document.createElement('span');
-                tagSpan.innerText = rel.tag?.name;
-                tagSpan.style.backgroundColor = rel.tag?.color || '#4654d3';
-                tagSpan.style.color = '#FFFFFF';
-                tagSpan.style.padding = '4px 8px';
-                tagSpan.style.borderRadius = '4px';
-                tagSpan.style.fontSize = '10px';
-                tagSpan.style.fontWeight = '700';
-                tagSpan.style.margin = '2px';
-                tagSpan.style.display = 'inline-block';
-                tagsContainer.appendChild(tagSpan);
-            });
         };
         this.closeRightSidebar = () => {
             const closeButton = document.getElementById('close');
@@ -549,10 +492,10 @@ export class Visits {
                         <div class="avatar"><i class="fa-regular fa-up-from-line"></i></div>
                         <h1 class="entity_editor_title">Importar <br><small>Clientes</small></h1>
                     </div>
-
+    
                     <button class="btn btn_close_editor" id="close"><i class="fa-solid fa-x"></i></button>
                     </div>
-
+    
                     <!-- EDITOR BODY -->
                     <div class="entity_editor_body padding_t_8_important">
                     <div class="sidebar_section">
@@ -568,19 +511,19 @@ export class Visits {
                             </div>
                         </div>
                     </div>
-
+    
                     <div class="sidebar_section" style="display: none">
                         <label class="drop_zone" id="drop-zone" draggable="true">
-                            Seleccione o arrastre <br>su archivo aquÃ­
+                            Seleccione o arrastre <br>su archivo aquí
                         </label>
                     </div>
-
+    
                     <div class="sidebar_section">
                         <input type="file" id="file-handler">
                     </div>
                     </div>
                     <!-- END EDITOR BODY -->
-
+    
                     <div class="entity_editor_footer">
                     <button class="btn btn_primary btn_widder" id="button-import">Importar</button>
                     </div>
@@ -668,7 +611,7 @@ export class Visits {
         }*/
         this.export = () => {
             const exportNotes = document.getElementById('export-entities');
-            exportNotes.addEventListener('click', async () => {
+            exportNotes.addEventListener('click', async() => {
                 this.siebarDialogContainer.innerHTML = '';
                 this.siebarDialogContainer.style.display = 'flex';
                 this.siebarDialogContainer.innerHTML = `
@@ -701,7 +644,7 @@ export class Visits {
                                 <label class="form_label" for="start-date">Desde:</label>
                                 <input type="date" class="input_date input_date-start" id="start-date" name="start-date">
                             </div>
-
+            
                             <div class="form_input">
                                 <label class="form_label" for="end-date">Hasta:</label>
                                 <input type="date" class="input_date input_date-end" id="end-date" name="end-date">
@@ -738,21 +681,22 @@ export class Visits {
                 inputObserver();
                 this.selectCustomer();
                 let fecha = new Date(); //Fecha actual
-                let mes = fecha.getMonth() + 1; //obteniendo mes
+                let mes = fecha.getMonth()+1; //obteniendo mes
                 let dia = fecha.getDate(); //obteniendo dia
-                let anio = fecha.getFullYear(); //obteniendo aÃ±o
-                if (dia < 10)
-                    dia = '0' + dia; //agrega cero si el menor de 10
-                if (mes < 10)
-                    mes = '0' + mes; //agrega cero si el menor de 10
-                document.getElementById("start-date").value = anio + "-" + mes + "-" + dia;
-                document.getElementById("end-date").value = anio + "-" + mes + "-" + dia;
+                let anio = fecha.getFullYear(); //obteniendo año
+                if(dia<10)
+                    dia='0'+dia; //agrega cero si el menor de 10
+                if(mes<10)
+                    mes='0'+mes //agrega cero si el menor de 10
+
+                document.getElementById("start-date").value = anio+"-"+mes+"-"+dia;
+                document.getElementById("end-date").value = anio+"-"+mes+"-"+dia;
                 const _closeButton = document.getElementById('close');
                 const exportButton = document.getElementById('export-data');
                 const exportAllCustomers = document.getElementById('exportAllCustomers');
                 let onPressed = false;
-                exportButton.addEventListener('click', async () => {
-                    if (!onPressed) {
+                exportButton.addEventListener('click', async() => {
+                    if(!onPressed){
                         onPressed = true;
                         this.dialogContainer.style.display = 'block';
                         this.dialogContainer.innerHTML = `
@@ -796,17 +740,17 @@ export class Visits {
                             start: document.getElementById('start-date'),
                             end: document.getElementById('end-date'),
                             exportOption: document.getElementsByName('exportOption')
-                        };
-                        let rawToExport = (offset) => {
+                        }
+                        let rawToExport=(offset)=>{
                             let condition = {
                                 property: "customer.id",
                                 value: `${_values.customer.dataset.optionid}`,
                                 order: "-createdDate"
-                            };
-                            if (exportAllCustomers.checked) {
+                            }
+                            if(exportAllCustomers.checked){
                                 condition.property = "business.id";
                                 condition.value = `${Config.currentUser.business.id}`;
-                                condition.order = "+customer.name,-createdDate";
+                                condition.order = "+customer.name,-createdDate"
                             }
                             let rawExport = JSON.stringify({
                                 "filter": {
@@ -834,32 +778,30 @@ export class Visits {
                                 fetchPlan: 'full',
                             });
                             return rawExport;
-                        };
+                        }
                         let rawExport = rawToExport(0);
                         const totalRegisters = await getFilterEntityCount("Visit", rawExport);
-                        if (totalRegisters === undefined) {
+                        if(totalRegisters === undefined){
                             onPressed = false;
                             const _dialog = document.getElementById('dialog-content');
                             new CloseDialog().x(_dialog);
-                            alert("OcurriÃ³ un error al exportar");
-                        }
-                        else if (totalRegisters === 0) {
+                            alert("Ocurrió un error al exportar");
+                        }else if(totalRegisters===0){
                             onPressed = false;
                             const _dialog = document.getElementById('dialog-content');
                             new CloseDialog().x(_dialog);
-                            alert("No hay ningÃºn registro");
-                        }
-                        else {
+                            alert("No hay ningún registro");  
+                        }else {
                             message1.value = `0 / ${totalRegisters}`;
                             const pages = Math.ceil(totalRegisters / Config.limitExport);
                             let array = [];
                             let visits = [];
                             let offset = 0;
-                            for (let i = 0; i < pages; i++) {
-                                if (onPressed) {
+                            for(let i = 0; i < pages; i++){
+                                if(onPressed){
                                     rawExport = rawToExport(offset);
                                     array[i] = await getFilterEntityData("Visit", rawExport); //await getEvents();
-                                    for (let y = 0; y < array[i].length; y++) {
+                                    for(let y=0; y<array[i].length; y++){
                                         visits.push(array[i][y]);
                                     }
                                     message1.value = `${visits.length} / ${totalRegisters}`;
@@ -867,6 +809,7 @@ export class Visits {
                                     await sleep(Config.timeOutExport);
                                 }
                             }
+             
                             for (let i = 0; i < _values.exportOption.length; i++) {
                                 let ele = _values.exportOption[i];
                                 if (ele.type = "radio") {
@@ -882,7 +825,7 @@ export class Visits {
                                         }
                                         else if (ele.value == "pdf") {
                                             // @ts-ignore
-                                            await exportVisitPdfModern(visits, _values.start.value, _values.end.value);
+                                            await exportVisitPdf(visits, _values.start.value, _values.end.value);
                                         }
                                         const _dialog = document.getElementById('dialog-content');
                                         new CloseDialog().x(_dialog);
@@ -901,54 +844,57 @@ export class Visits {
             });
         };
     }
+
     selectCustomer() {
         const btnElement = document.getElementById('btn-select-customer');
+
         btnElement.addEventListener('click', async () => {
             const element = document.getElementById('entity-customer');
             modalTable(0, "", element);
-        });
-        async function modalTable(offset, search, element) {
+        })
+
+        async function modalTable(offset, search, element){
             const dialogContainer = document.getElementById('app-dialogs');
             let raw = JSON.stringify({
                 "filter": {
                     "conditions": [
                         {
-                            "property": "business.id",
-                            "operator": "=",
-                            "value": `${Config.currentUser.business.id}`
+                        "property": "business.id",
+                        "operator": "=",
+                        "value": `${Config.currentUser.business.id}`
                         }
                     ],
-                },
+                }, 
                 sort: "+name",
                 limit: Config.modalRows,
                 offset: offset
             });
-            if (search != "") {
+            if(search != ""){
                 raw = JSON.stringify({
                     "filter": {
                         "conditions": [
                             {
-                                "group": "OR",
-                                "conditions": [
-                                    {
-                                        "property": "name",
-                                        "operator": "contains",
-                                        "value": `${search.toLowerCase()}`
-                                    },
-                                    {
-                                        "property": "ruc",
-                                        "operator": "contains",
-                                        "value": `${search.toLowerCase()}`
-                                    }
-                                ]
+                            "group": "OR",
+                            "conditions": [
+                                {
+                                "property": "name",
+                                "operator": "contains",
+                                "value": `${search.toLowerCase()}`
+                                },
+                                {
+                                "property": "ruc",
+                                "operator": "contains",
+                                "value": `${search.toLowerCase()}`
+                                }
+                            ]
                             },
                             {
-                                "property": "business.id",
-                                "operator": "=",
-                                "value": `${Config.currentUser.business.id}`
+                            "property": "business.id",
+                            "operator": "=",
+                            "value": `${Config.currentUser.business.id}`
                             }
                         ],
-                    },
+                    }, 
                     sort: "+name",
                     limit: Config.modalRows,
                     offset: offset
@@ -1035,7 +981,9 @@ export class Visits {
             const _dialog = document.getElementById('dialog-content');
             const prevModalButton = document.getElementById('prevModal');
             const nextModalButton = document.getElementById('nextModal');
+
             txtSearch.value = search ?? '';
+
             _selectCustomer.forEach((edit) => {
                 const entityId = edit.dataset.entityid;
                 const entityName = edit.dataset.entityname;
@@ -1044,24 +992,29 @@ export class Visits {
                     element.setAttribute('value', `${entityName}`);
                     element.classList.add('input_filled');
                     new CloseDialog().x(_dialog);
-                });
-            });
+                })
+            
+            })
+
             btnSearchModal.onclick = () => {
                 modalTable(0, txtSearch.value, element);
-            };
+            }
+
             _closeButton.onclick = () => {
                 new CloseDialog().x(_dialog);
-            };
+            }
+
             nextModalButton.onclick = () => {
                 offset = Config.modalRows + (offset);
                 modalTable(offset, search, element);
-            };
+            }
+
             prevModalButton.onclick = () => {
-                if (offset > 0) {
-                    offset = (offset) - Config.modalRows;
-                    modalTable(offset, search, element);
+                if(offset > 0){
+                offset = (offset) - Config.modalRows;
+                modalTable(offset, search, element);
                 }
-            };
+            }
         }
     }
 }

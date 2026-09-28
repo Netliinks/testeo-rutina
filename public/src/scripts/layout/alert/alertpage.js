@@ -14,36 +14,36 @@ let currentPage = Config.currentPage;
 const pageName = 'Alertas / Rutinas no cumplidas';
 const customerId = localStorage.getItem('customer_id');
 let infoPage = {
-    count1: 0,//RoutineMarcation
+    count1: 0,//RoutineRegister
     count2: 0,//Notification
-    data1: [],//RoutineMarcation
+    data1: [],//RoutineRegister
     data2: [],//Notification
-    data1_1: [],//RoutineMarcation
+    data1_1: [],//RoutineRegister
     data2_2: [],//Notification
     counter: 10,
-    table: ["RoutineMarcation", "Notification"],
+    table: ["RoutineRegister", "Notification"],
     newRegister: false,
     countNewRegister1: 0,
     countNewRegister2: 0,
     lastCreatedDate: undefined,
 };
 let dataPage = [];
-let raw1; //RoutineMarcation
+let raw1; //RoutineRegister
 let raw2; //Notification
 const GetAlerts = async () => {
-    //const notesRaw = await getEntitiesData('RoutineMarcation');
+    //const notesRaw = await getEntitiesData('RoutineRegister');
     //const notes = notesRaw.filter((data) => data.customer?.id === `${customerId}`);
     infoPage.counter = 10;
     clearTimeout(Config.timeOut);
     infoPage.data1_1 = []; // Reset data1_1
     infoPage.data2_2 = []; // Reset data2_2
-    infoPage.countNewRegister1 = 0; // Reset new register count for RoutineMarcation
+    infoPage.countNewRegister1 = 0; // Reset new register count for RoutineRegister
     infoPage.countNewRegister2 = 0; // Reset new register count for Notification
     raw1 = {
         "filter": {
             "conditions": [
                 {
-                    "property": "routineRelation.business.id",
+                    "property": "business.id",
                     "operator": "=",
                     "value": `${Config.currentUser.business.id}`
                 },
@@ -102,13 +102,13 @@ const GetAlerts = async () => {
     };
 
     for(let i = 0; i < infoPage.table.length; i++){
-        if(infoPage.table[i] == "RoutineMarcation"){
+        if(infoPage.table[i] == "RoutineRegister"){
             /*if(infoPage.count1 == 0 || infoPage.countNewRegister1 > 0){
-                //infoPage.count1 = await getFilterEntityCount("RoutineMarcation", raw1);
+                //infoPage.count1 = await getFilterEntityCount("RoutineRegister", raw1);
   
             }*/
            if(infoPage.data1.length == 0){
-                infoPage.data1 = await getFilterEntityData("RoutineMarcation", JSON.stringify(raw1));
+                infoPage.data1 = await getFilterEntityData("RoutineRegister", JSON.stringify(raw1));
             }else if(infoPage.lastCreatedDate){
                 const query1 = {
                     ...raw1,
@@ -124,7 +124,7 @@ const GetAlerts = async () => {
                         ]
                     }
                 };
-                infoPage.data1_1 = await getFilterEntityData("RoutineMarcation", JSON.stringify(query1));
+                infoPage.data1_1 = await getFilterEntityData("RoutineRegister", JSON.stringify(query1));
             }
         }else if(infoPage.table[i] == "Notification"){
             /*if(infoPage.count2 == 0 || infoPage.countNewRegister2 > 0){
@@ -264,12 +264,12 @@ export class AlertsRegisters {
                     let register = notes[i]; // getting note items
                     //let obsMessage = await this.obtainDelay(register);
                     let row = document.createElement('TR');
-                    if(register._entityName == "RoutineMarcation"){
+                    if(register._entityName == "RoutineRegister"){
 
                         row.innerHTML += `
-                            <td>${calculateLine(register?.routineRelation?.customer?.name, 40)}</td>
+                            <td>${calculateLine(register?.customer?.name, 40)}</td>
                             <td>Rutina no cumplida</td>
-                            <td>${calculateLine(register?.routineRelation?.routine?.name, 40)} | ${calculateLine(register?.routineRelation?.routineSchedule?.name, 40)} | ${calculateLine(register?.routineRelation?.qrPoint?.name, 40)}</td>
+                            <td>${calculateLine(register?.routine?.name, 40)} | ${calculateLine(register?.routineSchedule?.name, 40)}</td>
                             <td>${calculateLine(`${register?.user?.firstName ?? ''} ${register?.user?.lastName ?? ''}`, 40)}</td>
                             <td id="table-date">${register?.creationDate ?? ''} ${register?.creationTime ?? ''}</td>
                             <td id="td-alert-${register.id}"></td>

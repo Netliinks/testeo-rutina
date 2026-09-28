@@ -6,7 +6,7 @@
 export const tableLayout = `
   <div class="datatable" id="datatable">
     <div class="datatable_header">
-      <div class="datatable_title" id="datatable-title"><h1>Configuración de Rutinas</h1></div>
+      <div class="datatable_title" id="datatable-title"><h1>Rutinas</h1></div>
       <div class="datatable_tools" id="datatable-tools">
         <input type="search"
         class="search_input"
@@ -23,9 +23,9 @@ export const tableLayout = `
           <i class="fa-solid fa-add"></i>
         </button>
         <button
-          class="datatable_button add_user"
+          class="datatable_button import_user"
           id="ex-entity">
-          Exportar
+          <i class="fa-solid fa-file-arrow-down"></i>&nbsp; Exportar
         </button>
       </div>
     </div>
@@ -42,14 +42,6 @@ export const tableLayout = `
 
         <th><span data-type="validateLocation">
           Validar Ubicación <i class="fa-regular fa-filter"></i>
-        </span></th>
-
-        <th><span data-type="date">
-          Fecha C. <i class="fa-regular fa-filter"></i>
-        </span></th>
-
-        <th><span data-type="time">
-          Hora C. <i class="fa-regular fa-filter"></i>
         </span></th>
 
         <th class="header_filled"></th>

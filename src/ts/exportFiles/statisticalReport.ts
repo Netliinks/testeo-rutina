@@ -18,11 +18,11 @@ const percentage = (value) => Math.max(0, Math.min(100, numeric(String(value ?? 
 const complianceRatio = (completed, required) => {
     const completedRecords = Math.max(0, numeric(completed));
     const requiredRecords = Math.max(0, numeric(required));
-    if (requiredRecords === 0)
-        return 0;
+    if (requiredRecords === 0) return 0;
     return Math.min(1, completedRecords / requiredRecords);
 };
 const periodDateTime = (date, time) => date ? `${date} ${String(time || '').replace(/:00$/, '')}`.trim() : '-';
+
 const download = async (workbook, filename) => {
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8' });
@@ -33,10 +33,11 @@ const download = async (workbook, filename) => {
     link.click();
     window.setTimeout(() => window.URL.revokeObjectURL(url), 0);
 };
+
 const fillRow = (sheet, rowNumber, first, last, color) => {
-    for (let column = first; column <= last; column++)
-        sheet.getRow(rowNumber).getCell(column).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
+    for (let column = first; column <= last; column++) sheet.getRow(rowNumber).getCell(column).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
 };
+
 /**
  * Aplica el mismo lenguaje visual del Excel estadístico de Trace sin tocar las
  * métricas calculadas por NetGuard. Los valores de cumplimiento se reciben ya
@@ -48,6 +49,7 @@ export const exportNetGuardStatisticalReport = async ({ title, filename, conditi
     workbook.created = new Date();
     const sheet = workbook.addWorksheet('Estadísticas', { views: [{ state: 'frozen', ySplit: 7 }] });
     sheet.columns = [{ width: 26 }, { width: 46 }, { width: 17 }, { width: 17 }, { width: 18 }];
+
     sheet.mergeCells('A1:E1');
     const header = sheet.getCell('A1');
     header.value = title;
@@ -55,6 +57,7 @@ export const exportNetGuardStatisticalReport = async ({ title, filename, conditi
     header.alignment = { vertical: 'middle', horizontal: 'left' };
     sheet.getRow(1).height = 30;
     fillRow(sheet, 1, 1, 5, COLORS.soft);
+
     sheet.mergeCells('A2:E2');
     const period = sheet.getCell('A2');
     period.value = `FECHA INICIAL: ${periodDateTime(conditions.filterStartDate, conditions.filterStartTime)}   —   FECHA CORTE: ${periodDateTime(conditions.filterEndDate, conditions.filterEndTime)}`;
@@ -63,6 +66,7 @@ export const exportNetGuardStatisticalReport = async ({ title, filename, conditi
     sheet.getRow(2).height = 20;
     fillRow(sheet, 2, 1, 5, COLORS.soft);
     sheet.getRow(3).height = 15;
+
     const required = rows.reduce((sum, row) => sum + numeric(row.required), 0);
     const completed = rows.reduce((sum, row) => sum + numeric(row.completed), 0);
     const compliance = complianceRatio(completed, required);
@@ -86,12 +90,12 @@ export const exportNetGuardStatisticalReport = async ({ title, filename, conditi
         value.alignment = { vertical: 'bottom', horizontal: 'right' };
         value.border = border;
         value.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF6F7F9' } };
-        if (kpi.format)
-            value.numFmt = kpi.format;
+        if (kpi.format) value.numFmt = kpi.format;
     });
     sheet.getRow(4).height = 20;
     sheet.getRow(5).height = 25;
     sheet.getRow(6).height = 15;
+
     const headers = ['Cliente', 'Usuario', 'Requeridos', 'Realizados', 'Cumplimiento'];
     const tableHeader = sheet.getRow(7);
     tableHeader.height = 25;
@@ -103,6 +107,7 @@ export const exportNetGuardStatisticalReport = async ({ title, filename, conditi
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.navy } };
         cell.border = border;
     });
+
     rows.forEach((item, index) => {
         const row = sheet.getRow(8 + index);
         row.height = 22;
@@ -124,6 +129,7 @@ export const exportNetGuardStatisticalReport = async ({ title, filename, conditi
     if (rows.length) {
         sheet.addConditionalFormatting({ ref: `E8:E${7 + rows.length}`, rules: [{ type: 'dataBar', cfvo: [{ type: 'num', value: 0 }, { type: 'num', value: 1 }], color: { argb: 'FF6FAF8A' } }] });
     }
+
     const glossaryTitleRow = 9 + rows.length;
     sheet.mergeCells(`A${glossaryTitleRow}:E${glossaryTitleRow}`);
     const glossaryTitle = sheet.getCell(glossaryTitleRow, 1);
@@ -132,6 +138,7 @@ export const exportNetGuardStatisticalReport = async ({ title, filename, conditi
     glossaryTitle.alignment = { horizontal: 'left', vertical: 'middle' };
     fillRow(sheet, glossaryTitleRow, 1, 5, COLORS.soft);
     sheet.getRow(glossaryTitleRow).height = 22;
+
     glossary.forEach((item, index) => {
         const rowNumber = glossaryTitleRow + 1 + index;
         sheet.mergeCells(`B${rowNumber}:E${rowNumber}`);

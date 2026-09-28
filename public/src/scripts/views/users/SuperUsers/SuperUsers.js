@@ -802,6 +802,7 @@ export class SuperUsers {
           });
       });
     }
+
     close() {
         const closeButton = document.getElementById('close');
         const editor = document.getElementById('entity-editor-container');
@@ -953,7 +954,7 @@ export class SuperUsers {
                                 }
                             }
                         
-                            generateFileSimpleXls(users,"Administrador","xls");
+                            generateFileSimpleXls(users,"Administrador","csv");
                             const _dialog = document.getElementById('dialog-content');
                             new CloseDialog().x(_dialog);
                             onPressed = false;

@@ -2,7 +2,7 @@ import { firebaseConfig, applicationServerKey } from "../firebaseConfig.js";
 // @ts-ignore
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 // @ts-ignore
-import { getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 export class FirebaseCtrl {
     constructor() {
         // @ts-ignore
@@ -13,7 +13,6 @@ export class FirebaseCtrl {
         this.onErrorCb = undefined;
         // @ts-ignore
         this.onGetTokenCb = undefined;
-        this.messageListenerRegistered = false;
     }
     async initApp() {
         const savedToken = window.localStorage.getItem("libreriasjs-notification-token");
@@ -32,13 +31,11 @@ export class FirebaseCtrl {
                 this.onErrorCb("This browser does not support the API's required to use the Firebase SDK");
                 return;
             }
+            //navigator.serviceWorker.register("./public/src/scripts/services/firebase-messaging-sw.js");
             if ("serviceWorker" in navigator) {
-                // Use the application base path so this works both locally and when deployed under a subpath.
-                const basePath = new URL('./', document.baseURI).pathname;
-                const serviceWorkerRegistration = await navigator.serviceWorker.register(
-                    `${basePath}firebase-messaging-sw.js`,
-                    { scope: basePath },
-                );
+                const serviceWorkerRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {scope: "/"}).catch((error) => {
+                    console.error(`Service worker registration failed: ${error}`);
+                });
     
                 await navigator.serviceWorker.ready;
     
@@ -51,7 +48,6 @@ export class FirebaseCtrl {
                 serviceWorkerSuscription;
                 const app = initializeApp(firebaseConfig);
                 const messaging = getMessaging(app);
-                this.registerMessageListener(messaging);
                 try {
                     // @ts-ignore
                     this.token = await getToken(messaging, {
@@ -109,19 +105,18 @@ export class FirebaseCtrl {
                         },
                     );
                 });
+                navigator.serviceWorker.addEventListener("message", (event) => {
+                    console.log("FROM ON SERVICEWORKER MESSAGE", event);
+                    // @ts-ignore
+                    if (typeof this.onRecieveNotificationCb === "function") {
+                        // @ts-ignore
+                        this.onRecieveNotificationCb(event.data);
+                    }
+                });
             }else{
                 console.error("Service workers are not supported.");
             }
         }
-    }
-    registerMessageListener(messaging) {
-        if (this.messageListenerRegistered) return;
-        this.messageListenerRegistered = true;
-        onMessage(messaging, (payload) => this.emitNotification(payload));
-        navigator.serviceWorker.addEventListener("message", (event) => this.emitNotification(event.data));
-    }
-    emitNotification(payload) {
-        if (typeof this.onRecieveNotificationCb === "function") this.onRecieveNotificationCb(payload);
     }
     onGetToken(cb) {
         if (typeof cb === "function") {

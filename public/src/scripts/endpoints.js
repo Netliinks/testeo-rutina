@@ -3,7 +3,7 @@
 import { SignIn } from "./login.js";
 // GENERAL URL
 // ===================================================
-export const NetliinkBase = (window.APP_CONFIG?.baseUrl ?? 'https://backend4.netliinks.com:443/');
+export const NetliinkBase = (window.APP_CONFIG?.baseUrl ?? 'https://backend.netliinks.com:443/');
 const NetliinksUrl = `${NetliinkBase}rest/entities/`;
 // ===================================================
 // TOOLS
@@ -154,9 +154,15 @@ export const updateEntity = async (entities, entity, raw) => {
         body: raw,
         redirect: 'follow'
     };
-    await fetch(URL, ReqOptions)
-        .then(res => res.json())
-        .catch(err => console.error('Error: ', err));
+    return await fetch(URL, ReqOptions)
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return res.json();
+        })
+        .catch(err => {
+            console.error('Error: ', err);
+            throw err;
+        });
 };
 export const deleteEntity = async (entities, entity) => {
     const URL = `${NetliinksUrl}${entities}/${entity}?fetchPlan=full`;
@@ -180,9 +186,15 @@ export const registerEntity = async (raw, type) => {
         body: raw,
         redirect: 'follow'
     };
-    fetch(req.url + type, requestOptions)
-        .then(res => res.json())
-        .catch(err => console.error('Error:' + err));
+    return await fetch(req.url + type, requestOptions)
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return res.json();
+        })
+        .catch(err => {
+            console.error('Error:' + err);
+            throw err;
+        });
 };
 export const filterEntities = async (user) => { };
 export const setPassword = async (raw) => {
@@ -216,47 +228,6 @@ export const setUserRole = async (raw) => {
         .then(response => response.json())
         .then(result => console.log(result))
         .catch(error => console.log('error', error));
-};
-/**
- * Provisiona un cliente de forma secuencial: crea el usuario, establece la
- * contraseña y asigna el rol antes de devolver el control a la interfaz.
- */
-export const createUserWithPassword = async (raw, password, roleCode) => {
-    const user = JSON.parse(raw);
-    delete user.temp;
-    const createResponse = await fetch(`${NetliinkBase}rest/entities/User`, {
-        method: 'POST', headers, body: JSON.stringify(user), redirect: 'follow'
-    });
-    if (!createResponse.ok) {
-        throw new Error(`No se pudo crear el usuario (${createResponse.status}).`);
-    }
-    const createdUser = await createResponse.json();
-    if (!createdUser?.id) {
-        throw new Error('El backend no devolvió el identificador del usuario creado.');
-    }
-    const passwordResponse = await fetch(`${NetliinkBase}rest/services/UserServiceBean/updatePassword`, {
-        method: 'POST', headers,
-        body: JSON.stringify({ id: createdUser.id, newPassword: password }),
-        redirect: 'follow'
-    });
-    if (!passwordResponse.ok) {
-        throw new Error(`No se pudo establecer la contraseña (${passwordResponse.status}).`);
-    }
-    const roleResponse = await fetch(`${NetliinkBase}rest/services/UserServiceBean/assignRol`, {
-        method: 'POST', headers,
-        body: JSON.stringify({ id: createdUser.id, roleCode }),
-        redirect: 'follow'
-    });
-    if (!roleResponse.ok) {
-        throw new Error(`No se pudo asignar el rol (${roleResponse.status}).`);
-    }
-    const finalizeResponse = await fetch(`${NetliinkBase}rest/entities/User/${createdUser.id}`, {
-        method: 'PUT', headers, body: JSON.stringify({ newUser: false }), redirect: 'follow'
-    });
-    if (!finalizeResponse.ok) {
-        throw new Error(`No se pudo finalizar el usuario (${finalizeResponse.status}).`);
-    }
-    return createdUser;
 };
 export const sendMail = async (raw) => {
     const req = {
@@ -321,6 +292,17 @@ export const sendMail2 = async (raw) => {
         console.error('Error enviando correo con adjunto:', err);
         throw err; // se re-lanza para que quien llama decida cómo mostrarlo
     }
+};
+export const getFaceFile = async (path, storageName) => {
+    const params = new URLSearchParams({ path, fileName: 'temp.png', storageName });
+    const requestOptions = {
+        method: 'GET',
+        headers: headers,
+        redirect: 'follow'
+    };
+    const blob = await fetch(`${NetliinkBase}rest/files/download?${params}`, requestOptions)
+        .then(res => res.blob());
+    return window.URL.createObjectURL(blob);
 };
 export const getFile = async (fileUrl) => {
     const url = `${NetliinkBase}rest/files?fileRef=`;
@@ -412,3 +394,119 @@ export const postNotificationPush = async(data)=>{
     })
     .catch(error => console.error('Fetch error:', error));
 }
+
+export const getGuardPhotos = async (guardId, page, size) => {
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ guardId, page, size }),
+        redirect: 'follow'
+    };
+    const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/getGuardPhotos`, requestOptions);
+    return res.json().catch(err => console.error('getGuardPhotos error:', err));
+};
+
+export const getAllGuardFailedPhotos = async (page, size) => {
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ page, size }),
+        redirect: 'follow'
+    };
+    const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/getAllGuardFailedPhotos`, requestOptions);
+    return res.json().catch(err => console.error('getAllGuardFailedPhotos error:', err));
+};
+
+export const getModels = async (page, size) => {
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ page, size }),
+        redirect: 'follow'
+    };
+    const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/getModels`, requestOptions);
+    return res.json().catch(err => console.error('getModels error:', err));
+};
+
+export const requestModelTrain = async () => {
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({}),
+        redirect: 'follow'
+    };
+    const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/requestModelTrain`, requestOptions);
+    return res.json().catch(err => console.error('requestModelTrain error:', err));
+};
+
+export const getAllAccesses = async (page, size) => {
+    const customerId = localStorage.getItem('customer_id');
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ page, size, customerId }),
+        redirect: 'follow'
+    };
+    const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/getAllAccesses`, requestOptions);
+    return res.json().catch(err => console.error('getAllAccesses error:', err));
+};
+
+export const getAllAccessesBetweenDates = async (initialDate, finalDate, page, size) => {
+    const customerId = localStorage.getItem('customer_id');
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ customerId, initialDate, finalDate, page, size }),
+        redirect: 'follow'
+    };
+    const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/getAllAccessesBetweenDates`, requestOptions);
+    return res.json().catch(err => console.error('getAllAccessesBetweenDates error:', err));
+};
+
+export const getAllAccessesFromGuardByExternalId = async (externalGuardId, page, size) => {
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ externalGuardId, page, size }),
+        redirect: 'follow'
+    };
+    const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/getAllAccessesFromGuardByExternalId`, requestOptions);
+    return res.json().catch(err => console.error('getAllAccessesFromGuardByExternalId error:', err));
+};
+
+export const deleteGuardPhotoById = async (photoId) => {
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ photoId }),
+        redirect: 'follow'
+    };
+    const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/deleteGuardPhotoById`, requestOptions);
+    return res.json().catch(err => console.error('deleteGuardPhotoById error:', err));
+};
+
+export const createGuardPhoto = async (guardId, fileRef) => {
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ guardId, fileRef }),
+        redirect: 'follow'
+    };
+    const res = await fetch(`${NetliinkBase}rest/services/FaceRecognitionBean/createGuardPhoto`, requestOptions);
+    return res.json().catch(err => console.error('createGuardPhoto error:', err));
+};
+
+export const generateRoutineTimes = async (scheduleId) => {
+    const req = {
+        url: `${NetliinkBase}rest/services/app_RoutineTimeService/generateOrUpdateRoutineTimes`,
+        method: 'POST'
+    };
+    const requestOptions = {
+        method: req.method,
+        headers: headers,
+        body: JSON.stringify({ scheduleId }),
+        redirect: 'follow'
+    };
+    const res = await fetch(req.url, requestOptions);
+    return res.text();
+};

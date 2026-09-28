@@ -6,7 +6,7 @@ import { Endpoint, Request } from "./types.js"
 
 // GENERAL URL
 // ===================================================
-const NetliinksUrl: string = 'https://backend4.netliinks.com:443/rest/entities/'
+const NetliinksUrl: string = 'https://backend.netliinks.com:443/rest/entities/'
 // ===================================================
 
 // TOOLS
@@ -33,7 +33,7 @@ headers.append('Cookie', "JSESSIONID=CDD208A868EAABD1F523BB6F3C8946AF")
  */
 export const getToken = async (mail: string, password: string): Endpoint => {
     const URL: string =
-        'https://backend4.netliinks.com:443/oauth/token'
+        'https://backend.netliinks.com:443/oauth/token'
 
     const ReqOptions: {} = {
         method: 'POST',
@@ -60,7 +60,7 @@ export const getToken = async (mail: string, password: string): Endpoint => {
  */
 export const getUserInfo = async (): Endpoint => {
     const userInfo: Request = {
-        url: 'https://backend4.netliinks.com:443/rest/userInfo?fetchPlan=full',
+        url: 'https://backend.netliinks.com:443/rest/userInfo?fetchPlan=full',
         method: 'GET'
     }
 
@@ -145,7 +145,7 @@ export const deleteEntity = async (entities: string, entity: string): Endpoint =
 
 export const registerEntity = async (raw: any, type: string): Endpoint => {
     const req: Request = {
-        url: 'https://backend4.netliinks.com:443/rest/entities/',
+        url: 'https://backend.netliinks.com:443/rest/entities/',
         method: 'POST'
     }
 
@@ -165,7 +165,7 @@ export const filterEntities = async (user: any): Endpoint => { }
 
 export const setPassword = async (raw: string): Endpoint => {
     const req: Request = {
-        url: 'https://backend4.netliinks.com:443/rest/services/UserServiceBean/updatePassword',
+        url: 'https://backend.netliinks.com:443/rest/services/UserServiceBean/updatePassword',
         method: 'POST'
     }
 
@@ -184,7 +184,7 @@ export const setPassword = async (raw: string): Endpoint => {
 
 export const setUserRole = async (raw: string): Endpoint => {
     const req: Request = {
-        url: 'https://backend4.netliinks.com:443/rest/services/UserServiceBean/assignRol',
+        url: 'https://backend.netliinks.com:443/rest/services/UserServiceBean/assignRol',
         method: 'POST'
     }
 
@@ -201,66 +201,8 @@ export const setUserRole = async (raw: string): Endpoint => {
         .catch(error => console.log('error', error));
 }
 
-/**
- * Provisiona un cliente de forma secuencial: crea el usuario, establece la
- * contraseña y asigna el rol antes de devolver el control a la interfaz.
- * Evita que la tabla tenga que inicializar credenciales pendientes al cargarse.
- */
-export const createUserWithPassword = async (
-    raw: string,
-    password: string,
-    roleCode: string
-): Endpoint => {
-    const user = JSON.parse(raw)
-    delete user.temp
-
-    const createResponse = await fetch(`${NetliinksUrl}User`, {
-        method: 'POST', headers, body: JSON.stringify(user), redirect: 'follow'
-    })
-    if (!createResponse.ok) {
-        throw new Error(`No se pudo crear el usuario (${createResponse.status}).`)
-    }
-
-    const createdUser = await createResponse.json()
-    if (!createdUser?.id) {
-        throw new Error('El backend no devolvió el identificador del usuario creado.')
-    }
-
-    const passwordResponse = await fetch(
-        'https://backend4.netliinks.com:443/rest/services/UserServiceBean/updatePassword',
-        {
-            method: 'POST', headers,
-            body: JSON.stringify({ id: createdUser.id, newPassword: password }),
-            redirect: 'follow'
-        }
-    )
-    if (!passwordResponse.ok) {
-        throw new Error(`No se pudo establecer la contraseña (${passwordResponse.status}).`)
-    }
-
-    const roleResponse = await fetch(
-        'https://backend4.netliinks.com:443/rest/services/UserServiceBean/assignRol',
-        {
-            method: 'POST', headers,
-            body: JSON.stringify({ id: createdUser.id, roleCode }),
-            redirect: 'follow'
-        }
-    )
-    if (!roleResponse.ok) {
-        throw new Error(`No se pudo asignar el rol (${roleResponse.status}).`)
-    }
-
-    const finalizeResponse = await fetch(`${NetliinksUrl}User/${createdUser.id}`, {
-        method: 'PUT', headers, body: JSON.stringify({ newUser: false }), redirect: 'follow'
-    })
-    if (!finalizeResponse.ok) {
-        throw new Error(`No se pudo finalizar el usuario (${finalizeResponse.status}).`)
-    }
-    return createdUser
-}
-
 export const getFile = async (fileUrl: string): Endpoint => {
-    const url: string = 'https://backend4.netliinks.com:443/rest/files?fileRef='
+    const url: string = 'https://backend.netliinks.com:443/rest/files?fileRef='
 
     const requestOptions: {} = {
         method: 'GET',

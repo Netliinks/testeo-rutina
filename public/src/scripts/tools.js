@@ -1,5 +1,18 @@
-import { Config } from "./Configs.js";
 import { getEntitiesData, getUserInfo, getFilterEntityData, getFilterEntityCount, getEntityData, registerEntity, _userAgent } from "./endpoints.js";
+// Un reporte sin meta configurada no debe quedar como N/A. Sin una meta no es
+// posible medir cumplimiento, por lo que el resultado es 0 %. En todos los
+// demás casos se limita a 100 %.
+const calculateCompliancePercentage = (completed, required) => {
+    const completedRecords = Math.max(0, Number(completed) || 0);
+    const requiredRecords = Math.max(0, Number(required) || 0);
+    if (requiredRecords === 0)
+        return 0;
+    return Math.min(100, (completedRecords / requiredRecords) * 100);
+};
+const calculateRequiredRecords = (configuredRequired, totalDays) => {
+    const requiredPerDay = Math.max(0, Number(configuredRequired) || 0);
+    return requiredPerDay * totalDays;
+};
 //
 export const inputObserver = () => {
     const inputs = document.querySelectorAll('input');
@@ -62,12 +75,11 @@ export const inputSelect = async (entity, selectId, currentStatus) => {
         });
     });
 };
-
 export const inputSelectType = async (selectId, currentType) => {
     const data = [
-        {id: 'CUSTOMER', name: 'Cliente'},
-        {id: 'GUARD', name: 'Guardia'},
-    ]
+        { id: 'CUSTOMER', name: 'Cliente' },
+        { id: 'GUARD', name: 'Guardia' },
+    ];
     const type = await currentType;
     const select = document.querySelector(`#${selectId}`);
     const inputParent = select.parentNode;
@@ -75,7 +87,6 @@ export const inputSelectType = async (selectId, currentType) => {
     const optionsContainer = document.createElement('div');
     optionsContainer.classList.add('input_options_container');
     optionsContent.appendChild(optionsContainer);
-
     for (let i = 0; i < data.length; i++) {
         const inputOption = document.createElement('div');
         select.setAttribute('data-optionid', data[0].id);
@@ -86,7 +97,6 @@ export const inputSelectType = async (selectId, currentType) => {
         inputOption.innerHTML = nameData;
         optionsContainer.appendChild(inputOption);
     }
-
     const options = optionsContainer.querySelectorAll('.input_option');
     if (type === "CUSTOMER") {
         select.value = "Cliente";
@@ -110,22 +120,24 @@ export const inputSelectType = async (selectId, currentType) => {
             inputParent.classList.remove('select_active');
         });
     });
-} 
-
-export const verifyUserType = (userType) =>{
-    if(userType == 'CUSTOMER'){
-      return 'Cliente'
-    }else if(userType == 'GUARD'){
-      return 'Guardia'
-    }else if(userType == 'EMPLOYEE'){
-      return 'Empleado'
-    }else if(userType == 'CONTRACTOR'){
-      return 'Contratista'
-    }else{
-      return userType
+};
+export const verifyUserType = (userType) => {
+    if (userType == 'CUSTOMER') {
+        return 'Cliente';
     }
-  }
-
+    else if (userType == 'GUARD') {
+        return 'Guardia';
+    }
+    else if (userType == 'EMPLOYEE') {
+        return 'Empleado';
+    }
+    else if (userType == 'CONTRACTOR') {
+        return 'Contratista';
+    }
+    else {
+        return userType;
+    }
+};
 export class FixStatusElement {
     fix(element) {
         const elementTextValue = element.innerText;
@@ -172,13 +184,10 @@ export const drawTagsIntoTables = () => {
             text === "PENDIENTE") {
             tag.classList.add("tag_yellow");
         }
-        else if(text === "No cumplido"||
+        else if (text === "No cumplido" ||
             text === "no cumplido" ||
-            text === "NO CUMPLIDO"){
-            tag.classList.add("tag_red")
-        }
-        else if (text === "Visitas" || text === "VISITAS" || text === "Vehicular" || text === "VEHICULAR") {
-            tag.classList.add("tag_blue");
+            text === "NO CUMPLIDO") {
+            tag.classList.add("tag_red");
         }
         else {
             tag.classList.add('tag_gray');
@@ -283,26 +292,25 @@ export class filterDataByHeaderType {
     }
 }
 export const userInfo = getUserInfo();
-
 export const getVerifyEmail = async (email) => {
     let value = false;
     //console.log(email.includes("@"))
-    if(email.includes("@") === true){
+    if (email.includes("@") === true) {
         /*const users = await getEntitiesData('User');
         const data = users.filter((data) => `${data.email}`.includes(`${email}`));*/
         let raw = JSON.stringify({
             "filter": {
                 "conditions": [
-                  {
-                    "property": "email",
-                    "operator": "=",
-                    "value": `${email}`
-                  }
+                    {
+                        "property": "email",
+                        "operator": "=",
+                        "value": `${email}`
+                    }
                 ]
             }
         });
         let data = await getFilterEntityData("User", raw);
-        if(data.length != 0){
+        if (data.length != 0) {
             value = true;
         }
     }
@@ -402,10 +410,10 @@ export const pageNumbers = (totalPages, max, currentPage) => {
 };
 export const fillBtnPagination = (currentPage, color) => {
     let btnActive = document.getElementById("btnPag" + currentPage);
-    if(btnActive) btnActive.style.backgroundColor = color;
+    if (btnActive)
+        btnActive.style.backgroundColor = color;
     //btnActive.focus();
 };
-
 export const currentDateTime = () => {
     const _date = new Date();
     // TIME
@@ -426,65 +434,212 @@ export const currentDateTime = () => {
         date: date,
         timeHHMMSS: currentTimeHHMMSS,
         timeHHMM: currentTimeHHMM
-    }
-}
-
+    };
+};
 export const getDetails = async (param, value, table) => {
     const customerId = localStorage.getItem('customer_id');
     let raw = JSON.stringify({
         "filter": {
             "conditions": [
                 {
-                "property": `${param}`,
-                "operator": "=",
-                "value": `${value}`
+                    "property": `${param}`,
+                    "operator": "=",
+                    "value": `${value}`
                 },
                 {
-                "property": `customer.id`,
-                "operator": "=",
-                "value": `${customerId}`
+                    "property": `customer.id`,
+                    "operator": "=",
+                    "value": `${customerId}`
                 }
             ]
         },
-        sort: "createdDate", 
+        sort: "createdDate",
         fetchPlan: 'full',
     });
     let data = await getFilterEntityData(`${table}`, raw);
-    return data
-}
-
+    return data;
+};
 export const getDetails2 = async (param, value, param2, value2, table) => {
     const customerId = localStorage.getItem('customer_id');
     let raw = JSON.stringify({
         "filter": {
             "conditions": [
                 {
-                "property": `${param}`,
-                "operator": "=",
-                "value": `${value}`
+                    "property": `${param}`,
+                    "operator": "=",
+                    "value": `${value}`
                 },
                 {
-                "property": `${param2}`,
-                "operator": "=",
-                "value": `${value2}`
+                    "property": `${param2}`,
+                    "operator": "=",
+                    "value": `${value2}`
                 },
                 {
-                "property": `customer.id`,
-                "operator": "=",
-                "value": `${customerId}`
+                    "property": `customer.id`,
+                    "operator": "=",
+                    "value": `${customerId}`
                 }
             ]
         },
-        sort: "createdDate", 
+        sort: "createdDate",
         fetchPlan: 'full',
     });
     let data = await getFilterEntityData(`${table}`, raw);
-    return data
-}
-
-export const getDetailsSimple = async (param, operator, value, table) => {
-    const customerId = localStorage.getItem('customer_id');
-    let raw = JSON.stringify({
+    return data;
+};
+export const calculateGestionMarcation = (assistControl) => {
+    let objDate = {};
+    let arrayAssist = [];
+    assistControl.forEach((marcation) => {
+        let date = marcation.ingressDate + " " + marcation.user?.username ?? '';
+        if (objDate[date]) {
+            objDate[date].push(marcation);
+        }
+        else {
+            objDate[date] = [marcation];
+        }
+    });
+    //console.log(objDate)
+    let key = Object.keys(objDate);
+    for (let i = 0; i < key.length; i++) {
+        let objects = objDate[key[i]];
+        //console.log(objects)
+        //console.log(objects.length)
+        let valueMax = [];
+        objects.map(element => {
+            if (element.marcationState.name == 'Finalizado' && (element.egressTime != '' || element.egressTime != null || element.egressTime != undefined)) {
+                valueMax.push(element);
+            }
+        });
+        let maxDate = new Date(Math.max(...valueMax.map(element => {
+            return new Date(element.egressDate + " " + element.egressTime);
+        })));
+        let minDate = new Date(Math.min(...objects.map(element => {
+            return new Date(element.ingressDate + " " + element.ingressTime);
+        })));
+        //console.log("max "+maxDate)
+        //console.log("min "+minDate)
+        const format = (date) => {
+            var year = date.getFullYear();
+            var month = ("0" + (date.getMonth() + 1)).slice(-2);
+            var day = ("0" + date.getDate()).slice(-2);
+            var hours = ("0" + date.getHours()).slice(-2);
+            var minutes = ("0" + date.getMinutes()).slice(-2);
+            var seconds = ("0" + date.getSeconds()).slice(-2);
+            return `${hours}:${minutes}:${seconds}`;
+        };
+        let fechaSalida = "";
+        if (!isNaN(maxDate))
+            fechaSalida = format(maxDate);
+        let obj = {
+            "customer": `${objects[0]?.customer?.name ?? ''}`,
+            "firstName": `${objects[0]?.user?.firstName ?? ''}`,
+            "lastName": `${objects[0]?.user?.lastName ?? ''}`,
+            "dni": `${objects[0]?.user?.dni ?? ''}`,
+            "ingressDate": `${objects[0].ingressDate}`,
+            "egressDate": `${fechaSalida != ""
+                ? objects[0].egressDate != undefined ? objects[0].egressDate : objects[0].ingressDate
+                : ""}`,
+            "ingressTime": `${format(minDate)}`,
+            "egressTime": `${fechaSalida}`,
+            "username": `${objects[0]?.user?.username ?? ''}`
+        };
+        arrayAssist.push(obj);
+    }
+    return arrayAssist;
+};
+export const calculateLine = (text, limit) => {
+    if (text != undefined) {
+        if (text.length <= limit) {
+            return text;
+        }
+        else {
+            return text.slice(0, limit) + "...";
+        }
+    }
+    else {
+        return '';
+    }
+};
+export const equivalentTime = (time) => {
+    if (time == '13') {
+        return 1;
+    }
+    else if (time == '14') {
+        return 2;
+    }
+    else if (time == '15') {
+        return 3;
+    }
+    else if (time == '16') {
+        return 4;
+    }
+    else if (time == '17') {
+        return 5;
+    }
+    else if (time == '18') {
+        return 6;
+    }
+    else if (time == '19') {
+        return 7;
+    }
+    else if (time == '20') {
+        return 8;
+    }
+    else if (time == '21') {
+        return 9;
+    }
+    else if (time == '22') {
+        return 10;
+    }
+    else if (time == '23') {
+        return 11;
+    }
+    else if (time == '24') {
+        return 0;
+    }
+    else if (time == '00') {
+        return 12;
+    }
+    else if (time == '01') {
+        return 13;
+    }
+    else if (time == '02') {
+        return 14;
+    }
+    else if (time == '03') {
+        return 15;
+    }
+    else if (time == '04') {
+        return 16;
+    }
+    else if (time == '05') {
+        return 17;
+    }
+    else if (time == '06') {
+        return 18;
+    }
+    else if (time == '07') {
+        return 19;
+    }
+    else if (time == '08') {
+        return 20;
+    }
+    else if (time == '09') {
+        return 21;
+    }
+    else if (time == '10') {
+        return 22;
+    }
+    else if (time == '11') {
+        return 23;
+    }
+    else if (time == '12') {
+        return 0;
+    }
+};
+export const searchUniversalSingle = async (param, operator, value, table) => {
+    const raw = JSON.stringify({
         "filter": {
             "conditions": [
                 {
@@ -494,180 +649,22 @@ export const getDetailsSimple = async (param, operator, value, table) => {
                 },
             ]
         },
-        sort: "createdDate", 
-        //fetchPlan: 'full',
-    });
-    let data = await getFilterEntityData(`${table}`, raw);
-    return data
-}
-
-export const calculateGestionMarcation = (assistControl) => {
-    let objDate = {}
-    let arrayAssist= []
-    assistControl.forEach((marcation) => {
-        let date = marcation.ingressDate+" "+marcation.user?.username ?? ''
-        if (objDate[date]) {
-            objDate[date].push(marcation);
-        } else {
-            objDate[date] = [marcation];
-        }
-    })
-    //console.log(objDate)
-
-    let key = Object.keys(objDate)
-    for(let i = 0; i < key.length; i++){
-        let objects = objDate[key[i]]
-        //console.log(objects)
-        //console.log(objects.length)
-        let valueMax = []
-        objects.map(element => {
-            if(element.marcationState.name == 'Finalizado' && (element.egressTime != '' || element.egressTime != null || element.egressTime != undefined)){
-                valueMax.push(element)
-            }
-            
-            })
-        let maxDate = new Date(
-            Math.max(
-                ...valueMax.map(element => {
-                    return new Date(element.egressDate+" "+element.egressTime);
-                }),
-            ),
-            );
-            let minDate = new Date(
-            Math.min(
-                ...objects.map(element => {
-                return new Date(element.ingressDate+" "+element.ingressTime);
-                }),
-            ),
-            );
-            //console.log("max "+maxDate)
-            //console.log("min "+minDate)
-            const format = (date) => {
-            var year = date.getFullYear();
-            var month = ("0" + (date.getMonth() + 1)).slice(-2);
-            var day = ("0" + date.getDate()).slice(-2);
-
-            var hours = ("0" + date.getHours()).slice(-2);
-            var minutes = ("0" + date.getMinutes()).slice(-2);
-            var seconds = ("0" + date.getSeconds()).slice(-2);
-            return `${hours}:${minutes}:${seconds}`
-            }
-            let fechaSalida = ""
-            if(!isNaN(maxDate)) fechaSalida = format(maxDate)
-            let obj = {
-            "customer": `${objects[0]?.customer?.name ?? ''}`,    
-            "firstName": `${objects[0]?.user?.firstName ?? ''}`,
-            "lastName": `${objects[0]?.user?.lastName ?? ''}`,
-            "dni": `${objects[0]?.user?.dni ?? ''}`,
-            "ingressDate": `${objects[0].ingressDate}`,
-            "egressDate": `${
-                fechaSalida != "" 
-                    ? objects[0].egressDate != undefined ? objects[0].egressDate : objects[0].ingressDate
-                    : ""
-            }`,
-            "ingressTime": `${format(minDate)}`,
-            "egressTime": `${fechaSalida}`,
-            "username": `${objects[0]?.user?.username ?? ''}`
-        };
-        arrayAssist.push(obj);
-    }
-    return arrayAssist;
-}
-
-export const calculateLine = (text, limit) => {
-    if(text != undefined){
-        if(text.length <= limit){
-            return text;
-        }else{
-            return text.slice(0, limit)+"...";
-        }
-    }else{
-        return '';
-    }
-    
-}
-
-export const equivalentTime = (time) => {
-    if(time == '13'){
-        return 1;
-    }else if(time == '14'){
-        return 2;
-    }else if(time == '15'){
-        return 3;
-    }else if(time == '16'){
-        return 4;
-    }else if(time == '17'){
-        return 5;
-    }else if(time == '18'){
-        return 6;
-    }else if(time == '19'){
-        return 7;
-    }else if(time == '20'){
-        return 8;
-    }else if(time == '21'){
-        return 9;
-    }else if(time == '22'){
-        return 10;
-    }else if(time == '23'){
-        return 11;
-    }else if(time == '24'){
-        return 0;
-    }else if(time == '00'){
-        return 12;
-    }else if(time == '01'){
-        return 13;
-    }else if(time == '02'){
-        return 14;
-    }else if(time == '03'){
-        return 15;
-    }else if(time == '04'){
-        return 16;
-    }else if(time == '05'){
-        return 17;
-    }else if(time == '06'){
-        return 18;
-    }else if(time == '07'){
-        return 19;
-    }else if(time == '08'){
-        return 20;
-    }else if(time == '09'){
-        return 21;
-    }else if(time == '10'){
-        return 22;
-    }else if(time == '11'){
-        return 23;
-    }else if(time == '12'){
-        return 0;
-    }
-}
-    
-export const searchUniversalSingle = async (param, operator, value, table) => {
-    const raw = JSON.stringify({
-        "filter": {
-          "conditions": [
-            {
-              "property": `${param}`,
-              "operator": `${operator}`,
-              "value": `${value}`
-            },
-          ]
-        },
         sort: "-createdDate",
     });
     const data = await getFilterEntityData(`${table}`, raw);
-    if(data == undefined || data.length == 0){
+    if (data == undefined || data.length == 0) {
         alert(`${param} ${value} no obtenido(a)`);
-    }else{
+    }
+    else {
         return data;
     }
-}
-
-export const getRoutinesTopBar =async(id)=> {
+};
+export const getRoutinesTopBar = async (id) => {
     const raw = JSON.stringify({
         "filter": {
             "conditions": [
                 {
-                    "property": "routineRelation.business.id",
+                    "property": "business.id",
                     "operator": "=",
                     "value": `${id}`
                 },
@@ -680,53 +677,51 @@ export const getRoutinesTopBar =async(id)=> {
         },
         sort: "-createdDate",
     });
-    return await getFilterEntityCount("RoutineMarcation", raw);
-
-}
-
+    return await getFilterEntityCount("RoutineRegister", raw);
+};
 export const searchUniversalValue = async (param, operator, value, table) => {
     const raw = JSON.stringify({
         "filter": {
-          "conditions": [
-            {
-              "property": `${param}`,
-              "operator": `${operator}`,
-              "value": `${value}`
-            }
-          ]
+            "conditions": [
+                {
+                    "property": `${param}`,
+                    "operator": `${operator}`,
+                    "value": `${value}`
+                }
+            ]
         },
         sort: "createdDate",
     });
     const data = await getFilterEntityData(`${table}`, raw);
-    if(data == undefined || data.length == 0){
+    if (data == undefined || data.length == 0) {
         alert(`${param} ${value} no obtenido(a)`);
-    }else{
+    }
+    else {
         return data;
     }
-}
-
+};
 export const searchUniversalValueComplex = async (param, operator, value, table) => {
     const raw = JSON.stringify({
         "filter": {
-          "conditions": [
-            {
-              "property": `${param}`,
-              "operator": `${operator}`,
-              "value": `${value}`
-            }
-          ]
+            "conditions": [
+                {
+                    "property": `${param}`,
+                    "operator": `${operator}`,
+                    "value": `${value}`
+                }
+            ]
         },
         sort: "createdDate",
         fetchPlan: 'full',
     });
     const data = await getFilterEntityData(`${table}`, raw);
-    if(data == undefined || data.length == 0){
+    if (data == undefined || data.length == 0) {
         alert(`${param} ${value} no obtenido(a)`);
-    }else{
+    }
+    else {
         return data;
     }
-}
-
+};
 export const searchUniversalSingle2 = async (param, operator, value, param2, operator2, value2, table) => {
     const raw = JSON.stringify({
         "filter": {
@@ -757,40 +752,39 @@ export const searchUniversalSingle2 = async (param, operator, value, param2, ope
         return data;
     }
 };
-
 export const searchCustomerbyName = async (name, business) => {
     const raw = JSON.stringify({
         "filter": {
-          "conditions": [
-            {
-              "property": `name`,
-              "operator": `contains`,
-              "value": `${name}`
-            },
-            {
-              "property": `business.id`,
-              "operator": `=`,
-              "value": `${business}`
-            },
-          ]
+            "conditions": [
+                {
+                    "property": `name`,
+                    "operator": `contains`,
+                    "value": `${name}`
+                },
+                {
+                    "property": `business.id`,
+                    "operator": `=`,
+                    "value": `${business}`
+                },
+            ]
         },
         sort: "createdDate",
     });
     const data = await getFilterEntityData(`Customer`, raw);
-    if(data == undefined || data.length == 0){
+    if (data == undefined || data.length == 0) {
         alert(`Nombre empresa: ${name}, no encontrado.`);
         return null;
-    }else{
+    }
+    else {
         let response = undefined;
-        for(let i=0; i < data.length; i++){
-            if(data[i].name.toLowerCase() === name.toLowerCase()){
-                response = data[i]
+        for (let i = 0; i < data.length; i++) {
+            if (data[i].name.toLowerCase() === name.toLowerCase()) {
+                response = data[i];
             }
         }
         return response;
     }
-}
-
+};
 export const inputSelectTypeAudit = async (selectId, _inputElements) => {
     //const data = ['GUARDIA', 'CONSOLA', 'CLIENTE']
     const data = ['GUARDIA'];
@@ -861,6 +855,11 @@ export const inputSelectThemeAudit = async (selectId, currentSelect, _inputEleme
     select.addEventListener('click', () => {
         inputParent.classList.toggle('select_active');
     });
+    document.addEventListener('pointerdown', (event) => {
+        if (!inputParent.contains(event.target)) {
+            inputParent.classList.remove('select_active');
+        }
+    });
     options.forEach((option) => {
         option.addEventListener('click', () => {
             select.value = option.innerText;
@@ -871,16 +870,8 @@ export const inputSelectThemeAudit = async (selectId, currentSelect, _inputEleme
             //_inputElements.entityElement.removeAttribute('data-optionid');
             //service.removeAttribute('value');
             //service.removeAttribute('data-optionid');
-            if (option.getAttribute('value') === "RUTINA DE GUARDIA" || option.getAttribute('value') === "RUTINA DE CONSOLA") {
-                //console.log("es cliente")
-                _inputElements.divAllCustomer.style.display = "none";
-                _inputElements.divCustomer.style.display = "none";
-            }
-            else {
-                //console.log("no es cliente")
-                _inputElements.divAllCustomer.style.display = "block";
-                _inputElements.divCustomer.style.display = "block";//"flex";
-            }
+            _inputElements.divAllCustomer.style.display = "block";
+            _inputElements.divCustomer.style.display = "grid";
         });
     });
 };
@@ -1269,46 +1260,42 @@ function esMenorOIgualA5Minutos(timestamp, registerTime) {
     //const timestamp = 5 * 60 * 1000; // 5 minutos = 300000 ms
     return registerTime <= timestamp;
 }
-function calcularMarcacionesPorFrecuencia(inicio, fin, hEntrada, hSalida, frecuenciaMinutos) {
-    const fechaActual = new Date(inicio + 'T00:00:00');
-    const fechaLimite = new Date(fin + 'T00:00:00');
-    const todasLasMarcaciones = [];
-    while (fechaActual <= fechaLimite) {
-        let marcacionesDia = [];
-        const fechaBaseStr = fechaActual.toISOString().split('T')[0];
-        //console.log(`Generando marcaciones para el día: ${fechaBaseStr}`);
-
-        // Definir punto de inicio (Entrada) y punto final (Salida)
-        let mEntrada = new Date(`${fechaBaseStr}T${hEntrada}`);
-        let mSalida = new Date(`${fechaBaseStr}T${hSalida}`);
-
-        // Ajuste de turno nocturno: Si la salida es menor a la entrada, es el día siguiente
-        if (hSalida <= hEntrada) {
-            mSalida.setDate(mSalida.getDate() + 1);
-        }
-
-        // Generar marcaciones según la frecuencia dentro de esa jornada
-        let marcaIterada = new Date(mEntrada);
-        
-        while (marcaIterada < mSalida) { //<=
-            marcacionesDia.push({
-                fechaHora: new Date(marcaIterada), // Clonamos la fecha
-                display: marcaIterada.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }),
-                count: 0 // Contador inicializado en 0
-            });
-
-            // Sumar la frecuencia en minutos
-            marcaIterada.setMinutes(marcaIterada.getMinutes() + frecuenciaMinutos);
-        }
-
-        // Avanzar al siguiente día calendario
-        fechaActual.setDate(fechaActual.getDate() + 1);
-        todasLasMarcaciones.push(marcacionesDia);
+function calcularMarcacionesPorFrecuencia(inicio, fin, horaInicio, horaFin, frecuenciaMinutos, filtroHoraInicio = '00:00:00', filtroHoraFin = '23:59:59') {
+    const rangoInicio = new Date(`${inicio}T${filtroHoraInicio}`);
+    const rangoFin = new Date(`${fin}T${filtroHoraFin}`);
+    const frecuencia = Number(frecuenciaMinutos);
+    const marcaciones = [];
+    if (Number.isNaN(rangoInicio.getTime()) || Number.isNaN(rangoFin.getTime()) || rangoInicio > rangoFin || frecuencia <= 0) {
+        return { detalle: marcaciones, totalEsperado: 0 };
     }
-
+    const esTurnoNocturno = horaFin <= horaInicio;
+    const fechaActual = new Date(`${inicio}T00:00:00`);
+    const fechaLimite = new Date(`${fin}T00:00:00`);
+    if (esTurnoNocturno) {
+        fechaActual.setDate(fechaActual.getDate() - 1);
+    }
+    while (fechaActual <= fechaLimite) {
+        const fechaBase = `${fechaActual.getFullYear()}-${String(fechaActual.getMonth() + 1).padStart(2, '0')}-${String(fechaActual.getDate()).padStart(2, '0')}`;
+        const inicioTurno = new Date(`${fechaBase}T${horaInicio}`);
+        const finTurno = new Date(`${fechaBase}T${horaFin}`);
+        if (esTurnoNocturno) {
+            finTurno.setDate(finTurno.getDate() + 1);
+        }
+        for (let inicioVentana = new Date(inicioTurno); inicioVentana < finTurno; inicioVentana.setMinutes(inicioVentana.getMinutes() + frecuencia)) {
+            const finVentana = new Date(Math.min(inicioVentana.getTime() + (frecuencia * 60 * 1000), finTurno.getTime()));
+            if (finVentana > rangoInicio && inicioVentana <= rangoFin) {
+                marcaciones.push({
+                    fechaHora: new Date(inicioVentana),
+                    fechaHoraFin: finVentana,
+                    count: 0
+                });
+            }
+        }
+        fechaActual.setDate(fechaActual.getDate() + 1);
+    }
     return {
-        detalle: todasLasMarcaciones,
-        totalEsperado: todasLasMarcaciones.flat().length
+        detalle: marcaciones,
+        totalEsperado: marcaciones.length
     };
 }
 const generarRangosTiempo = (inicio, fin, intervaloMinutos) => {
@@ -1372,7 +1359,6 @@ export const auditResponse = (conditions) => {
                 }
             }
         });*/
-
         rawAudits.forEach((rawAudit) => {
             const routine = rawAudit['routine']?.id ?? '';
             if (routine != '') {
@@ -1385,166 +1371,156 @@ export const auditResponse = (conditions) => {
             }
         });
     }
-    
-    
-        if (conditions.objetive == "RUTINA DE CONSOLA") {
-            let key = Object.keys(objUser);
-            for (let i = 0; i < key.length; i++) {
-                let objects = objUser[key[i]];
-                    //console.log(objects)
-                //console.log(objects.length)
-                const variables = {
-                    //totalIntentosMarcacion: 0,
-                    totalMarcacionesHechas: 0,
-                    totalAlertasGeneradas: 0, // Las que crea el sistema de no cumplido
-                    //totalAlertasNoMarcadas: 0, // Las que crea el sistema, las no respondidas en mas de 5 min o no respondidas para nada
-                    totalAlertasRespondidas: 0,
-                    totalAlertasRespondidasATiempo: 0,
-                    tiempoLimite: 5 * 60 * 1000 // 5 minutos en milisegundos
-                };
-                const averageConsole = [];
-                // @ts-ignore
-                objects.map(element => {
-                    //variables.totalIntentosMarcacion += 1
-                    if (element['routineState']['name'] == 'Cumplido') {
-                        variables.totalMarcacionesHechas += 1;
-                    }
-                    else if (element['routineState']['name'] == 'No cumplido') {
-                        variables.totalAlertasGeneradas += 1;
-                        let observation = element["observation"] ?? "";
-                        if (observation != "") {
-                            if (element["consoleDate"] != undefined) {
-                                variables.totalAlertasRespondidas += 1;
-                                const creationDateTime = new Date(`${element["creationDate"]}T${element["creationTime"]}`);
-                                const consoleDateTime = new Date(`${element["consoleDate"]}T${element["consoleTime"]}`);
-                                const avg = consoleDateTime.getTime() - creationDateTime.getTime();
-                                averageConsole.push(avg);
-                                if (esMenorOIgualA5Minutos(variables.tiempoLimite, avg)) {
-                                    variables.totalAlertasRespondidasATiempo += 1;
-                                }
-                                else {
-                                    //variables.totalAlertasNoMarcadas += 1
-                                }
+    if (conditions.objetive == "RUTINA DE CONSOLA") {
+        let key = Object.keys(objUser);
+        for (let i = 0; i < key.length; i++) {
+            let objects = objUser[key[i]];
+            //console.log(objects)
+            //console.log(objects.length)
+            const variables = {
+                //totalIntentosMarcacion: 0,
+                totalMarcacionesHechas: 0,
+                totalAlertasGeneradas: 0, // Las que crea el sistema de no cumplido
+                //totalAlertasNoMarcadas: 0, // Las que crea el sistema, las no respondidas en mas de 5 min o no respondidas para nada
+                totalAlertasRespondidas: 0,
+                totalAlertasRespondidasATiempo: 0,
+                tiempoLimite: 5 * 60 * 1000 // 5 minutos en milisegundos
+            };
+            const averageConsole = [];
+            // @ts-ignore
+            objects.map(element => {
+                //variables.totalIntentosMarcacion += 1
+                if (element['routineState']['name'] == 'Cumplido') {
+                    variables.totalMarcacionesHechas += 1;
+                }
+                else if (element['routineState']['name'] == 'No cumplido') {
+                    variables.totalAlertasGeneradas += 1;
+                    let observation = element["observation"] ?? "";
+                    if (observation != "") {
+                        if (element["consoleDate"] != undefined) {
+                            variables.totalAlertasRespondidas += 1;
+                            const creationDateTime = new Date(`${element["creationDate"]}T${element["creationTime"]}`);
+                            const consoleDateTime = new Date(`${element["consoleDate"]}T${element["consoleTime"]}`);
+                            const avg = consoleDateTime.getTime() - creationDateTime.getTime();
+                            averageConsole.push(avg);
+                            if (esMenorOIgualA5Minutos(variables.tiempoLimite, avg)) {
+                                variables.totalAlertasRespondidasATiempo += 1;
+                            }
+                            else {
+                                //variables.totalAlertasNoMarcadas += 1
                             }
                         }
-                        else {
-                            //variables.totalAlertasNoMarcadas += 1
+                    }
+                    else {
+                        //variables.totalAlertasNoMarcadas += 1
+                    }
+                }
+            });
+            const cumplimiento = calculateCompliancePercentage(variables.totalAlertasRespondidasATiempo, conditions.registersNot.length).toFixed(2);
+            const averageDate = averageTime(averageConsole);
+            const obj = {
+                "Usuario": `${objects[0]['consoleUserId']['firstName'] ?? ''} ${objects[0]['consoleUserId']['lastName'] ?? ''} ${objects[0]['consoleUserId']['secondLastName'] ?? ''}`,
+                //"Total Intentos Marcacion": variables.totalIntentosMarcacion,
+                "Total Marcaciones Hechas": variables.totalMarcacionesHechas,
+                "Total Alertas Generadas": conditions.registersNot.length,
+                //"Total Alertas No Marcadas": variables.totalAlertasNoMarcadas,
+                "Total Alertas Respondidas": variables.totalAlertasRespondidas,
+                "Total Alertas Respondidas A Tiempo": variables.totalAlertasRespondidasATiempo,
+                "Cumplimiento": cumplimiento,
+                "Promedio": averageDate,
+            };
+            audits.push(obj);
+        }
+    }
+    else if (conditions.objetive == "RUTINA DE GUARDIA") {
+        //console.log(`${objects[0]['user']['firstName'] ?? ''} ${objects[0]['user']['lastName'] ?? ''} ${objects[0]['user']['secondLastName'] ?? ''}`)
+        const users = [];
+        let keyRoutine = Object.keys(objRoutine);
+        conditions.allUsersRoutines.forEach((routineUser) => {
+            const routines = [];
+            const routineScheduleG = [];
+            const routinesSchedule = [];
+            const variables = {
+                totalRutinas: 0,
+                totalUbicaciones: 0,
+                totalRealizadas: 0,
+                totalValidas: 0,
+                totalEsperadas: 0
+            };
+            const index = keyRoutine.findIndex(filterElement => filterElement === routineUser['routine']['id']);
+            let objectRoutine = objRoutine[keyRoutine[index]];
+            if (objectRoutine != undefined) {
+                // @ts-ignore
+                objectRoutine.map(element2 => {
+                    console.log(element2); //routineUser['routine']['id'] == element2['routine']['id'] &&
+                    // @ts-ignore
+                    const exisRoutine = routines.some(data => data.id === element2['routine']['id']);
+                    if (!exisRoutine) {
+                        routines.push(element2['routine']);
+                        variables.totalRutinas += 1;
+                    }
+                    const exisRoutineScheduleG = routineScheduleG.some(data => data.id === element2['routineSchedule']['id']);
+                    if (!exisRoutineScheduleG) {
+                        const esperadas = calcularMarcacionesPorFrecuencia(conditions.filterStartDate, conditions.filterEndDate, element2['routineSchedule']['scheduleTime'], element2['routineSchedule']['scheduleTimeEnd'], element2['routineSchedule']['frequency'], conditions.filterStartTime, conditions.filterEndTime);
+                        routineScheduleG.push({ ...element2["routineSchedule"], "rangos": esperadas.detalle });
+                        variables.totalEsperadas += esperadas.totalEsperado;
+                    }
+                    const exisRoutineSchedule = routinesSchedule.some(data => data.id === element2['routineSchedule']['id']);
+                    if (!exisRoutineSchedule) {
+                        variables.totalUbicaciones += 1;
+                        routinesSchedule.push(element2['routineSchedule']);
+                    }
+                    if (routineUser['user']['id'] == element2['user']['id']) {
+                        if (element2['routineState']['name'] == 'Cumplido' || element2['routineState']['name'] == 'Libre') {
+                            variables.totalRealizadas += 1;
+                            const creationDateTime = new Date(`${element2["creationDate"]}T${element2["creationTime"]}`);
+                            const indice = routineScheduleG.findIndex(data => data.id === element2['routineSchedule']['id']);
+                            const ventana = routineScheduleG[indice]?.rangos.find((rango) => (creationDateTime >= rango.fechaHora && creationDateTime < rango.fechaHoraFin));
+                            if (ventana && ventana.count === 0) {
+                                ventana.count += 1;
+                                variables.totalValidas += 1;
+                            }
                         }
                     }
                 });
-                const cumplimiento = ((variables.totalAlertasRespondidasATiempo / conditions.registersNot.length/*variables.totalAlertasGeneradas*/) * 100).toFixed(2);
-                const averageDate = averageTime(averageConsole);
-                const obj = {
-                    "Usuario": `${objects[0]['consoleUserId']['firstName'] ?? ''} ${objects[0]['consoleUserId']['lastName'] ?? ''} ${objects[0]['consoleUserId']['secondLastName'] ?? ''}`,
-                    //"Total Intentos Marcacion": variables.totalIntentosMarcacion,
-                    "Total Marcaciones Hechas": variables.totalMarcacionesHechas,
-                    "Total Alertas Generadas": conditions.registersNot.length,//variables.totalAlertasGeneradas,
-                    //"Total Alertas No Marcadas": variables.totalAlertasNoMarcadas,
-                    "Total Alertas Respondidas": variables.totalAlertasRespondidas,
-                    "Total Alertas Respondidas A Tiempo": variables.totalAlertasRespondidasATiempo,
-                    "Cumplimiento": cumplimiento,
-                    "Promedio": averageDate,
-                };
-                audits.push(obj);
             }
-        }
-        else if (conditions.objetive == "RUTINA DE GUARDIA") {
-            //console.log(`${objects[0]['user']['firstName'] ?? ''} ${objects[0]['user']['lastName'] ?? ''} ${objects[0]['user']['secondLastName'] ?? ''}`)
-            const users = [];
-            let keyRoutine = Object.keys(objRoutine);
-            conditions.allUsersRoutines.forEach((routineUser) => {
-                const routines = [];
-                const routineScheduleG = [];
-                const routinesSchedule = [];
-                const variables = {
-                    totalRutinas: 0,
-                    totalUbicaciones: 0,
-                    totalRealizadas: 0,
-                    totalValidas: 0,
-                    totalEsperadas: 0
-                };
-                const index = keyRoutine.findIndex(filterElement => filterElement === routineUser['routine']['id']);
-                let objectRoutine = objRoutine[keyRoutine[index]];
-                if (objectRoutine != undefined) {
-                    // @ts-ignore
-                    objectRoutine.map(element2 => {
-                        console.log(element2)//routineUser['routine']['id'] == element2['routine']['id'] && 
-                            // @ts-ignore
-                            const exisRoutine = routines.some(data => data.id === element2['routine']['id']);
-                            if (!exisRoutine) {
-                                routines.push(element2['routine']);
-                                variables.totalRutinas += 1;
-                            }
-
-                            const exisRoutineScheduleG = routineScheduleG.some(data => data.id === element2['routineSchedule']['id']);
-                            if (!exisRoutineScheduleG) {
-                                const esperadas = calcularMarcacionesPorFrecuencia(conditions.filterStartDate, conditions.filterEndDate, element2['routineSchedule']['scheduleTime'], element2['routineSchedule']['scheduleTimeEnd'], element2['routineSchedule']['frequency']);
-                                routineScheduleG.push({...element2["routineSchedule"], "rangos": esperadas.detalle});
-                                variables.totalEsperadas += esperadas.totalEsperado;
-                            }
-
-                            const exisRoutineSchedule = routinesSchedule.some(data => data.id === element2['routineSchedule']['id']);
-                            if (!exisRoutineSchedule) {
-                                variables.totalUbicaciones += 1;
-                                routinesSchedule.push(element2['routineSchedule']);
-                            }
-
-                        if (routineUser['user']['id'] == element2['user']['id']) {
-                            if (element2['routineState']['name'] == 'Cumplido' || element2['routineState']['name'] == 'Libre') {
-                                variables.totalRealizadas += 1;
-                                const creationDateTime = new Date(`${element2["creationDate"]}T${element2["creationTime"]}`);
-                                const indice = routineScheduleG.findIndex(data => data.id === element2['routineSchedule']['id']);
-                                for (let r = 0; r < routineScheduleG[indice].rangos.length; r++) {
-                                    let horaRango = routineScheduleG[indice].rangos[r];
-                                    for (let m = 0; m < horaRango.length; m++) {
-                                        if (horaRango[m + 1] != undefined) {
-                                            if((creationDateTime.getTime() >= horaRango[m].fechaHora.getTime()) && (creationDateTime.getTime() < horaRango[m + 1].fechaHora.getTime())) {
-                                                if (horaRango[m].count == 0) {
-                                                    // si tiene marcacion en ese rango de tiempo
-                                                    horaRango[m].count += 1;
-                                                    variables.totalValidas += 1;
-                                                }
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-                const existUser = audits.some(data => data.id === routineUser['user']['id']);
-                if (!existUser) {
-                    const ponderado = ((variables.totalValidas / variables.totalEsperadas) * 100).toFixed(2);
-                    audits.push({
-                        id: routineUser['user']['id'],
-                        name: `${routineUser['user']['firstName'] ?? ''} ${routineUser['user']['lastName'] ?? ''} ${routineUser['user']['secondLastName'] ?? ''}`,
-                        username: routineUser['user']['username'],
-                        totalRutinas: variables.totalRutinas,
-                        totalUbicaciones: variables.totalUbicaciones,
-                        totalRealizadas: variables.totalRealizadas,
-                        totalValidas: variables.totalValidas,
-                        totalEsperadas: variables.totalEsperadas,
-                        ponderado: ponderado
-                    });
-                }else{
-                    audits.map(data => {
-                        if(data.id == routineUser['user']['id']){
-                            data.totalRutinas += variables.totalRutinas;
-                            data.totalUbicaciones += variables.totalUbicaciones;
-                            data.totalRealizadas += variables.totalRealizadas;
-                            data.totalValidas += variables.totalValidas;
-                            data.totalEsperadas += variables.totalEsperadas;
-                            data.ponderado = ((data.totalValidas / data.totalEsperadas) * 100).toFixed(2);
-                        }
-                    });
-
-                }
-            });   
+            const existUser = audits.some(data => data.id === routineUser['user']['id']);
+            const company = routineUser['customer']?.name ?? routineUser['routine']?.customer?.name ?? '';
+            if (!existUser) {
+                const ponderado = calculateCompliancePercentage(variables.totalValidas, variables.totalEsperadas).toFixed(2);
+                audits.push({
+                    id: routineUser['user']['id'],
+                    name: `${routineUser['user']['firstName'] ?? ''} ${routineUser['user']['lastName'] ?? ''} ${routineUser['user']['secondLastName'] ?? ''}`,
+                    username: routineUser['user']['username'],
+                    empresa: company,
+                    totalRutinas: variables.totalRutinas,
+                    totalUbicaciones: variables.totalUbicaciones,
+                    totalRealizadas: variables.totalRealizadas,
+                    totalValidas: variables.totalValidas,
+                    totalEsperadas: variables.totalEsperadas,
+                    ponderado: ponderado
+                });
+            }
+            else {
+                audits.map(data => {
+                    if (data.id == routineUser['user']['id']) {
+                        const companies = data.empresa.split(' | ').filter(Boolean);
+                        if (company && !companies.includes(company))
+                            companies.push(company);
+                        data.empresa = companies.join(' | ');
+                        data.totalRutinas += variables.totalRutinas;
+                        data.totalUbicaciones += variables.totalUbicaciones;
+                        data.totalRealizadas += variables.totalRealizadas;
+                        data.totalValidas += variables.totalValidas;
+                        data.totalEsperadas += variables.totalEsperadas;
+                        data.ponderado = calculateCompliancePercentage(data.totalValidas, data.totalEsperadas).toFixed(2);
+                    }
+                });
+            }
+        });
     }
     return audits;
 };
-
 export const routineToStimate = (conditions, rawRoutines) => {
     const objRoutine = {};
     rawRoutines.forEach((rawRoutine) => {
@@ -1565,16 +1541,15 @@ export const routineToStimate = (conditions, rawRoutines) => {
             if (index !== -1) {
                 // Si existe: Actualizar (reemplazar el objeto en el índice encontrado)
                 users[index].routines += 1; // Incrementar el contador de visitas
-            } else {
+            }
+            else {
                 // Si no existe: Insertar
                 // 1. Diferencia en milisegundos
                 const fecha1 = new Date(conditions.filterStartDate);
                 const fecha2 = new Date(conditions.filterEndDate);
                 const diferenciaMs = Math.abs(fecha2.getTime() - fecha1.getTime());
-
                 // 2. Convertir a días (redondear para evitar errores de zona horaria)
                 const dias = Math.ceil(diferenciaMs / (1000 * 60 * 60 * 24));
-
                 // 3. Contar ambos extremos (sumar 1)
                 const totalDias = dias + 1;
                 users.push({
@@ -1583,19 +1558,18 @@ export const routineToStimate = (conditions, rawRoutines) => {
                     username: element.user?.username ?? '',
                     customer: `${element.customer?.name ?? ''}`,
                     routines: 1,
-                    requerido: element?.customer?.reqNroRoutine == undefined ? 'N/A' : element?.customer?.reqNroRoutine == 0 ? 'N/A' : (element?.customer?.reqNroRoutine * totalDias),
+                    requerido: calculateRequiredRecords(element?.customer?.reqNroRoutine, totalDias),
                     cumplimiento: 0
                 });
             }
         });
     }
-    for(let i = 0; i < users.length; i++){
-        const cumplimiento = users[i].requerido != 'N/A' ? ((users[i].routines / users[i].requerido) * 100).toFixed(2) : 'N/A';
+    for (let i = 0; i < users.length; i++) {
+        const cumplimiento = calculateCompliancePercentage(users[i].routines, users[i].requerido).toFixed(2);
         users[i].cumplimiento = cumplimiento;
     }
     return users;
-}
-
+};
 export const visitToStimate = (conditions, rawVisits) => {
     const objVisit = {};
     rawVisits.forEach((rawVisit) => {
@@ -1616,16 +1590,15 @@ export const visitToStimate = (conditions, rawVisits) => {
             if (index !== -1) {
                 // Si existe: Actualizar (reemplazar el objeto en el índice encontrado)
                 users[index].visits += 1; // Incrementar el contador de visitas
-            } else {
+            }
+            else {
                 // Si no existe: Insertar
                 // 1. Diferencia en milisegundos
                 const fecha1 = new Date(conditions.filterStartDate);
                 const fecha2 = new Date(conditions.filterEndDate);
                 const diferenciaMs = Math.abs(fecha2.getTime() - fecha1.getTime());
-
                 // 2. Convertir a días (redondear para evitar errores de zona horaria)
                 const dias = Math.ceil(diferenciaMs / (1000 * 60 * 60 * 24));
-
                 // 3. Contar ambos extremos (sumar 1)
                 const totalDias = dias + 1;
                 users.push({
@@ -1634,19 +1607,18 @@ export const visitToStimate = (conditions, rawVisits) => {
                     username: element.user?.username ?? '',
                     customer: `${element.customer?.name ?? ''}`,
                     visits: 1,
-                    requerido: element?.customer?.reqNroVisitEmer == undefined ? 'N/A' : element?.customer?.reqNroVisitEmer == 0 ? 'N/A' : (element?.customer?.reqNroVisitEmer * totalDias),
+                    requerido: calculateRequiredRecords(element?.customer?.reqNroVisitEmer, totalDias),
                     cumplimiento: 0
                 });
             }
         });
     }
-    for(let i = 0; i < users.length; i++){
-        const cumplimiento = users[i].requerido != 'N/A' ? ((users[i].visits / users[i].requerido) * 100).toFixed(2) : 'N/A';
+    for (let i = 0; i < users.length; i++) {
+        const cumplimiento = calculateCompliancePercentage(users[i].visits, users[i].requerido).toFixed(2);
         users[i].cumplimiento = cumplimiento;
     }
     return users;
-}
-
+};
 export const vehicleToStimate = (conditions, rawVehicles) => {
     const objVehicle = {};
     rawVehicles.forEach((rawVehicle) => {
@@ -1667,16 +1639,15 @@ export const vehicleToStimate = (conditions, rawVehicles) => {
             if (index !== -1) {
                 // Si existe: Actualizar (reemplazar el objeto en el índice encontrado)
                 users[index].vehicles += 1; // Incrementar el contador de visitas
-            } else {
+            }
+            else {
                 // Si no existe: Insertar
                 // 1. Diferencia en milisegundos
                 const fecha1 = new Date(conditions.filterStartDate);
                 const fecha2 = new Date(conditions.filterEndDate);
                 const diferenciaMs = Math.abs(fecha2.getTime() - fecha1.getTime());
-
                 // 2. Convertir a días (redondear para evitar errores de zona horaria)
                 const dias = Math.ceil(diferenciaMs / (1000 * 60 * 60 * 24));
-
                 // 3. Contar ambos extremos (sumar 1)
                 const totalDias = dias + 1;
                 users.push({
@@ -1685,19 +1656,18 @@ export const vehicleToStimate = (conditions, rawVehicles) => {
                     username: element.ingressIssued?.username ?? '',
                     customer: `${element.customer?.name ?? ''}`,
                     vehicles: 1,
-                    requerido: element?.customer?.reqNroVehicle == undefined ? 'N/A' : element?.customer?.reqNroVehicle == 0 ? 'N/A' : (element?.customer?.reqNroVehicle * totalDias),
+                    requerido: calculateRequiredRecords(element?.customer?.reqNroVehicle, totalDias),
                     cumplimiento: 0
                 });
             }
         });
     }
-    for(let i = 0; i < users.length; i++){
-        const cumplimiento = users[i].requerido != 'N/A' ? ((users[i].vehicles / users[i].requerido) * 100).toFixed(2) : 'N/A';
+    for (let i = 0; i < users.length; i++) {
+        const cumplimiento = calculateCompliancePercentage(users[i].vehicles, users[i].requerido).toFixed(2);
         users[i].cumplimiento = cumplimiento;
     }
     return users;
-}
-
+};
 export const reportToStimate = (conditions, rawReports) => {
     const objReport = {};
     rawReports.forEach((rawReport) => {
@@ -1718,16 +1688,15 @@ export const reportToStimate = (conditions, rawReports) => {
             if (objeto) {
                 // Si existe: Actualizar (reemplazar el objeto en el índice encontrado)
                 objeto.reports += 1; // Incrementar el contador de visitas
-            } else {
+            }
+            else {
                 // Si no existe: Insertar
                 // 1. Diferencia en milisegundos
                 const fecha1 = new Date(conditions.filterStartDate);
                 const fecha2 = new Date(conditions.filterEndDate);
                 const diferenciaMs = Math.abs(fecha2.getTime() - fecha1.getTime());
-
                 // 2. Convertir a días (redondear para evitar errores de zona horaria)
                 const dias = Math.ceil(diferenciaMs / (1000 * 60 * 60 * 24));
-
                 // 3. Contar ambos extremos (sumar 1)
                 const totalDias = dias + 1;
                 users.push({
@@ -1736,19 +1705,18 @@ export const reportToStimate = (conditions, rawReports) => {
                     username: element.user?.username ?? '',
                     customer: `${element.customer?.name ?? ''}`,
                     reports: 1,
-                    requerido: element?.customer?.reqNroReport == undefined ? 'N/A' : element?.customer?.reqNroReport == 0 ? 'N/A' : (element?.customer?.reqNroReport * totalDias),
+                    requerido: calculateRequiredRecords(element?.customer?.reqNroReport, totalDias),
                     cumplimiento: 0
                 });
             }
         });
     }
-    for(let i = 0; i < users.length; i++){
-        const cumplimiento = users[i].requerido != 'N/A' ? ((users[i].reports / users[i].requerido) * 100).toFixed(2) : 'N/A';
+    for (let i = 0; i < users.length; i++) {
+        const cumplimiento = calculateCompliancePercentage(users[i].reports, users[i].requerido).toFixed(2);
         users[i].cumplimiento = cumplimiento;
     }
     return users;
-}
-
+};
 export const generateFileSimpleCsv = (ar, title, extension) => {
     //comprobamos compatibilidad
     if (window.Blob && (window.URL || window.webkitURL)) {
@@ -1820,7 +1788,7 @@ export const generateFileSimpleXls = async (ar, title, extension = 'xlsx') => {
         const keys = Object.keys(ar[0]);
         const header = sheet.addRow(keys);
         header.font = { bold: true };
-        header.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+        header.alignment = { horizontal: "center" };
         // @ts-ignore
         header.eachCell(cell => {
             cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
@@ -1833,16 +1801,11 @@ export const generateFileSimpleXls = async (ar, title, extension = 'xlsx') => {
             // @ts-ignore
             row.eachCell(cell => {
                 cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
-                cell.alignment = { horizontal: "left", vertical: "top", wrapText: true };
+                cell.alignment = { horizontal: "center" };
             });
         });
 
-        sheet.columns = keys.map(key => {
-            const longest = Math.max(key.length, ...ar.map(item => String(item[key] ?? '').split('\n').reduce((max, line) => Math.max(max, line.length), 0)));
-            return { width: Math.min(42, Math.max(14, longest + 2)) };
-        });
-        sheet.views = [{ state: 'frozen', ySplit: 1 }];
-        sheet.autoFilter = { from: 'A1', to: { row: header.number, column: keys.length } };
+        sheet.columns = keys.map(() => ({ width: 25 }));
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8' });
@@ -1887,10 +1850,10 @@ export const generateFileSimpleXls = async (ar, title, extension = 'xlsx') => {
         window.URL.revokeObjectURL(blobUrl);
     }
 };
-
 /**
- * Genera el reporte de rutinas con el mismo formato XLSX de Producción.
- * Se mantiene separado del exportador genérico para no afectar otros Excel.
+ * Genera el detalle de rutinas como un libro XLSX real. Las exportaciones
+ * anteriores se descargaban como CSV, por lo que Excel no conservaba anchos,
+ * congelado de encabezado ni ajuste de texto.
  */
 export const generateRoutineReportXlsx = async (rows, {
     title = 'REPORTE DE RUTINA',
@@ -1905,18 +1868,34 @@ export const generateRoutineReportXlsx = async (rows, {
         alert('No hay datos para exportar');
         return;
     }
+
     // @ts-ignore
     if (typeof ExcelJS === 'undefined') {
         await generateFileSimpleXls(rows, 'Reporte_Rutina', 'xlsx');
         return;
     }
-    const excludedFields = new Set(['inicio', 'fin', 'imagen', 'imageTag', 'cords', 'intervaloInicio', 'intervaloFin', 'fechaObjetivo', 'horaObjetivo']);
+
+    const excludedFields = new Set([
+        'inicio', 'fin', 'imagen', 'imageTag', 'cords',
+        'intervaloInicio', 'intervaloFin', 'fechaObjetivo', 'horaObjetivo',
+    ]);
     const keys = Object.keys(rows[0]).filter((key) => !excludedFields.has(key));
     const widths = {
-        cliente: 20, rutina: 28, ubicacion: 24, fecha: 13, hora: 12,
-        'INTERVALO DESDE': 21, 'INTERVALO HASTA': 21, 'NOVEDAD REVISADA EN': 23,
-        'OBSERVACION DE CONSOLA': 34, 'USUARIO DE CONSOLA': 22, estado: 15,
-        latitud: 17, longitud: 17, usuario: 22, observacion: 34,
+        cliente: 20,
+        rutina: 28,
+        ubicacion: 24,
+        fecha: 13,
+        hora: 12,
+        'INTERVALO DESDE': 21,
+        'INTERVALO HASTA': 21,
+        'NOVEDAD REVISADA EN': 23,
+        'OBSERVACIÓN DE CONSOLA': 34,
+        'USUARIO DE CONSOLA': 22,
+        estado: 15,
+        latitud: 17,
+        longitud: 17,
+        usuario: 22,
+        observacion: 34,
     };
     // @ts-ignore
     const workbook = new ExcelJS.Workbook();
@@ -1927,12 +1906,14 @@ export const generateRoutineReportXlsx = async (rows, {
         pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
     });
     const lastColumn = Math.max(keys.length, 1);
+
     sheet.mergeCells(1, 1, 1, lastColumn);
     const titleCell = sheet.getCell(1, 1);
     titleCell.value = title;
     titleCell.font = { bold: true, size: 14, color: { argb: 'FF002060' } };
     titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
     sheet.getRow(1).height = 22;
+
     const addInfo = (row, label, value) => {
         sheet.getCell(row, 1).value = label;
         sheet.getCell(row, 1).font = { bold: true, color: { argb: 'FF002060' } };
@@ -1943,6 +1924,7 @@ export const generateRoutineReportXlsx = async (rows, {
     addInfo(2, 'Cliente:', customerName);
     addInfo(3, 'Periodo:', `${startDate || '-'} al ${endDate || '-'}`);
     addInfo(4, 'Horario:', `${startTime || '-'} a ${endTime || '-'}`);
+
     const header = sheet.getRow(6);
     keys.forEach((key, index) => {
         const cell = header.getCell(index + 1);
@@ -1950,22 +1932,42 @@ export const generateRoutineReportXlsx = async (rows, {
         cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } };
         cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-        cell.border = { top: { style: 'thin', color: { argb: 'FFB8C2D1' } }, left: { style: 'thin', color: { argb: 'FFB8C2D1' } }, bottom: { style: 'thin', color: { argb: 'FFB8C2D1' } }, right: { style: 'thin', color: { argb: 'FFB8C2D1' } } };
+        cell.border = {
+            top: { style: 'thin', color: { argb: 'FFB8C2D1' } },
+            left: { style: 'thin', color: { argb: 'FFB8C2D1' } },
+            bottom: { style: 'thin', color: { argb: 'FFB8C2D1' } },
+            right: { style: 'thin', color: { argb: 'FFB8C2D1' } },
+        };
     });
     header.height = 30;
+
     rows.forEach((item, rowIndex) => {
         const row = sheet.getRow(rowIndex + 7);
         keys.forEach((key, columnIndex) => {
             const cell = row.getCell(columnIndex + 1);
             cell.value = String(item[key] ?? '').replace(/[\n\r]+/g, ' ').trim();
             cell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
-            cell.border = { top: { style: 'thin', color: { argb: 'FFE1E6ED' } }, left: { style: 'thin', color: { argb: 'FFE1E6ED' } }, bottom: { style: 'thin', color: { argb: 'FFE1E6ED' } }, right: { style: 'thin', color: { argb: 'FFE1E6ED' } } };
-            if (rowIndex % 2 === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F9FC' } };
+            cell.border = {
+                top: { style: 'thin', color: { argb: 'FFE1E6ED' } },
+                left: { style: 'thin', color: { argb: 'FFE1E6ED' } },
+                bottom: { style: 'thin', color: { argb: 'FFE1E6ED' } },
+                right: { style: 'thin', color: { argb: 'FFE1E6ED' } },
+            };
+            if (rowIndex % 2 === 1) {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F9FC' } };
+            }
         });
         row.height = 28;
     });
+
     sheet.columns = keys.map((key) => ({ width: widths[key] ?? Math.min(Math.max(key.length + 4, 16), 28) }));
-    if (keys.length > 0) sheet.autoFilter = { from: { row: 6, column: 1 }, to: { row: 6, column: keys.length } };
+    if (keys.length > 0) {
+        sheet.autoFilter = {
+            from: { row: 6, column: 1 },
+            to: { row: 6, column: keys.length },
+        };
+    }
+
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -1975,9 +1977,9 @@ export const generateRoutineReportXlsx = async (rows, {
     link.click();
     URL.revokeObjectURL(url);
 };
+
 // Función para pausar
 export const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
 /**
  * Infiere si un timestamp sin timezone es UTC comparando su hora
  * contra una hora de referencia (ej: creationTime del dispositivo).
@@ -2000,78 +2002,65 @@ export const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
  * forma silenciosa, porque no hay información de día para detectarlo.
  */
 function inferirZonaOrigen(horaTexto, horaReferencia, offsetEsperadoMin = 300, margenMin = 15) {
-  if (!horaTexto || !horaReferencia) {
-    return { esUtc: null, motivo: 'sin_datos_suficientes' };
-  }
-
-  const parsearHora = (str) => {
-    const s = String(str).trim();
-
-    // Caso esperado: "HH:MM..." puro (creationTime del dispositivo)
-    let m = s.match(/^(\d{1,2}):(\d{2})/);
-    if (m) return Number(m[1]) * 60 + Number(m[2]);
-
-    // Caso datetime completo: extraemos solo el componente de hora.
-    // Esto SOLO tiene sentido si horaReferencia es un valor legítimo
-    // distinto de fechaTexto (ver chequeo de duplicado más abajo).
-    m = s.match(/[T\s](\d{2}):(\d{2})/);
-    if (m) return Number(m[1]) * 60 + Number(m[2]);
-
-    return null;
-  };
-
-  // Si horaReferencia es idéntico a horaTexto, NO es una referencia real
-  // comparando dos relojes distintos — es el síntoma de un bug de origen
-  // (típicamente: creationTime vino vacío y algún fallback usó createdDate
-  // dos veces). Tratarlo como "sin referencia válida" en vez de inferir
-  // coincide_local, que daría una falsa confianza de diff=0.
-  if (String(horaTexto).trim() === String(horaReferencia).trim()) {
-    return { esUtc: null, motivo: 'referencia_duplicada_de_fecha' };
-  }
-
-  const minsA = parsearHora(horaTexto);
-  const minsR = parsearHora(horaReferencia);
-
-  if (minsA === null || minsR === null) {
-    return { esUtc: null, motivo: 'formato_hora_invalido' };
-  }
-
-  // Diferencia circular (maneja cambio de día)
-  const diff = (minsA - minsR + 1440) % 1440;
-
-  // Evidencia fuerte de UTC: el diff coincide con el offset esperado (~5h)
-  if (Math.abs(diff - offsetEsperadoMin) <= margenMin) {
-    return { esUtc: true, motivo: 'coincide_utc', diffMin: diff };
-  }
-
-  // Evidencia fuerte de que YA es local: el diff está cerca de 0
-  // (circular: también cuenta si está cerca de 1440, ej. diff=1439 ~ diff=1)
-  const distanciaACero = Math.min(diff, 1440 - diff);
-  if (distanciaACero <= margenMin) {
-    return { esUtc: false, motivo: 'coincide_local', diffMin: diff };
-  }
-
-  // Ni una cosa ni la otra: esto NO es evidencia de "es local", es un caso
-  // ambiguo. Típicamente ocurre cuando el registro se creó offline en el
-  // dispositivo y se sincronizó al servidor mucho después: creationTime y
-  // createdDate dejan de representar el mismo instante, y comparar sus
-  // horas del día ya no dice nada confiable sobre la zona horaria.
-  return { esUtc: null, motivo: 'diff_inesperado_posible_atraso_offline', diffMin: diff };
+    if (!horaTexto || !horaReferencia) {
+        return { esUtc: null, motivo: 'sin_datos_suficientes' };
+    }
+    const parsearHora = (str) => {
+        const s = String(str).trim();
+        // Caso esperado: "HH:MM..." puro (creationTime del dispositivo)
+        let m = s.match(/^(\d{1,2}):(\d{2})/);
+        if (m)
+            return Number(m[1]) * 60 + Number(m[2]);
+        // Caso datetime completo: extraemos solo el componente de hora.
+        // Esto SOLO tiene sentido si horaReferencia es un valor legítimo
+        // distinto de fechaTexto (ver chequeo de duplicado más abajo).
+        m = s.match(/[T\s](\d{2}):(\d{2})/);
+        if (m)
+            return Number(m[1]) * 60 + Number(m[2]);
+        return null;
+    };
+    // Si horaReferencia es idéntico a horaTexto, NO es una referencia real
+    // comparando dos relojes distintos — es el síntoma de un bug de origen
+    // (típicamente: creationTime vino vacío y algún fallback usó createdDate
+    // dos veces). Tratarlo como "sin referencia válida" en vez de inferir
+    // coincide_local, que daría una falsa confianza de diff=0.
+    if (String(horaTexto).trim() === String(horaReferencia).trim()) {
+        return { esUtc: null, motivo: 'referencia_duplicada_de_fecha' };
+    }
+    const minsA = parsearHora(horaTexto);
+    const minsR = parsearHora(horaReferencia);
+    if (minsA === null || minsR === null) {
+        return { esUtc: null, motivo: 'formato_hora_invalido' };
+    }
+    // Diferencia circular (maneja cambio de día)
+    const diff = (minsA - minsR + 1440) % 1440;
+    // Evidencia fuerte de UTC: el diff coincide con el offset esperado (~5h)
+    if (Math.abs(diff - offsetEsperadoMin) <= margenMin) {
+        return { esUtc: true, motivo: 'coincide_utc', diffMin: diff };
+    }
+    // Evidencia fuerte de que YA es local: el diff está cerca de 0
+    // (circular: también cuenta si está cerca de 1440, ej. diff=1439 ~ diff=1)
+    const distanciaACero = Math.min(diff, 1440 - diff);
+    if (distanciaACero <= margenMin) {
+        return { esUtc: false, motivo: 'coincide_local', diffMin: diff };
+    }
+    // Ni una cosa ni la otra: esto NO es evidencia de "es local", es un caso
+    // ambiguo. Típicamente ocurre cuando el registro se creó offline en el
+    // dispositivo y se sincronizó al servidor mucho después: creationTime y
+    // createdDate dejan de representar el mismo instante, y comparar sus
+    // horas del día ya no dice nada confiable sobre la zona horaria.
+    return { esUtc: null, motivo: 'diff_inesperado_posible_atraso_offline', diffMin: diff };
 }
-
 function formatearEnZona(fecha, zonaHorariaDestino) {
-  const formateador = new Intl.DateTimeFormat('en-US', {
-    timeZone: zonaHorariaDestino,
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-    hour12: false,
-  });
-  const partes = Object.fromEntries(
-    formateador.formatToParts(fecha).map(p => [p.type, p.value])
-  );
-  return `${partes.year}-${partes.month}-${partes.day} ${partes.hour}:${partes.minute}:${partes.second}`;
+    const formateador = new Intl.DateTimeFormat('en-US', {
+        timeZone: zonaHorariaDestino,
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false,
+    });
+    const partes = Object.fromEntries(formateador.formatToParts(fecha).map(p => [p.type, p.value]));
+    return `${partes.year}-${partes.month}-${partes.day} ${partes.hour}:${partes.minute}:${partes.second}`;
 }
-
 /**
  * Formatea una fecha ambigua (sin timezone explícita) a una zona destino,
  * infiriendo el origen mediante una hora de referencia opcional.
@@ -2095,84 +2084,66 @@ function formatearEnZona(fecha, zonaHorariaDestino) {
  * @returns {string|null}
  */
 export function formatearFechaPorZona(fechaTexto, horaReferencia = null, opciones = {}) {
-  const {
-    zonaHorariaDestino = 'America/Guayaquil',
-    offsetOrigenAsumido = '-05:00',
-    offsetEsperadoUtcMin = 300,
-    margenMin = 15,
-  } = opciones;
-
-  try {
-    if (!fechaTexto) return null;
-
-    let limpio = String(fechaTexto).trim().replace(' ', 'T');
-    const tieneZonaExplicita = /[Zz]$|[+-]\d{2}:\d{2}$/.test(limpio);
-
-    let inferencia = { esUtc: null, motivo: 'zona_explicita' };
-
-    if (!tieneZonaExplicita) {
-      const horaEnTexto = limpio.split('T')[1];
-
-      if (horaReferencia && horaEnTexto) {
-        inferencia = inferirZonaOrigen(horaEnTexto, horaReferencia, offsetEsperadoUtcMin, margenMin);
-      } else if (!horaReferencia) {
-        inferencia = { esUtc: true, motivo: 'sin_referencia_default_utc' };
-      } else {
-        // Hay horaReferencia pero fechaTexto no trae componente de hora:
-        // no hay nada que comparar, se cae a offset local por defecto.
-        inferencia = { esUtc: null, motivo: 'fecha_sin_componente_hora' };
-      }
-
-      if (inferencia.esUtc === null && inferencia.motivo !== 'sin_referencia_default_utc') {
-        // Heurística inconclusa (probable atraso offline entre creationTime
-        // y createdDate): lo dejamos trazado en vez de asumir en silencio.
-        const detalleDiff = inferencia.diffMin != null ? ` (diff=${inferencia.diffMin}min)` : '';
-        console.warn(
-          `[formatearFechaPorZona] Inferencia ambigua (${inferencia.motivo})${detalleDiff} para "${fechaTexto}" con referencia "${horaReferencia}". Se asume offset local ${offsetOrigenAsumido}, pero podría ser incorrecto.`
-        );
-      }
-
-      limpio += inferencia.esUtc === true ? 'Z' : offsetOrigenAsumido;
-    }
-
-    const fecha = new Date(limpio);
-    if (isNaN(fecha.getTime())) {
-      console.error('Dato inválido recibido ->', JSON.stringify(fechaTexto));
-      return null;
-    }
-
-    const resultado = formatearEnZona(fecha, zonaHorariaDestino);
-
-    // El paréntesis solo se muestra cuando hubo una conversión UTC
-    // confirmada (esUtc === true) y aun así el resultado no coincide con
-    // el device. En el caso ambiguo (esUtc === null, posible atraso
-    // offline) NO se muestra: ese desfase suele ser comportamiento normal
-    // (sync tardío), no un error, y mostrar el mismo paréntesis en ambos
-    // casos le quita valor de señal. Queda trazado solo vía console.warn.
-    if (inferencia.esUtc === true && horaReferencia) {
-      const partesHora = resultado.split(' ')[1];
-      const [hRes, mRes] = partesHora.split(':').map(Number);
-      const [hR, mR] = String(horaReferencia).trim().slice(0, 5).split(':').map(Number);
-
-      if (!Number.isNaN(hR) && !Number.isNaN(mR)) {
-        const minsRes = hRes * 60 + mRes;
-        const minsR = hR * 60 + mR;
-
-        if (Math.abs(minsRes - minsR) <= 5) {
-          return resultado;
+    const { zonaHorariaDestino = 'America/Guayaquil', offsetOrigenAsumido = '-05:00', offsetEsperadoUtcMin = 300, margenMin = 15, } = opciones;
+    try {
+        if (!fechaTexto)
+            return null;
+        let limpio = String(fechaTexto).trim().replace(' ', 'T');
+        const tieneZonaExplicita = /[Zz]$|[+-]\d{2}:\d{2}$/.test(limpio);
+        let inferencia = { esUtc: null, motivo: 'zona_explicita' };
+        if (!tieneZonaExplicita) {
+            const horaEnTexto = limpio.split('T')[1];
+            if (horaReferencia && horaEnTexto) {
+                inferencia = inferirZonaOrigen(horaEnTexto, horaReferencia, offsetEsperadoUtcMin, margenMin);
+            }
+            else if (!horaReferencia) {
+                inferencia = { esUtc: true, motivo: 'sin_referencia_default_utc' };
+            }
+            else {
+                // Hay horaReferencia pero fechaTexto no trae componente de hora:
+                // no hay nada que comparar, se cae a offset local por defecto.
+                inferencia = { esUtc: null, motivo: 'fecha_sin_componente_hora' };
+            }
+            if (inferencia.esUtc === null && inferencia.motivo !== 'sin_referencia_default_utc') {
+                // Heurística inconclusa (probable atraso offline entre creationTime
+                // y createdDate): lo dejamos trazado en vez de asumir en silencio.
+                const detalleDiff = inferencia.diffMin != null ? ` (diff=${inferencia.diffMin}min)` : '';
+                console.warn(`[formatearFechaPorZona] Inferencia ambigua (${inferencia.motivo})${detalleDiff} para "${fechaTexto}" con referencia "${horaReferencia}". Se asume offset local ${offsetOrigenAsumido}, pero podría ser incorrecto.`);
+            }
+            limpio += inferencia.esUtc === true ? 'Z' : offsetOrigenAsumido;
         }
-        return `${resultado} (Movil: ${horaReferencia})`;
-      }
+        const fecha = new Date(limpio);
+        if (isNaN(fecha.getTime())) {
+            console.error('Dato inválido recibido ->', JSON.stringify(fechaTexto));
+            return null;
+        }
+        const resultado = formatearEnZona(fecha, zonaHorariaDestino);
+        // El paréntesis solo se muestra cuando hubo una conversión UTC
+        // confirmada (esUtc === true) y aun así el resultado no coincide con
+        // el device. En el caso ambiguo (esUtc === null, posible atraso
+        // offline) NO se muestra: ese desfase suele ser comportamiento normal
+        // (sync tardío), no un error, y mostrar el mismo paréntesis en ambos
+        // casos le quita valor de señal. Queda trazado solo vía console.warn.
+        if (inferencia.esUtc === true && horaReferencia) {
+            const partesHora = resultado.split(' ')[1];
+            const [hRes, mRes] = partesHora.split(':').map(Number);
+            const [hR, mR] = String(horaReferencia).trim().slice(0, 5).split(':').map(Number);
+            if (!Number.isNaN(hR) && !Number.isNaN(mR)) {
+                const minsRes = hRes * 60 + mRes;
+                const minsR = hR * 60 + mR;
+                if (Math.abs(minsRes - minsR) <= 5) {
+                    return resultado;
+                }
+                return `${resultado} (Movil: ${horaReferencia})`;
+            }
+        }
+        return resultado;
     }
-
-    return resultado;
-
-  } catch (error) {
-    console.error('Error crítico:', error);
-    return null;
-  }
+    catch (error) {
+        console.error('Error crítico:', error);
+        return null;
+    }
 }
-
 /* ---------- Ejemplo de uso ---------- */
 //
 // formatearFechaPorZona('2024-05-10T13:45:00', '08:47');

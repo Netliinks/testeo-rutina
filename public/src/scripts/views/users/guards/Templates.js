@@ -13,6 +13,9 @@ export const tableLayoutTemplate = `
         <button class="button" id="edit-data">
             <i class="table_icon fa-solid fa-pencil"></i>
         </button>
+        <button class="button" id="remove-entity">
+            <i class="table_icon fa-solid fa-trash"></i>
+        </button>
         <button class="button" id="convert-toSuperuser">
             <i class="table_icon fa-solid fa-shield"></i>
         </button>

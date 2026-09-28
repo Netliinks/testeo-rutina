@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { auditResponse } from '../tools.js';
+
 // El formato sigue el mismo patrón de los Excel estadísticos: encabezado,
 // indicadores, tabla de resultados, glosario y pie. Solo se formatean los
 // datos ya calculados por NetGuard; aquí no se recalcula ningún porcentaje.
@@ -19,22 +20,24 @@ const COLORS = {
     red: 'FFFBDEDA',
     redText: 'FFE03135'
 };
+
 const border = {
     top: { style: 'thin', color: { argb: COLORS.line } },
     left: { style: 'thin', color: { argb: COLORS.line } },
     bottom: { style: 'thin', color: { argb: COLORS.line } },
     right: { style: 'thin', color: { argb: COLORS.line } }
 };
+
 const number = (value) => Number.isFinite(Number(value)) ? Number(value) : 0;
 const percentage = (value) => Math.max(0, Math.min(100, number(String(value ?? '').replace('%', '')))) / 100;
 const complianceRatio = (completed, required) => {
     const completedRecords = Math.max(0, number(completed));
     const requiredRecords = Math.max(0, number(required));
-    if (requiredRecords === 0)
-        return 0;
+    if (requiredRecords === 0) return 0;
     return Math.min(1, completedRecords / requiredRecords);
 };
 const valueOrDash = (value) => value === undefined || value === null || value === '' ? '-' : String(value);
+
 const download = async (workbook, filename) => {
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8' });
@@ -45,11 +48,13 @@ const download = async (workbook, filename) => {
     link.click();
     window.setTimeout(() => window.URL.revokeObjectURL(url), 0);
 };
+
 const styleCells = (sheet, rowNumber, from, to, style) => {
-    for (let column = from; column <= to; column++)
-        Object.assign(sheet.getCell(rowNumber, column), style);
+    for (let column = from; column <= to; column++) Object.assign(sheet.getCell(rowNumber, column), style);
 };
+
 const periodDateTime = (date, time) => date ? `${date} ${String(time || '').replace(/:00$/, '')}`.trim() : '-';
+
 const buildWorkbook = ({ title, startDate, startTime, endDate, endTime, widths }) => {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'NetGuard';
@@ -61,6 +66,7 @@ const buildWorkbook = ({ title, startDate, startTime, endDate, endTime, widths }
         orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0,
         margins: { left: 0.25, right: 0.25, top: 0.35, bottom: 0.35, header: 0.1, footer: 0.1 }
     };
+
     const last = sheet.getColumn(widths.length).letter;
     sheet.mergeCells(`A1:${last}1`);
     const heading = sheet.getCell('A1');
@@ -69,6 +75,7 @@ const buildWorkbook = ({ title, startDate, startTime, endDate, endTime, widths }
     heading.alignment = { horizontal: 'left', vertical: 'middle' };
     styleCells(sheet, 1, 1, widths.length, { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.soft } }, border });
     sheet.getRow(1).height = 30;
+
     sheet.mergeCells(`A2:${last}2`);
     const period = sheet.getCell('A2');
     period.value = `FECHA INICIAL: ${periodDateTime(startDate, startTime)}   —   FECHA CORTE: ${periodDateTime(endDate, endTime)}`;
@@ -79,6 +86,7 @@ const buildWorkbook = ({ title, startDate, startTime, endDate, endTime, widths }
     sheet.getRow(3).height = 15;
     return { workbook, sheet };
 };
+
 const addIndicators = (sheet, indicators, spans = []) => {
     indicators.forEach((indicator, index) => {
         const [from, to] = spans[index] || [index + 1, index + 1];
@@ -100,8 +108,7 @@ const addIndicators = (sheet, indicators, spans = []) => {
         metric.alignment = { horizontal: 'right', vertical: 'middle' };
         metric.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF6F7F9' } };
         metric.border = border;
-        if (indicator.format)
-            metric.numFmt = indicator.format;
+        if (indicator.format) metric.numFmt = indicator.format;
         styleCells(sheet, 4, from, to, { border, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF6F7F9' } } });
         styleCells(sheet, 5, from, to, { border, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF6F7F9' } } });
     });
@@ -109,13 +116,13 @@ const addIndicators = (sheet, indicators, spans = []) => {
     sheet.getRow(5).height = 25;
     sheet.getRow(6).height = 15;
 };
+
 const scoreColors = (score) => {
-    if (score >= 0.9)
-        return { fill: COLORS.green, text: COLORS.greenText };
-    if (score >= 0.7)
-        return { fill: COLORS.amber, text: COLORS.amberText };
+    if (score >= 0.9) return { fill: COLORS.green, text: COLORS.greenText };
+    if (score >= 0.7) return { fill: COLORS.amber, text: COLORS.amberText };
     return { fill: COLORS.red, text: COLORS.redText };
 };
+
 const addTable = (sheet, { headers, rows, percentageColumn, mergeFirstTwoColumns = false }) => {
     const tableHeader = sheet.getRow(7);
     tableHeader.height = 28;
@@ -133,6 +140,7 @@ const addTable = (sheet, { headers, rows, percentageColumn, mergeFirstTwoColumns
         sheet.mergeCells('A7:B7');
         styleCells(sheet, 7, 1, actualColumns, { border, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.navy } } });
     }
+
     rows.forEach((values, rowIndex) => {
         const row = sheet.getRow(8 + rowIndex);
         row.height = 24;
@@ -167,14 +175,15 @@ const addTable = (sheet, { headers, rows, percentageColumn, mergeFirstTwoColumns
         sheet.addConditionalFormatting({
             ref: `${columnLetter}8:${columnLetter}${7 + rows.length}`,
             rules: [{
-                    type: 'dataBar',
-                    cfvo: [{ type: 'num', value: 0 }, { type: 'num', value: 1 }],
-                    color: { argb: 'FF6FAF8A' }
-                }]
+                type: 'dataBar',
+                cfvo: [{ type: 'num', value: 0 }, { type: 'num', value: 1 }],
+                color: { argb: 'FF6FAF8A' }
+            }]
         });
     }
     return Math.max(8, 7 + rows.length);
 };
+
 const addGlossary = (sheet, startRow, columnCount, glossary) => {
     const last = sheet.getColumn(columnCount).letter;
     sheet.mergeCells(`A${startRow}:${last}${startRow}`);
@@ -184,6 +193,7 @@ const addGlossary = (sheet, startRow, columnCount, glossary) => {
     heading.alignment = { horizontal: 'left', vertical: 'middle' };
     styleCells(sheet, startRow, 1, columnCount, { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.soft } }, border });
     sheet.getRow(startRow).height = 22;
+
     glossary.forEach((item, index) => {
         const rowNumber = startRow + index + 1;
         styleCells(sheet, rowNumber, 1, columnCount, { border });
@@ -199,6 +209,7 @@ const addGlossary = (sheet, startRow, columnCount, glossary) => {
         definition.alignment = { vertical: 'middle', wrapText: true };
         sheet.getRow(rowNumber).height = 30;
     });
+
     const footerRow = startRow + glossary.length + 2;
     sheet.mergeCells(`A${footerRow}:${last}${footerRow}`);
     const footer = sheet.getCell(footerRow, 1);
@@ -207,20 +218,21 @@ const addGlossary = (sheet, startRow, columnCount, glossary) => {
     footer.alignment = { horizontal: 'left', vertical: 'middle' };
     sheet.getRow(footerRow).height = 20;
 };
+
 const averageTime = (values) => {
     const seconds = values.map((value) => {
-        if (!/^\d{2}:\d{2}:\d{2}$/.test(String(value)))
-            return null;
+        if (!/^\d{2}:\d{2}:\d{2}$/.test(String(value))) return null;
         const [hours, minutes, secs] = String(value).split(':').map(Number);
         return hours * 3600 + minutes * 60 + secs;
     }).filter((value) => value !== null);
-    if (!seconds.length)
-        return 'N/A';
+    if (!seconds.length) return 'N/A';
     const total = Math.round(seconds.reduce((sum, value) => sum + value, 0) / seconds.length);
     return [Math.floor(total / 3600), Math.floor((total % 3600) / 60), total % 60].map((item) => String(item).padStart(2, '0')).join(':');
 };
+
 export const exportAuditV2Xls = async (conditions) => {
     const response = await auditResponse(conditions);
+
     if (conditions.objetive === 'RUTINA DE GUARDIA') {
         const rows = response.map((item) => ({
             user: valueOrDash(item.name),
@@ -241,7 +253,7 @@ export const exportAuditV2Xls = async (conditions) => {
             startTime: conditions.filterStartTime,
             endDate: conditions.filterEndDate,
             endTime: conditions.filterEndTime,
-            widths: [28, 30, 12, 14, 16, 16, 14, 16]
+        widths: [28, 30, 12, 14, 16, 16, 14, 16]
         });
         addIndicators(sheet, [
             { label: 'Guardias evaluados', value: rows.length },
@@ -264,6 +276,7 @@ export const exportAuditV2Xls = async (conditions) => {
         await download(workbook, 'Reporte_Estadistico_Guardias_NetGuard.xlsx');
         return;
     }
+
     const rows = response.map((item) => ({
         user: valueOrDash(item.Usuario),
         generated: number(item['Total Alertas Generadas']),

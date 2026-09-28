@@ -1,8 +1,6 @@
-// @ts-nocheck
 import { generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
-import { createModernPdf } from "./modernPdfLayout.js";
 //import {generateFile } from "../tools";
-const exportEventPdfLegacy = (ar, start, end) => {
+export const exportEventPdf = (ar, start, end) => {
     // @ts-ignore
     window.jsPDF = window.jspdf.jsPDF;
     // @ts-ignore
@@ -39,61 +37,63 @@ const exportEventPdfLegacy = (ar, start, end) => {
         let rowDescription = 0;
         // @ts-ignore
         //if (event.creationDate >= start && event.creationDate <= end) {
-        doc.setFontSize(9);
-        doc.setFont(undefined, 'normal');
-        doc.setTextColor(0, 0, 0);
-        doc.text(10, row, `${event.creationDate}`);
-        doc.text(30, row, `${event.creationTime}`);
-        //doc.text(50, row, `${event.user?.firstName ?? ''} ${event.user?.lastName ?? ''}`);
-        //doc.text(90, row, `${event.title.split("\n").join("(salto)")}`);
-        //doc.text(140, row, `${event.description.split("\n").join("(salto)")}`);
-        var lMargin = 50; //left margin in mm
-        var rMargin = 5; //right margin in mm
-        var pdfInMM = 90; //210;  // width of A4 in mm
-        var name = doc.splitTextToSize(`${event.user?.firstName ?? ''} ${event.user?.lastName ?? ''}`, (pdfInMM - lMargin - rMargin));
-        doc.text(lMargin, row, name);
-        lMargin = 90; //left margin in mm
-        rMargin = 5; //right margin in mm
-        pdfInMM = 140; //210;  // width of A4 in mm
-        var title = event.title.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
-        var paragraph = doc.splitTextToSize(title, (pdfInMM - lMargin - rMargin));
-        doc.text(lMargin, row, paragraph);
-        rowTitle = calculateRow(title.length, "titulo");
-        lMargin = 140; //left margin in mm
-        rMargin = 5; //right margin in mm
-        pdfInMM = 210; //210;  // width of A4 in mm
-        var description = event.description.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
-        paragraph = doc.splitTextToSize(description, (pdfInMM - lMargin - rMargin));
-        doc.text(lMargin, row, paragraph);
-        rowDescription = calculateRow(description.length, "parrafo");
-        rowTitle > rowDescription ? row += rowTitle : row += rowDescription;
-        doc.setDrawColor(210, 210, 210);
-        doc.line(5, row, 205, row);
-        if ((row + newDataBlock(ar, i)) > 280) { //290 limite de lineas A4
-            doc.addPage();
-            row = 30;
-            pagina += 1;
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'italic');
-            doc.text(135, 10, `Fecha: Desde ${start} Hasta ${end}`);
-            doc.setFont(undefined, 'bold');
-            //construimos cabecera del csv
-            doc.setDrawColor(0, 0, 128);
-            doc.line(5, 15, 205, 15);
-            doc.setFillColor(210, 210, 210);
-            doc.rect(5, 15, 200, 10, 'F');
-            doc.text(10, 20, "Fecha");
-            doc.text(30, 20, "Hora");
-            doc.text(50, 20, "Usuario");
-            doc.text(90, 20, "Título");
-            doc.text(140, 20, "Descripción");
-            doc.line(5, 25, 205, 25);
-            doc.setTextColor(0, 0, 128);
-            doc.text(10, 290, `Página ${pagina}`);
-        }
-        else {
-            row += 5;
-        }
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(0, 0, 0);
+            doc.text(10, row, `${event.creationDate}`);
+            doc.text(30, row, `${event.creationTime}`);
+            //doc.text(50, row, `${event.user?.firstName ?? ''} ${event.user?.lastName ?? ''}`);
+            //doc.text(90, row, `${event.title.split("\n").join("(salto)")}`);
+            //doc.text(140, row, `${event.description.split("\n").join("(salto)")}`);
+            var lMargin = 50; //left margin in mm
+            var rMargin = 5; //right margin in mm
+            var pdfInMM = 90; //210;  // width of A4 in mm
+            var name = doc.splitTextToSize(`${event.user?.firstName ?? ''} ${event.user?.lastName ?? ''}`, (pdfInMM - lMargin - rMargin));
+            doc.text(lMargin, row, name);
+
+            lMargin = 90; //left margin in mm
+            rMargin = 5; //right margin in mm
+            pdfInMM = 140; //210;  // width of A4 in mm
+            var title = event.title.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
+            var paragraph = doc.splitTextToSize(title, (pdfInMM - lMargin - rMargin));
+            doc.text(lMargin, row, paragraph);
+            rowTitle = calculateRow(title.length,"titulo");
+
+            lMargin = 140; //left margin in mm
+            rMargin = 5; //right margin in mm
+            pdfInMM = 210; //210;  // width of A4 in mm
+            var description = event.description.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
+            paragraph = doc.splitTextToSize(description, (pdfInMM - lMargin - rMargin));
+            doc.text(lMargin, row, paragraph);
+            rowDescription = calculateRow(description.length,"parrafo");
+
+            rowTitle > rowDescription ? row += rowTitle : row += rowDescription
+            doc.setDrawColor(210, 210, 210);
+            doc.line(5, row, 205, row);
+            if ((row+newDataBlock(ar,i)) > 280) { //290 limite de lineas A4
+                doc.addPage();
+                row = 30;
+                pagina += 1;
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'italic');
+                doc.text(135, 10, `Fecha: Desde ${start} Hasta ${end}`);
+                doc.setFont(undefined, 'bold');
+                //construimos cabecera del csv
+                doc.setDrawColor(0, 0, 128);
+                doc.line(5, 15, 205, 15);
+                doc.setFillColor(210, 210, 210);
+                doc.rect(5, 15, 200, 10, 'F');
+                doc.text(10, 20, "Fecha");
+                doc.text(30, 20, "Hora");
+                doc.text(50, 20, "Usuario");
+                doc.text(90, 20, "Título");
+                doc.text(140, 20, "Descripción");
+                doc.line(5, 25, 205, 25);
+                doc.setTextColor(0, 0, 128);
+                doc.text(10, 290, `Página ${pagina}`);
+            }else{
+                row += 5;
+            }
         //}
     }
     // Save the PDF
@@ -107,27 +107,19 @@ export const exportEventCsv = (ar, start, end) => {
         let event = ar[i];
         // @ts-ignore
         //if (event.creationDate >= start && event.creationDate <= end) {
-        let obj = {
-            "Empresa": `${event.customer?.name.split("\n").join("(salto)")}`,
-            "Título": `${event.title.split("\n").join("(salto)")}`,
-            "Fecha": `${event.creationDate}`,
-            "Hora": `${event.creationTime}`,
-            "Nombre": `${event.user?.firstName ?? ''} ${event.user?.lastName ?? ''}`,
-            "Usuario": `${event.user?.username ?? ''}`,
-            "Descripción": `${event.description.split("\n").join("(salto)")}`
-        };
-        rows.push(obj);
+            let obj = {
+                "Empresa": `${event.customer?.name.split("\n").join("(salto)")}`,
+                "Título": `${event.title.split("\n").join("(salto)")}`,
+                "Fecha": `${event.creationDate}`,
+                "Hora": `${event.creationTime}`,
+                "Nombre": `${event.user?.firstName ?? ''} ${event.user?.lastName ?? ''}`,
+                "Usuario": `${event.user?.username ?? ''}`,
+                "Descripción": `${event.description.split("\n").join("(salto)")}`
+            };
+            rows.push(obj);
         //}
     }
     generateFileSimpleCsv(rows, "Eventos", "csv");
-};
-const eventCoordinates = (event) => {
-    const latitude = Number(event?.latitude);
-    const longitude = Number(event?.longitude);
-    const hasLocation = event?.latitude !== null && event?.latitude !== undefined
-        && event?.longitude !== null && event?.longitude !== undefined
-        && Number.isFinite(latitude) && Number.isFinite(longitude);
-    return hasLocation ? `${latitude}, ${longitude}` : '';
 };
 export const exportEventXls = (ar, start, end) => {
     let rows = [];
@@ -135,17 +127,16 @@ export const exportEventXls = (ar, start, end) => {
         let event = ar[i];
         // @ts-ignore
         //if (event.creationDate >= start && event.creationDate <= end) {
-        let obj = {
-            "Empresa": `${event.customer?.name.split("\n").join("(salto)")}`,
-            "Título": `${event.title.split("\n").join("(salto)")}`,
-            "Fecha": `${event.creationDate}`,
-            "Hora": `${event.creationTime}`,
-            "Nombre": `${event.user?.firstName ?? ''} ${event.user?.lastName ?? ''}`,
-            "Usuario": `${event.user?.username ?? ''}`,
-            "Descripción": `${event.description.split("\n").join("(salto)")}`,
-            "Coordenadas GPS": eventCoordinates(event)
-        };
-        rows.push(obj);
+            let obj = {
+                "Empresa": `${event.customer?.name.split("\n").join("(salto)")}`,
+                "Título": `${event.title.split("\n").join("(salto)")}`,
+                "Fecha": `${event.creationDate}`,
+                "Hora": `${event.creationTime}`,
+                "Nombre": `${event.user?.firstName ?? ''} ${event.user?.lastName ?? ''}`,
+                "Usuario": `${event.user?.username ?? ''}`,
+                "Descripción": `${event.description.split("\n").join("(salto)")}`
+            };
+            rows.push(obj);
         //}
     }
     generateFileSimpleXls(rows, "Eventos", "xls");
@@ -204,83 +195,31 @@ const generateFile = (ar, title, extension) => {
         alert("Su navegador no permite esta acción");
     }
 };
+
 const calculateRow = (length, mode) => {
     let row = 0;
     let limit = 0; // limite de lineas
-    if (mode == "parrafo") {
+    if(mode=="parrafo"){
         limit = 47;
-    }
-    else if (mode == "titulo") {
+    }else if(mode=="titulo"){
         limit = 30;
     }
     let lineCount = Math.ceil(length / limit);
-    for (let i = 1; i <= lineCount; i++) {
-        if (length <= (limit * i)) { //124 caracteres cada linea aprox en total margen A4
-            row += (4 * i);
+    for(let i = 1; i <= lineCount; i++){
+        if(length <= (limit * i)){  //124 caracteres cada linea aprox en total margen A4
+            row += (4*i);
         }
     }
     return row;
-};
+}
+
 const newDataBlock = (array, index) => {
     let row = 0;
-    if (array[index + 1] != undefined) {
-        row += 5;
-        let rowTitle = calculateRow(array[index + 1]?.title.length, "titulo");
-        let rowDescription = calculateRow(array[index + 1]?.description.length, "parrafo");
+    if(array[index+1] != undefined){
+        row+=5;
+        let rowTitle = calculateRow(array[index+1]?.title.length,"titulo");
+        let rowDescription = calculateRow(array[index+1]?.description.length,"parrafo");
         rowTitle > rowDescription ? row += rowTitle : row += rowDescription;
     }
     return row;
-};
-export const exportEventPdf = (events, start, end) => {
-    const clean = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
-    const repairEncoding = (value) => {
-        const text = String(value ?? '');
-        if (!/[ÃÂð]/.test(text))
-            return text;
-        try {
-            return decodeURIComponent(escape(text));
-        }
-        catch (_) {
-            return text;
-        }
-    };
-    const eventEmoji = (value) => repairEncoding(value).match(/^[\p{Extended_Pictographic}\uFE0F\u200D]+/u)?.[0] || '';
-    const eventDescription = (value) => clean(repairEncoding(value).replace(/^[\p{Extended_Pictographic}\uFE0F\u200D]+\s*/u, ''));
-    const userCounts = events.reduce((counts, event) => {
-        const user = clean(`${event?.user?.firstName ?? ''} ${event?.user?.lastName ?? ''}`)
-            || event?.user?.username
-            || 'Sistema';
-        counts[user] = (counts[user] || 0) + 1;
-        return counts;
-    }, {});
-    createModernPdf({
-        title: 'REPORTE DE EVENTOS',
-        subtitle: 'Bitácora Digital · Historial de eventos',
-        origin: 'NetGuard · Alertas y eventos',
-        start,
-        end,
-        summary: [
-            { label: 'TOTAL EVENTOS', value: events.length, color: [0, 32, 96] },
-            { label: 'CON UBICACIÓN GPS', value: events.filter(event => eventCoordinates(event)).length, color: [27, 138, 65] },
-        ],
-        users: Object.entries(userCounts).map(([name, count]) => `${name} (${count})`),
-        columns: [
-            { key: 'number', label: '#', width: 8 },
-            { key: 'date', label: 'FECHA', width: 26 },
-            { key: 'time', label: 'HORA', width: 20 },
-            { key: 'user', label: 'USUARIO', width: 40 },
-            { key: 'title', label: 'TÍTULO', width: 58 },
-            { key: 'description', label: 'DESCRIPCIÓN', width: 125 },
-        ],
-        rows: events.map((event, index) => ({
-            number: index + 1,
-            date: event?.creationDate,
-            time: event?.creationTime,
-            user: clean(`${event?.user?.firstName ?? ''} ${event?.user?.lastName ?? ''}`) || event?.user?.username,
-            title: clean(event?.title),
-            description: eventDescription(event?.description),
-            emoji: eventEmoji(event?.description),
-        })),
-        filename: `log_Eventos_${new Date().getDate()}_${new Date().getMonth() + 1}_${new Date().getFullYear()}.pdf`,
-    });
-};
+}

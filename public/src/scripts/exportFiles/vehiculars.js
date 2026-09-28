@@ -1,4 +1,6 @@
+//import {generateFile } from "../tools";
 import { vehicleToStimate, generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
+import { exportNetGuardStatisticalReport } from "./statisticalReport.js";
 
 export const exportVehicularPdf = (ar, start, end) => {
     // @ts-ignore
@@ -115,7 +117,6 @@ export const exportVehicularCsv = (ar, start, end) => {
     let rows = [];
     for (let i = 0; i < ar.length; i++) {
         let vehicular = ar[i];
-        const rucParse = parseEntradaSalida(vehicular?.ruc);
         const dniParse = parseEntradaSalida(vehicular?.dni);
         const conductorParse = parseEntradaSalida(vehicular?.driver);
         const productoParse = parseEntradaSalida(vehicular?.product);
@@ -129,12 +130,6 @@ export const exportVehicularCsv = (ar, start, end) => {
         let obj = {
             "Empresa": `${vehicular.customer?.name.split("\n").join("(salto)")}`,
             "Placa": `${vehicular?.licensePlate.split("\n").join("(salto)") ?? ''}`,
-            "RUC Entrada": rucParse.entrada,
-            "RUC Salida": rucParse.salida,
-            "Tipo Documento Entrada": `${vehicular?.typeDocument ?? ''}`,
-            "Referencia Documento Entrada": `${vehicular?.referenceDocument ?? ''}`,
-            "Tipo Documento Salida": `${vehicular?.typeDocumentOut ?? ''}`,
-            "Referencia Documento Salida": `${vehicular?.referenceDocumentOut ?? ''}`,
             "Conductor Entrada": conductorParse.entrada,
             "Conductor Salida": conductorParse.salida,
             "DNI Entrada": dniParse.entrada,
@@ -172,7 +167,6 @@ export const exportVehicularXls = (ar, start, end) => {
     let rows = [];
     for (let i = 0; i < ar.length; i++) {
         let vehicular = ar[i];
-        const rucParse = parseEntradaSalida(vehicular?.ruc);
         const dniParse = parseEntradaSalida(vehicular?.dni);
         const conductorParse = parseEntradaSalida(vehicular?.driver);
         const productoParse = parseEntradaSalida(vehicular?.product);
@@ -186,12 +180,6 @@ export const exportVehicularXls = (ar, start, end) => {
         let obj = {
             "Empresa": `${vehicular.customer?.name.split("\n").join("(salto)")}`,
             "Placa": `${vehicular?.licensePlate.split("\n").join("(salto)") ?? ''}`,
-            "RUC Entrada": rucParse.entrada,
-            "RUC Salida": rucParse.salida,
-            "Tipo Documento Entrada": `${vehicular?.typeDocument ?? ''}`,
-            "Referencia Documento Entrada": `${vehicular?.referenceDocument ?? ''}`,
-            "Tipo Documento Salida": `${vehicular?.typeDocumentOut ?? ''}`,
-            "Referencia Documento Salida": `${vehicular?.referenceDocumentOut ?? ''}`,
             "Conductor Entrada": conductorParse.entrada,
             "Conductor Salida": conductorParse.salida,
             "DNI Entrada": dniParse.entrada,
@@ -226,6 +214,18 @@ export const exportVehicularXls = (ar, start, end) => {
 };
 
 export const generarReportVehicularXls = async (conditions, vehiculars) => {
+    const statisticalRows = await vehicleToStimate(conditions, vehiculars);
+    return exportNetGuardStatisticalReport({
+        title: 'REPORTE DE INGRESO VEHICULAR',
+        filename: 'Cumplimiento_Vehicular.xlsx',
+        conditions,
+        rows: statisticalRows.map((user) => ({ customer: user.customer, user: `[${user.username}] ${user.name}`, required: user.requerido, completed: user.vehicles, compliance: user.cumplimiento })),
+        glossary: [
+            { term: 'Requeridos', definition: 'Cantidad de registros vehiculares esperados durante el período seleccionado.' },
+            { term: 'Realizados', definition: 'Cantidad de ingresos vehiculares registrados durante el período seleccionado.' },
+            { term: 'Cumplimiento', definition: 'Porcentaje calculado por NetGuard: realizados / requeridos.' }
+        ]
+    });
     // @ts-ignore
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Vehicular");

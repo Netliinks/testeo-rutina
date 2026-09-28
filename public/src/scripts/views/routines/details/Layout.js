@@ -20,7 +20,9 @@ export const UIContentLayout = `
                     id="btnSearch">
                     <i class="fa-solid fa-search"></i>
                 </button>
-                <button class="datatable_button import_user" id="export-entities">Exportar</button>
+                <button class="datatable_button add_user" id="generate-entities" title="Generar reportes y enviar correos">
+                    <i class="fa-solid fa-file-export"></i>&nbsp; Generar
+                </button>
             </div>
         </div>
 
@@ -35,10 +37,6 @@ export const UIContentLayout = `
             </span></th>
 
             <th><span data-type="ubication">
-            Horario <i class="fa-regular fa-filter"></i>
-            </span></th>
-
-            <th><span data-type="qrpoint">
             Ubicación <i class="fa-regular fa-filter"></i>
             </span></th>
 
@@ -110,22 +108,17 @@ export const UIRightSidebar = `
         </div>
         <br>
         <div class="input_detail">
-            <label for="register-schedule"><i class="fa-solid fa-clock"></i></label>
+            <label for="register-schedule"><i class="fa-solid fa-map-location"></i></label>
             <input type="text" id="register-schedule" class="input_filled" readonly>
         </div>
         <br>
         <div class="input_detail">
-            <label for="register-location-name"><i class="fa-solid fa-location-crosshairs"></i></label>
-            <input type="text" id="register-location-name" class="input_filled" readonly>
-        </div>
-        <br>
-        <div class="input_detail">
-            <label for="register-location-lat"><i class="fa-solid fa-location-crosshairs"></i></label>
+            <label for="register-location-lat"><i class="fa-solid fa-location-dot"></i></label>
             <input type="text" id="register-location-lat" class="input_filled" readonly>
         </div>
         <br>
         <div class="input_detail">
-            <label for="register-location-long"><i class="fa-solid fa-location-crosshairs"></i></label>
+            <label for="register-location-long"><i class="fa-solid fa-location-dot"></i></label>
             <input type="text" id="register-location-long" class="input_filled" readonly>
         </div>
         <br>

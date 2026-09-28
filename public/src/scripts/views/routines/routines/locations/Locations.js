@@ -1,5 +1,5 @@
 // @filename: locations.ts
-import { deleteEntity, getEntitiesData, registerEntity, updateEntity, getEntityData, getFilterEntityData, getFilterEntityCount, getUserInfo } from "../../../../endpoints.js";
+import { deleteEntity, getEntitiesData, registerEntity, updateEntity, getEntityData, getFilterEntityData, getFilterEntityCount, getUserInfo, generateRoutineTimes } from "../../../../endpoints.js";
 import { inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, getDetails, equivalentTime } from "../../../../tools.js";
 import { Config } from "../../../../Configs.js";
 import { tableLayout } from "./Layout.js";
@@ -127,7 +127,6 @@ export class Locations {
     }
 
     load(table, currentPage, data) {
-        createRoutines('INS', routine.id, null);
         table.innerHTML = '';
         currentPage--;
         let start = tableRows * currentPage;
@@ -161,9 +160,6 @@ export class Locations {
           <button class="button" id="edit-entity" data-entityId="${location.id}">
             <i class="fa-solid fa-pen"></i>
           </button>
-            <button class="button" id="remove-entity" data-entityId="${location.id}">
-              <i class="fa-solid fa-trash"></i>
-            </button>
           </dt>
         `;
                 table.appendChild(row);
@@ -172,7 +168,6 @@ export class Locations {
         this.register();
         this.edit(this.entityDialogContainer, data);
         this.selectModal();
-        this.remove();
 
     }
     pagination(items, limitRows, currentPage) {
@@ -381,42 +376,64 @@ export class Locations {
                   //console.log(hourEnd)
                   const minEnd = parseInt(timeEnd[1].trim());
                   //console.log(minEnd)
-                  const raw = JSON.stringify({
-                      "name": `${inputsCollection.name.value}`,
-                      "cords": `${inputsCollection.cords.value}`,
-                      'latitude' : `${latitud}`,
-                      'longitude' : `${longitud}`,
-                      "frequency": `${inputsCollection.frequency.value}`,  
-                      "distance": `${inputsCollection.distance.value}`,  
-                      "business": {
-                          "id": `${businessData.business.id}`
-                      },                 
-                      "customer": {
-                          "id": `${customerId}`
-                      },
-                      "routine": {
-                        "id": `${routine.id}`
-                      },
-                      'scheduleTime': `${inputsCollection.scheduleTime.value}`,
-                      'scheduleTimeEnd': `${inputsCollection.scheduleTimeEnd.value}`,
-                      'creationDate': `${currentDateTime().date}`,
-                      'creationTime': `${currentDateTime().timeHHMMSS}`,
-                  });
-                  if(inputsCollection.name.value == "" || inputsCollection.name.value == undefined){
-                    alert("Nombre de Ubicación vacía");
-                  }else if(inputsCollection.distance.value == "" || inputsCollection.distance.value == undefined || inputsCollection.distance.value < 0){
-                    alert("Distancia inválida");
-                  }else if(routine.id == '' || routine.id == null || routine.id == undefined){
-                    alert("No hay rutina");
-                  }else if(hourIni == hourEnd && minIni > minEnd){
+
+                  if(hourIni == hourEnd && minIni > minEnd){
                     alert("Minutos iniciales no pueden ser mayores a las del final en horas iguales.");
-                  }else{
-                    registerEntity(raw, 'RoutineSchedule');
-                    setTimeout(() => {
-                        const container = document.getElementById('entity-editor-container');
-                        new CloseDialog().x(container);
-                        new Locations().render(Config.offset, Config.currentPage, infoPage.search, routine.id);
-                    }, 1000);
+                    return;
+                  }
+
+                  registerButton.disabled = true;
+                  const originalText = registerButton.innerText;
+                  registerButton.innerText = "Guardando...";
+
+                  try {
+                    const raw = JSON.stringify({
+                        "name": `${inputsCollection.name.value}`,
+                        "cords": `${inputsCollection.cords.value}`,
+                        'latitude' : `${latitud}`,
+                        'longitude' : `${longitud}`,
+                        "frequency": `${inputsCollection.frequency.value}`,
+                        "distance": `${inputsCollection.distance.value}`,
+                        "business": {
+                            "id": `${businessData.business.id}`
+                        },
+                        "customer": {
+                            "id": `${customerId}`
+                        },
+                        "routine": {
+                          "id": `${routine.id}`
+                        },
+                        'scheduleTime': `${inputsCollection.scheduleTime.value}`,
+                        'scheduleTimeEnd': `${inputsCollection.scheduleTimeEnd.value}`,
+                        'creationDate': `${currentDateTime().date}`,
+                        'creationTime': `${currentDateTime().timeHHMMSS}`,
+                    });
+                    if(inputsCollection.name.value == "" || inputsCollection.name.value == undefined){
+                      alert("Nombre de Ubicación vacía");
+                      registerButton.disabled = false;
+                      registerButton.innerText = originalText;
+                    }else if(inputsCollection.distance.value == "" || inputsCollection.distance.value == undefined || inputsCollection.distance.value < 0){
+                      alert("Distancia inválida");
+                      registerButton.disabled = false;
+                      registerButton.innerText = originalText;
+                    }else if(routine.id == '' || routine.id == null || routine.id == undefined){
+                      alert("No hay rutina");
+                      registerButton.disabled = false;
+                      registerButton.innerText = originalText;
+                    }else{
+                      const saved = await registerEntity(raw, 'RoutineSchedule');
+                      if (saved && saved.id) {
+                          await generateRoutineTimes(saved.id);
+                      }
+                      const container = document.getElementById('entity-editor-container');
+                      new CloseDialog().x(container);
+                      new Locations().render(Config.offset, Config.currentPage, infoPage.search, routine.id);
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    alert("Error al registrar ubicación: " + (err.message || err));
+                    registerButton.disabled = false;
+                    registerButton.innerText = originalText;
                   }
                 }
             });
@@ -645,7 +662,7 @@ export class Locations {
             frequency: document.getElementById('entity-frequency'),
 
           };
-          updateButton.addEventListener('click', () => {
+          updateButton.addEventListener('click', async () => {
             if($value.cords.value == "" || $value.cords.value == undefined){
               alert("No se ha seleccionado una ubicación");
             }else{
@@ -665,19 +682,7 @@ export class Locations {
               //console.log(hourEnd)
               const minEnd = parseInt(timeEnd[1].trim());
               //console.log(minEnd)
-              let raw = JSON.stringify({
-                  // @ts-ignore
-                  "name": `${$value.name.value}`,
-                  // @ts-ignore
-                  "cords": `${$value.cords.value}`,
-                  "latitude": `${latitud}`,
-                  "longitude": `${longitud}`,
-                  "scheduleTime": `${$value.scheduleTime.value}`,
-                  "scheduleTimeEnd": `${$value.scheduleTimeEnd.value}`,
-                  // @ts-ignore
-                  "distance": `${$value.distance.value}`,
-                  "frequency": `${$value.frequency.value}`,
-              });
+
               if($value.name.value == "" || $value.name.value == undefined){
                 alert("Nombre de Ubicación vacía");
               }else if($value.distance.value == "" || $value.distance.value == undefined || $value.distance.value < 0){
@@ -685,7 +690,35 @@ export class Locations {
               }else if(hourIni == hourEnd && minIni > minEnd){
                 alert("Minutos iniciales no pueden ser mayores a las del final en horas iguales.");
               }else{
-                update(raw);
+                updateButton.disabled = true;
+                const originalText = updateButton.innerText;
+                updateButton.innerText = "Actualizando...";
+
+                try {
+                  let raw = JSON.stringify({
+                      // @ts-ignore
+                      "name": `${$value.name.value}`,
+                      // @ts-ignore
+                      "cords": `${$value.cords.value}`,
+                      "latitude": `${latitud}`,
+                      "longitude": `${longitud}`,
+                      "scheduleTime": `${$value.scheduleTime.value}`,
+                      "scheduleTimeEnd": `${$value.scheduleTimeEnd.value}`,
+                      // @ts-ignore
+                      "distance": `${$value.distance.value}`,
+                      "frequency": `${$value.frequency.value}`,
+                  });
+                  await updateEntity('RoutineSchedule', entityId, raw);
+                  await generateRoutineTimes(entityId);
+                  let container = document.getElementById('entity-editor-container');
+                  new CloseDialog().x(container);
+                  new Locations().render(infoPage.offset, infoPage.currentPage, infoPage.search, routine.id);
+                } catch (err) {
+                  console.error(err);
+                  alert("Error al actualizar ubicación: " + (err.message || err));
+                  updateButton.disabled = false;
+                  updateButton.innerText = originalText;
+                }
               }
             }
           });
@@ -707,25 +740,6 @@ export class Locations {
                 }
                 });
             });*/
-          const update = (raw) => {
-            updateEntity('RoutineSchedule', entityId, raw)
-                .then((res) => {
-                setTimeout(async () => {
-                    if($value.frequency.value != data.frequency || $value.scheduleTime.value != data?.scheduleTime || $value.scheduleTimeEnd.value != data?.scheduleTimeEnd)
-                      createRoutines('UPD', routine.id, entityId);
-                    let tableBody;
-                    let container;
-                    //let data;
-                    //data = await getLocations();
-                    new CloseDialog()
-                        .x(container =
-                        document.getElementById('entity-editor-container'));
-                    new Locations().render(infoPage.offset, infoPage.currentPage, infoPage.search, routine.id);
-                    //new Locations().load(tableBody
-                    //    = document.getElementById('datatable-body'), currentPage, data);
-                }, 100);
-            });
-        };
       };
       /*async function initAutocomplete(lat, lng, zoom, data) {
         //var map = new google.maps.Map(document.getElementById('map'), {
@@ -801,48 +815,7 @@ export class Locations {
             }
         } */
   }
-    remove() {
-        const remove = document.querySelectorAll('#remove-entity');
-        remove.forEach((remove) => {
-            const entityId = remove.dataset.entityid;
-            remove.addEventListener('click', () => {
-                this.dialogContainer.style.display = 'flex';
-                this.dialogContainer.innerHTML = `
-          <div class="dialog_content" id="dialog-content">
-            <div class="dialog dialog_danger">
-              <div class="dialog_container">
-                <div class="dialog_header">
-                  <h2>¿Deseas eliminar esta Ubicación?</h2>
-                </div>
-                <div class="dialog_message">
-                  <p>Esta acción no se puede revertir</p>
-                </div>
-                <div class="dialog_footer">
-                  <button class="btn btn_primary" id="cancel">Cancelar</button>
-                  <button class="btn btn_danger" id="delete">Eliminar</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-                // delete button
-                // cancel button
-                // dialog content
-                const deleteButton = document.getElementById('delete');
-                const cancelButton = document.getElementById('cancel');
-                const dialogContent = document.getElementById('dialog-content');
-                deleteButton.onclick = async () => {
-                    createRoutines('DLT', null, entityId);
-                    deleteEntity('RoutineSchedule', entityId)
-                        .then(res => new Locations().render(infoPage.offset, infoPage.currentPage, infoPage.search, routine.id));
-                    new CloseDialog().x(dialogContent);
-                };
-                cancelButton.onclick = () => {
-                    new CloseDialog().x(dialogContent);
-                };
-            });
-        });
-    }
+
     selectModal() {
       // register entity
       const view = document.querySelectorAll('#view-entity');
@@ -1011,231 +984,3 @@ const agregarCero = (valor) => {
   valor < 10 ? valor = "0"+valor : valor;
   return valor;
 }
-
-const createRoutines = async (mode, routineId, scheduleId) => {
-  const insertTimes = (ubications) => {
-    const schedules = calculoTimes(ubications);
-    //console.log(schedules);
-    schedules.forEach(async (schedule) => {
-      const raw = JSON.stringify({ 
-        "business": {
-            "id": `${ubications.business.id}`
-        },                 
-        "customer": {
-            "id": `${customerId}`
-        },
-        "routine": {
-          "id": `${routineId}`
-        },
-        "routineSchedule": {
-          "id": `${ubications.id}`
-        },
-        'routineTimePoint': `${schedule}`
-      });
-      registerEntity(raw, 'RoutineTime');
-    });
-    
-  }
-
-  const deleteTimes = (times) => {
-    for(let i=0; i<times.length; i++){
-      deleteEntity('RoutineTime', times[i].id);
-    }
-  }
-
-  const calculoTimes = (ubications) => {
-    let timesResults = [];
-    const timeIni = ubications.scheduleTime.split(":");
-    const timeEnd = ubications.scheduleTimeEnd.split(":");
-    timesResults.push(ubications.scheduleTime);
-    let minAdd = timeIni[1];
-    let minRest = 0;
-    let hourAdd = 0;
-    let validators; 
-    let releaseHour = false;
-    let releaseMin = false;
-    let exceed = false;
-    let i = 0;
-    do {
-      minAdd = parseInt(minAdd) + ubications.frequency;
-      //console.log(timesResults)
-      if(exceed){
-        releaseHour = true;
-        releaseMin = true;
-      }else{
-        validators = timesResults[i].split(":");
-        if(((equivalentTime(timeEnd[0]) == equivalentTime(validators[0])) && releaseHour == false)){
-          releaseHour = true;
-        }
-      }
-
-      if(releaseHour == true && (minAdd > parseInt(timeEnd[1]))){
-        releaseMin = true;
-      }else{
-        if(parseInt(minAdd) > 59){
-          if(ubications.frequency <= 60){
-            minRest = minAdd - 60; //minutos restantes
-            hourAdd += 1;
-            minAdd = minRest;
-
-            if((parseInt(timeIni[0]) + hourAdd) > 24){
-
-              if(((parseInt(timeIni[0]) + hourAdd)-24)==parseInt(timeEnd[0]) && minRest > parseInt(timeEnd[1])){
-                exceed = true;
-              }else{
-                timesResults.push(agregarCero((parseInt(timeIni[0]) + hourAdd)-24)+":"+agregarCero(minRest)+":00");
-              }
-              
-              
-            }else if((parseInt(timeIni[0]) + hourAdd) == 24){
-              
-              if((equivalentTime(parseInt(timeIni[0]) + hourAdd))==parseInt(timeEnd[0]) && minRest > parseInt(timeEnd[1])){
-                exceed = true;
-              }else{
-                timesResults.push(agregarCero(equivalentTime(parseInt(timeIni[0]) + hourAdd))+":"+agregarCero(minRest)+":00");
-              }
-            
-            }else{
-  
-              if((parseInt(timeIni[0]) + hourAdd)==parseInt(timeEnd[0]) && minRest > parseInt(timeEnd[1])){
-                exceed = true;
-              }else{
-                timesResults.push(agregarCero(parseInt(timeIni[0]) + hourAdd)+":"+agregarCero(minRest)+":00");
-              }
-              
-            }
-          }else{
-            console.log(minRest);
-            minRest = minAdd - 120; //minutos restantes
-            hourAdd += 2;
-            minAdd = minRest;
-
-            if((parseInt(timeIni[0]) + hourAdd) > 24){
-              if(((parseInt(timeIni[0]) + hourAdd)-24)>parseInt(timeEnd[0]) || (((parseInt(timeIni[0]) + hourAdd)-24)==parseInt(timeEnd[0]) && minRest > parseInt(timeEnd[1]))){
-                exceed = true;
-              }else{
-                timesResults.push(agregarCero((parseInt(timeIni[0]) + hourAdd)-24)+":"+agregarCero(minRest)+":00");
-              }
-              
-            }else if((parseInt(timeIni[0]) + hourAdd) == 24){
-              if(parseInt(timeIni[0])<parseInt(timeEnd[0])){
-                if((equivalentTime(parseInt(timeIni[0]) + hourAdd))<parseInt(timeEnd[0]) || (equivalentTime(parseInt(timeIni[0]) + hourAdd))==parseInt(timeEnd[0]) && minRest > parseInt(timeEnd[1])){
-                  exceed = true;
-                }else{
-                  timesResults.push(agregarCero(equivalentTime(parseInt(timeIni[0]) + hourAdd))+":"+agregarCero(minRest)+":00");
-                }
-              }else{
-                if((equivalentTime(parseInt(timeIni[0]) + hourAdd))>parseInt(timeEnd[0]) || (equivalentTime(parseInt(timeIni[0]) + hourAdd))==parseInt(timeEnd[0]) && minRest > parseInt(timeEnd[1])){
-                  exceed = true;
-                }else{
-                  timesResults.push(agregarCero(equivalentTime(parseInt(timeIni[0]) + hourAdd))+":"+agregarCero(minRest)+":00");
-                }
-              }
-            }else{
-              //console.log((parseInt(timeIni[0]) + hourAdd));
-              if(parseInt(timeIni[0])>parseInt(timeEnd[0])){
-                if((parseInt(timeIni[0]) + hourAdd)<parseInt(timeEnd[0]) || ((parseInt(timeIni[0]) + hourAdd)==parseInt(timeEnd[0]) && minRest > parseInt(timeEnd[1]))){
-                  exceed = true;
-                }else{
-                  timesResults.push(agregarCero(parseInt(timeIni[0]) + hourAdd)+":"+agregarCero(minRest)+":00");
-                }
-              }else{
-                if((parseInt(timeIni[0]) + hourAdd)>parseInt(timeEnd[0]) || ((parseInt(timeIni[0]) + hourAdd)==parseInt(timeEnd[0]) && minRest > parseInt(timeEnd[1]))){
-                  exceed = true;
-                }else{
-                  timesResults.push(agregarCero(parseInt(timeIni[0]) + hourAdd)+":"+agregarCero(minRest)+":00");
-                }
-              }
-            }
-          }
-
-        }else{
-          if((parseInt(timeIni[0]) + hourAdd) > 24){
-
-            if(((parseInt(timeIni[0]) + hourAdd)-24)==parseInt(timeEnd[0]) && minAdd > parseInt(timeEnd[1])){
-              exceed = true;
-            }else{
-              timesResults.push(agregarCero((parseInt(timeIni[0]) + hourAdd)-24)+":"+agregarCero(minAdd)+":00");
-            }
-          }else if((parseInt(timeIni[0]) + hourAdd) == 24){
-
-            if((equivalentTime(parseInt(timeIni[0]) + hourAdd))==parseInt(timeEnd[0]) && minAdd > parseInt(timeEnd[1])){
-              exceed = true;
-            }else{
-              timesResults.push(agregarCero(equivalentTime(parseInt(timeIni[0]) + hourAdd))+":"+agregarCero(minAdd)+":00");
-            }
-            
-          }else{
-
-            if((parseInt(timeIni[0]) + hourAdd)==parseInt(timeEnd[0]) && minAdd > parseInt(timeEnd[1])){
-              exceed = true;
-            }else{
-              timesResults.push(agregarCero(parseInt(timeIni[0]) + hourAdd)+":"+agregarCero(minAdd)+":00");;
-            }
-          }
-        }
-        i+=1;
-      }
-      
-    } while (releaseMin != true);
-    return timesResults;
-  }
-
-  if(mode == 'INS'){
-    let data = await getDetails("routine.id", routineId, "RoutineSchedule");
-    data.forEach(async (ubications) => {
-      let raw = JSON.stringify({
-        "filter": {
-            "conditions": [
-                {
-                  "property": "routineSchedule.id",
-                  "operator": "=",
-                  "value": `${ubications.id}`
-                },
-            ],
-        },
-        sort: "-createdDate",
-      });
-      let times = await getFilterEntityData("RoutineTime", raw);
-      if(times != undefined && times.length == 0){
-        insertTimes(ubications);
-      }
-    });
-  }else if(mode == 'UPD'){
-    const data = await getEntityData("RoutineSchedule", scheduleId);
-    let raw = JSON.stringify({
-      "filter": {
-          "conditions": [
-              {
-                "property": "routineSchedule.id",
-                "operator": "=",
-                "value": `${scheduleId}`
-              },
-          ],
-      },
-      sort: "-createdDate",
-    });
-    let times = await getFilterEntityData("RoutineTime", raw);
-    if(times != undefined && times.length != 0){
-      deleteTimes(times);
-      insertTimes(data);
-    }
-  }else if(mode == 'DLT'){
-    let raw = JSON.stringify({
-      "filter": {
-          "conditions": [
-              {
-                "property": "routineSchedule.id",
-                "operator": "=",
-                "value": `${scheduleId}`
-              },
-          ],
-      },
-      sort: "-createdDate",
-    });
-    let times = await getFilterEntityData("RoutineTime", raw);
-    if(times != undefined && times.length != 0){
-      deleteTimes(times);
-    }
-  }
-};

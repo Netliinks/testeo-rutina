@@ -264,6 +264,7 @@ export class Departments {
         const reg = async (raw) => {
         };
     }
+
     close() {
         const closeButton = document.getElementById('close');
         const editor = document.getElementById('entity-editor-container');

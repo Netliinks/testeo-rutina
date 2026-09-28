@@ -131,17 +131,18 @@ export class Procedures {
         let procedure = paginatedItems[i];
         let row = document.createElement('tr');
         row.innerHTML += `
-          <td>${procedure.name}</dt>
+          <td>${procedure.name}</td>
           <td>
           
 
             <button class="button download-file" id="download-file" data-entityId="${procedure.name}%${procedure.file}">
             <i class="fa-solid fa-download"></i>
             </button>
-          </dt>
+          </td>
           
           <td class="entity_options">
-          </dt>
+
+          </td>
         `;
         table.appendChild(row);
       }
