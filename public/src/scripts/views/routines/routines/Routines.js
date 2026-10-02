@@ -284,7 +284,7 @@ export class Routines {
           ]
         },
         sort: "-createdDate",
-        limit: 100,
+        //limit: 100,
         fetchPlan: 'full'
       });
       schedules = await getFilterEntityData("RoutineSchedule", rawSchedules) || [];
@@ -298,7 +298,7 @@ export class Routines {
           ]
         },
         sort: "-createdDate",
-        limit: 100,
+        //limit: 100,
         fetchPlan: 'full'
       });
       guards = await getFilterEntityData("RoutineUser", rawUsers) || [];
@@ -1042,7 +1042,7 @@ export class Routines {
         <div class="ng-container" style="max-width:900px; margin:0 auto;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
             <h1 style="font-size:1.4rem; font-weight:800; color:var(--ng-primary); margin:0;">
-              Wizard de Creación de Rutina Unificada
+              Creación de Rutina Unificada
             </h1>
             <button class="ng-btn ng-btn-secondary" id="wizard-cancel-btn">Cancelar</button>
           </div>
@@ -1342,7 +1342,7 @@ export class Routines {
             ]
           },
           sort: "+username",
-          limit: 50,
+          //limit: 50,
           fetchPlan: 'full'
         });
 
@@ -1364,7 +1364,7 @@ export class Routines {
               ]
             },
             sort: "+username",
-            limit: 50,
+            //limit: 50,
             fetchPlan: 'full'
           });
         }
