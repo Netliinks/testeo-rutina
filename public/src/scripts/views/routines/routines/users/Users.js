@@ -4,6 +4,7 @@ import { inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNu
 import { Config } from "../../../../Configs.js";
 import { tableLayout } from "./Layout.js";
 import { tableLayoutTemplate } from "./Template.js";
+import { Routines } from "../Routines.js";
 const tableRows = Config.tableRows;
 const currentPage = Config.currentPage;
 const customerId = localStorage.getItem('customer_id');
@@ -225,7 +226,10 @@ export class RoutineUsers {
         tableBody.innerHTML = tableLayoutTemplate.repeat(tableRows);
         this.load(tableBody, currentPage, data);
         this.searchEntity(tableBody /*, data*/);
-        document.getElementById('export-routine-users').addEventListener('click', () => exportUsers(routine.id));
+        document.getElementById('export-routine-users')?.addEventListener('click', () => exportUsers(routine.id));
+        document.getElementById('btnBack')?.addEventListener('click', () => {
+          new Routines().renderDetail(routineId);
+        });
         new filterDataByHeaderType().filter();
         this.pagination(data, tableRows, infoPage.currentPage);
     }

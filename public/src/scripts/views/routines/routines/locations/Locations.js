@@ -4,6 +4,7 @@ import { inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNu
 import { Config } from "../../../../Configs.js";
 import { tableLayout } from "./Layout.js";
 import { tableLayoutTemplate } from "./Template.js";
+import { Routines } from "../Routines.js";
 const tableRows = Config.tableRows;
 const currentPage = Config.currentPage;
 const customerId = localStorage.getItem('customer_id');
@@ -122,6 +123,9 @@ export class Locations {
         tableBody.innerHTML = tableLayoutTemplate.repeat(tableRows);
         this.load(tableBody, currentPage, data);
         this.searchEntity(tableBody /*, data*/);
+        document.getElementById('btnBack')?.addEventListener('click', () => {
+          new Routines().renderDetail(routineId);
+        });
         new filterDataByHeaderType().filter();
         this.pagination(data, tableRows, infoPage.currentPage);
     }
@@ -326,10 +330,12 @@ export class Locations {
                       <option value="30">30</option>
                       <option value="60">60</option>
                       <option value="120">120</option>
+                      <option value="180">180</option>
+                      <option value="240">240</option>
                   </select>
                 </div>
             </div>    
-          <!-- </div>
+          <!-- </div> -->
         </div> -->
             
             
@@ -598,6 +604,8 @@ export class Locations {
                         <option value="30">30</option>
                         <option value="60">60</option>
                         <option value="120">120</option>
+                        <option value="180">180</option>
+                        <option value="240">240</option>
                     </select>
                   </div>
               </div>

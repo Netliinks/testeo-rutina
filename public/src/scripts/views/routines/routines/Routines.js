@@ -1,14 +1,14 @@
 // @filename: Routines.ts
-import { registerEntity, getUserInfo, getEntityData, updateEntity, getFilterEntityData, getFilterEntityCount, deleteEntity, getFile, sendMail2 } from "../../../endpoints.js";
-import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, getDetails, generateFileSimpleXls, generateRoutineReportXlsx, sleep } from "../../../tools.js";
+import { registerEntity, getUserInfo, getEntityData, updateEntity, getFilterEntityData, getFilterEntityCount, deleteEntity, getFile, sendMail2, generateRoutineTimes } from "../../../endpoints.js";
+import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, getDetails, getDetails2, generateFileSimpleXls, generateRoutineReportXlsx, sleep, equivalentTime } from "../../../tools.js";
 import { Config } from "../../../Configs.js";
 import { tableLayout } from "./Layout.js";
 import { tableLayoutTemplate } from "./Template.js";
 import { Locations } from "../routines/locations/Locations.js";
 import { RoutineUsers } from "../routines/users/Users.js";
 import { exportRoutinePdf, exportRoutinePdf2 } from "../../../exportFiles/extraRoutine.js";
+
 const tableRows = Config.tableRows;
-const hiddenRoutineExportFields = new Set(['inicio', 'fin', 'imagen', 'imageTag', 'cords', 'intervaloInicio', 'intervaloFin', 'fechaObjetivo', 'horaObjetivo']);
 const currentPage = Config.currentPage;
 const customerId = localStorage.getItem('customer_id');
 let infoPage = {
@@ -18,444 +18,1495 @@ let infoPage = {
   search: ""
 };
 
+const currentBusiness = async () => {
+  const currentUser = await getUserInfo();
+  const userid = await getEntityData('User', `${currentUser.attributes.id}`);
+  return userid;
+};
+
 const getRoutines = async () => {
-    let raw = JSON.stringify({
+  let raw = JSON.stringify({
+    "filter": {
+      "conditions": [
+        {
+          "property": "customer.id",
+          "operator": "=",
+          "value": `${customerId}`
+        }
+      ],
+    },
+    sort: "-createdDate",
+    limit: Config.tableRows,
+    offset: infoPage.offset,
+    fetchPlan: 'full',
+  });
+  if (infoPage.search != "") {
+    raw = JSON.stringify({
       "filter": {
-          "conditions": [
+        "conditions": [
+          {
+            "group": "OR",
+            "conditions": [
               {
-                "property": "customer.id",
-                "operator": "=",
-                "value": `${customerId}`
+                "property": "name",
+                "operator": "contains",
+                "value": `${infoPage.search.toLowerCase()}`
               }
-          ],
+            ]
+          },
+          {
+            "property": "customer.id",
+            "operator": "=",
+            "value": `${customerId}`
+          }
+        ]
       },
       sort: "-createdDate",
       limit: Config.tableRows,
       offset: infoPage.offset,
       fetchPlan: 'full',
-  });
-  if (infoPage.search != "") {
-    raw = JSON.stringify({
-        "filter": {
-            "conditions": [
-                {
-                    "group": "OR",
-                    "conditions": [
-                        {
-                            "property": "name",
-                            "operator": "contains",
-                            "value": `${infoPage.search.toLowerCase()}`
-                        }
-                    ]
-                },
-                {
-                  "property": "customer.id",
-                  "operator": "=",
-                  "value": `${customerId}`
-                }
-            ]
-        },
-        sort: "-createdDate",
-        limit: Config.tableRows,
-        offset: infoPage.offset,
-        fetchPlan: 'full',
     });
-}
+  }
   infoPage.count = await getFilterEntityCount("Routine", raw);
   return await getFilterEntityData("Routine", raw);
 };
+
+const formatDayPills = (weekDayStr) => {
+  const daysMap = [
+    { label: 'L', key: 'LUNES' },
+    { label: 'M', key: 'MARTES' },
+    { label: 'X', key: 'MIERCOLES' },
+    { label: 'J', key: 'JUEVES' },
+    { label: 'V', key: 'VIERNES' },
+    { label: 'S', key: 'SABADO' },
+    { label: 'D', key: 'DOMINGO' }
+  ];
+  const activeDays = weekDayStr ? weekDayStr.toUpperCase() : 'LUNES, MARTES, MIERCOLES, JUEVES, VIERNES, SABADO, DOMINGO';
+  return `<div style="display:inline-flex; gap:4px; align-items:center;">
+    ${daysMap.map(d => {
+      const isActive = activeDays.includes(d.key);
+      return `<span class="ng-day-pill ${isActive ? 'active' : 'inactive'}">${d.label}</span>`;
+    }).join('')}
+  </div>`;
+};
+
 export class Routines {
-    constructor() {
-        this.dialogContainer = document.getElementById('app-dialogs');
-        this.entityDialogContainer = document.getElementById('entity-editor-container');
-        this.content = document.getElementById('datatable-container');
-        this.searchEntity = async (tableBody /*, data*/) => {
-            const search = document.getElementById('search');
-            const btnSearch = document.getElementById('btnSearch');
-            search.value = infoPage.search;
-            await search.addEventListener('keyup', () => {
-                /*const arrayData = data.filter((data) => `${data.name}
-                 ${data.ruc}`
-                    .toLowerCase()
-                    .includes(search.value.toLowerCase()));
-                let filteredResult = arrayData.length;
-                let result = arrayData;
-                if (filteredResult >= tableRows)
-                    filteredResult = tableRows;
-                this.load(tableBody, currentPage, result);
-                this.pagination(result, tableRows, currentPage);*/
-            });
-            btnSearch.addEventListener('click', async () => {
-              new Routines().render(Config.offset, Config.currentPage, search.value.toLowerCase().trim());
-          });
-        };
+  constructor() {
+    this.dialogContainer = document.getElementById('app-dialogs');
+    this.entityDialogContainer = document.getElementById('entity-editor-container');
+    this.content = document.getElementById('datatable-container');
+
+    this.searchEntity = async (tableBody) => {
+      const search = document.getElementById('search');
+      const btnSearch = document.getElementById('btnSearch');
+      if (search) {
+        search.value = infoPage.search;
+        btnSearch?.addEventListener('click', async () => {
+          new Routines().render(Config.offset, Config.currentPage, search.value.toLowerCase().trim());
+        });
+      }
+    };
+  }
+
+  async render(offset, actualPage, search) {
+    infoPage.offset = offset;
+    infoPage.currentPage = actualPage;
+    infoPage.search = search;
+    this.content.innerHTML = '';
+    this.content.innerHTML = tableLayout;
+    const tableBody = document.getElementById('datatable-body');
+    tableBody.innerHTML = '.Cargando...';
+    let data = await getRoutines();
+    tableBody.innerHTML = tableLayoutTemplate.repeat(tableRows);
+    this.load(tableBody, currentPage, data);
+    this.searchEntity(tableBody);
+    new filterDataByHeaderType().filter();
+    this.pagination(data, tableRows, infoPage.currentPage);
+
+    // Bind New Routine wizard button
+    const btnNewRoutine = document.getElementById('new-entity');
+    if (btnNewRoutine) {
+      btnNewRoutine.onclick = () => this.renderWizard();
     }
-    async render(offset, actualPage, search) {
-        infoPage.offset = offset;
-        infoPage.currentPage = actualPage;
-        infoPage.search = search;
-        this.content.innerHTML = '';
-        this.content.innerHTML = tableLayout;
-        const tableBody = document.getElementById('datatable-body');
-        tableBody.innerHTML = '.Cargando...';
-        let data = await getRoutines();
-        tableBody.innerHTML = tableLayoutTemplate.repeat(tableRows);
-        this.load(tableBody, currentPage, data);
-        this.searchEntity(tableBody /*, data*/);
-        new filterDataByHeaderType().filter();
-        this.pagination(data, tableRows, infoPage.currentPage);
-    }
-    load(table, currentPage, data) {
-        table.innerHTML = '';
-        currentPage--;
-        let start = tableRows * currentPage;
-        let end = start + tableRows;
-        let paginatedItems = data.slice(start, end);
-        if (data.length === 0) {
-            let mensaje = 'No existen datos';
-            if(customerId == null){mensaje = 'Seleccione una empresa';}
-            let row = document.createElement('tr');
-            row.innerHTML = `
+  }
+
+  load(table, currentPage, data) {
+    table.innerHTML = '';
+    currentPage--;
+    let start = tableRows * currentPage;
+    let end = start + tableRows;
+    let paginatedItems = data.slice(start, end);
+    if (data.length === 0) {
+      let mensaje = 'No existen datos';
+      if (customerId == null) { mensaje = 'Seleccione una empresa'; }
+      let row = document.createElement('tr');
+      row.innerHTML = `
         <td>${mensaje}</td>
         <td></td>
         <td></td>
       `;
-            table.appendChild(row);
-        }
-        else {
-            for (let i = 0; i < paginatedItems.length; i++) {
-                let routine = paginatedItems[i];
-                let row = document.createElement('tr');
-                if(routine.customer.id == "2dd22d6d-a61f-5a11-b9ad-b1afc0dc1603" || routine.customer.id == "c7afa17d-0544-7351-f50f-b5630a6a93c7"){
-                  row.innerHTML += `
-                    <td>${routine?.name ?? ''}</dt>
-                    <td>${routine?.isActive ? 'Sí' : 'No'}</dt>
-                    <td>${routine?.checkLocation ? 'Sí' : 'No'}</dt>
-                    <td class="entity_options">
-                        <button class="button" id="edit-entity" data-entityId="${routine.id}">
-                          <i class="fa-solid fa-pen"></i>
-                        </button>
+      table.appendChild(row);
+    } else {
+      for (let i = 0; i < paginatedItems.length; i++) {
+        let routine = paginatedItems[i];
+        let row = document.createElement('tr');
+        const activeBadge = routine?.isActive
+          ? `<span class="ng-badge ng-badge-ok"><i class="fa-solid fa-circle" style="font-size:6px; margin-right:4px;"></i> ACTIVO</span>`
+          : `<span class="ng-badge ng-badge-bad"><i class="fa-solid fa-circle" style="font-size:6px; margin-right:4px;"></i> INACTIVO</span>`;
 
-                        <button class="button" id="location-entity" data-entityId="${routine.id}">
-                          <i class="fa-solid fa-map-location"></i>
-                        </button>
+        const locationBadge = routine?.checkLocation
+          ? `<span class="ng-badge ng-badge-info"><i class="fa-solid fa-location-crosshairs" style="margin-right:4px;"></i> VÁLIDA UBICACIÓN</span>`
+          : `<span class="ng-badge ng-badge-neu">SIN VALIDAR</span>`;
 
-                        <button class="button" id="guard-entity" data-entityId="${routine.id}">
-                          <i class="fa-solid fa-user-police"></i>
-                        </button>
+        row.innerHTML = `
+          <td>
+            <strong style="color:var(--ng-primary); font-size:14px;">${routine?.name ?? ''}</strong>
+            <br>
+            <small style="font-family:monospace; color:#64748b; font-size:11px;">ID: ${routine?.id ?? ''}</small>
+          </td>
+          <td>${activeBadge}</td>
+          <td>${locationBadge}</td>
+          <td class="entity_options">
+              <button class="ng-btn ng-btn-secondary" id="detail-entity" data-entityId="${routine.id}" title="Ver detalle unificado">
+                <i class="fa-solid fa-eye"></i> Ver detalle
+              </button>
 
-                        <button class="button" id="export2-entity" data-entityId="${routine.id}" title="Exportar registros">
-                    <i class="fa-solid fa-file-export"></i>
-                </button>
-                    </dt>
-                  `;
-                }else{
-                  row.innerHTML += `
-                    <td>${routine?.name ?? ''}</dt>
-                    <td>${routine?.isActive ? 'Sí' : 'No'}</dt>
-                    <td>${routine?.checkLocation ? 'Sí' : 'No'}</dt>
-                    <td class="entity_options">
-                        <button class="button" id="edit-entity" data-entityId="${routine.id}">
-                          <i class="fa-solid fa-pen"></i>
-                        </button>
+              <button class="button" id="edit-entity" data-entityId="${routine.id}" title="Editar rutina">
+                <i class="fa-solid fa-pen"></i>
+              </button>
 
-                        <button class="button" id="location-entity" data-entityId="${routine.id}">
-                          <i class="fa-solid fa-map-location"></i>
-                        </button>
-
-                        <button class="button" id="guard-entity" data-entityId="${routine.id}">
-                          <i class="fa-solid fa-user-police"></i>
-                        </button>
-
-                        <button class="button" id="export2-entity" data-entityId="${routine.id}">
-                          <i class="fa-solid fa-file-pdf"></i>
-                        </button>
-                    </dt>
-                  `;
-                  
-                }
-                table.appendChild(row);
-                drawTagsIntoTables();
-            }
-        }
-        this.register();
-        this.ex();
-        this.export2();
-        this.location();
-        this.assignGuard();
-        this.edit(this.entityDialogContainer, data);
+              <button class="button" id="export2-entity" data-entityId="${routine.id}" title="Exportar reportes">
+                <i class="fa-solid fa-file-export"></i>
+              </button>
+          </td>
+        `;
+        table.appendChild(row);
+      }
     }
-    pagination(items, limitRows, currentPage) {
-      const tableBody = document.getElementById('datatable-body');
-      const paginationWrapper = document.getElementById('pagination-container');
+    this.bindDetailEvents();
+    this.register();
+    this.ex();
+    this.export2();
+    this.edit(this.entityDialogContainer, data);
+  }
+
+  bindDetailEvents() {
+    const detailBtns = document.querySelectorAll('#detail-entity');
+    detailBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const entityId = btn.dataset.entityid;
+        this.renderDetail(entityId, 'list');
+      });
+    });
+  }
+
+  pagination(items, limitRows, currentPage) {
+    const paginationWrapper = document.getElementById('pagination-container');
+    if (!paginationWrapper) return;
+    paginationWrapper.innerHTML = '';
+    let pageCount = Math.ceil(infoPage.count / limitRows);
+    let button;
+    if (pageCount <= Config.maxLimitPage) {
+      for (let i = 1; i < pageCount + 1; i++) {
+        button = setupButtons(i);
+        paginationWrapper.appendChild(button);
+      }
+      fillBtnPagination(currentPage, Config.colorPagination);
+    } else {
+      pagesOptions(items, currentPage);
+    }
+
+    function setupButtons(page) {
+      const button = document.createElement('button');
+      button.classList.add('pagination_button');
+      button.setAttribute("name", "pagination-button");
+      button.setAttribute("id", "btnPag" + page);
+      button.innerText = page;
+      button.addEventListener('click', () => {
+        infoPage.offset = Config.tableRows * (page - 1);
+        currentPage = page;
+        new Routines().render(infoPage.offset, currentPage, infoPage.search);
+      });
+      return button;
+    }
+
+    function pagesOptions(items, currentPage) {
       paginationWrapper.innerHTML = '';
-      let pageCount;
-      pageCount = Math.ceil(infoPage.count / limitRows);
-      let button;
-      if (pageCount <= Config.maxLimitPage) {
-          for (let i = 1; i < pageCount + 1; i++) {
-              button = setupButtons(i /*, items, currentPage, tableBody, limitRows*/);
-              paginationWrapper.appendChild(button);
-          }
-          fillBtnPagination(currentPage, Config.colorPagination);
+      let pages = pageNumbers(items, Config.maxLimitPage, currentPage);
+      const prevButton = document.createElement('button');
+      prevButton.classList.add('pagination_button');
+      prevButton.innerText = "<<";
+      paginationWrapper.appendChild(prevButton);
+      const nextButton = document.createElement('button');
+      nextButton.classList.add('pagination_button');
+      nextButton.innerText = ">>";
+      for (let i = 0; i < pages.length; i++) {
+        if (pages[i] > 0 && pages[i] <= pageCount) {
+          button = setupButtons(pages[i]);
+          paginationWrapper.appendChild(button);
+        }
       }
-      else {
-          pagesOptions(items, currentPage);
-      }
-      function setupButtons(page /*, items, currentPage, tableBody, limitRows*/) {
-          const button = document.createElement('button');
-          button.classList.add('pagination_button');
-          button.setAttribute("name", "pagination-button");
-          button.setAttribute("id", "btnPag" + page);
-          button.innerText = page;
-          button.addEventListener('click', () => {
-              infoPage.offset = Config.tableRows * (page - 1);
-              currentPage = page;
-              new Routines().render(infoPage.offset, currentPage, infoPage.search);
-          });
-          return button;
-      }
-      function pagesOptions(items, currentPage) {
-          paginationWrapper.innerHTML = '';
-          let pages = pageNumbers(items, Config.maxLimitPage, currentPage);
-          const prevButton = document.createElement('button');
-          prevButton.classList.add('pagination_button');
-          prevButton.innerText = "<<";
-          paginationWrapper.appendChild(prevButton);
-          const nextButton = document.createElement('button');
-          nextButton.classList.add('pagination_button');
-          nextButton.innerText = ">>";
-          for (let i = 0; i < pages.length; i++) {
-              if (pages[i] > 0 && pages[i] <= pageCount) {
-                  button = setupButtons(pages[i]);
-                  paginationWrapper.appendChild(button);
-              }
-          }
-          paginationWrapper.appendChild(nextButton);
-          fillBtnPagination(currentPage, Config.colorPagination);
-          setupButtonsEvents(prevButton, nextButton);
-      }
-      function setupButtonsEvents(prevButton, nextButton) {
-          prevButton.addEventListener('click', () => {
-            new Routines().render(Config.offset, Config.currentPage, infoPage.search);
-          });
-          nextButton.addEventListener('click', () => {
-            infoPage.offset = Config.tableRows * (pageCount - 1);
-            new Routines().render(infoPage.offset, pageCount, infoPage.search);
-          });
-      }
+      paginationWrapper.appendChild(nextButton);
+      fillBtnPagination(currentPage, Config.colorPagination);
+      setupButtonsEvents(prevButton, nextButton);
     }
-    register() {
-        // register entity
-        const openEditor = document.getElementById('new-entity');
-        openEditor.addEventListener('click', () => {
-            renderInterface();
+
+    function setupButtonsEvents(prevButton, nextButton) {
+      prevButton.addEventListener('click', () => {
+        new Routines().render(Config.offset, Config.currentPage, infoPage.search);
+      });
+      nextButton.addEventListener('click', () => {
+        infoPage.offset = Config.tableRows * (pageCount - 1);
+        new Routines().render(infoPage.offset, pageCount, infoPage.search);
+      });
+    }
+  }
+
+  // =========================================================================
+  // VISTA DE DETALLE UNIFICADA (NTL-155)
+  // =========================================================================
+  async renderDetail(routineId, source = 'list') {
+    this.content.innerHTML = `<div class="ng-container" style="text-align:center; padding:40px;"><i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--ng-primary);"></i><p style="margin-top:12px; font-weight:600;">Cargando detalle de rutina...</p></div>`;
+
+    let routine;
+    let schedules = [];
+    let guards = [];
+
+    try {
+      routine = await getEntityData("Routine", routineId);
+
+      // Fetch RoutineSchedules
+      const rawSchedules = JSON.stringify({
+        "filter": {
+          "conditions": [
+            { "property": "customer.id", "operator": "=", "value": `${customerId}` },
+            { "property": "routine.id", "operator": "=", "value": `${routineId}` }
+          ]
+        },
+        sort: "-createdDate",
+        limit: 100,
+        fetchPlan: 'full'
+      });
+      schedules = await getFilterEntityData("RoutineSchedule", rawSchedules) || [];
+
+      // Fetch RoutineUsers
+      const rawUsers = JSON.stringify({
+        "filter": {
+          "conditions": [
+            { "property": "customer.id", "operator": "=", "value": `${customerId}` },
+            { "property": "routine.id", "operator": "=", "value": `${routineId}` }
+          ]
+        },
+        sort: "-createdDate",
+        limit: 100,
+        fetchPlan: 'full'
+      });
+      guards = await getFilterEntityData("RoutineUser", rawUsers) || [];
+    } catch (err) {
+      console.error("Error al cargar detalle de rutina:", err);
+      alert("No se pudieron obtener los datos completos de la rutina.");
+      return this.render(infoPage.offset, infoPage.currentPage, infoPage.search);
+    }
+
+    const activeBadge = routine?.isActive
+      ? `<span class="ng-badge ng-badge-ok"><i class="fa-solid fa-circle" style="font-size:6px; margin-right:4px;"></i> ACTIVO</span>`
+      : `<span class="ng-badge ng-badge-bad"><i class="fa-solid fa-circle" style="font-size:6px; margin-right:4px;"></i> INACTIVO</span>`;
+
+    const locationBadge = routine?.checkLocation
+      ? `<span class="ng-badge ng-badge-info"><i class="fa-solid fa-location-crosshairs" style="margin-right:4px;"></i> VÁLIDA UBICACIÓN</span>`
+      : `<span class="ng-badge ng-badge-neu">SIN VALIDAR</span>`;
+
+    let schedulesHtml = '';
+    if (schedules.length === 0) {
+      schedulesHtml = `<div style="padding:16px; color:#64748b; font-style:italic;">No hay ubicaciones o horarios registrados para esta rutina.</div>`;
+    } else {
+      schedules.forEach((sch, idx) => {
+        const midnight = sch.scheduleTimeEnd < sch.scheduleTime;
+        const midnightBadge = midnight
+          ? `<span class="ng-badge ng-badge-warn"><i class="fa-solid fa-moon" style="margin-right:4px;"></i> CRUZA MEDIANOCHE</span>`
+          : '';
+
+        schedulesHtml += `
+          <div style="background:var(--ng-surface-2); border:1px solid var(--ng-border); border-radius:10px; padding:16px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+              <div>
+                <strong style="color:var(--ng-primary); font-size:15px; text-transform:uppercase;">UBICACIÓN ${idx + 1} · ${sch.name}</strong>
+                <div style="display:flex; align-items:center; gap:12px; margin-top:4px; flex-wrap:wrap;">
+                  <span style="font-family:monospace; font-size:18px; font-weight:700; color:#1e293b;">
+                    <i class="fa-solid fa-clock" style="color:var(--ng-accent); margin-right:4px;"></i>
+                    ${sch.scheduleTime || '00:00'} - ${sch.scheduleTimeEnd || '00:00'}
+                  </span>
+                  ${formatDayPills(sch.weekDay)}
+                </div>
+              </div>
+
+              <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                <span class="ng-badge ng-badge-info">CADA ${sch.frequency || 0} MIN</span>
+                <span class="ng-badge ng-badge-info">${sch.distance || 0} METROS</span>
+                ${midnightBadge}
+              </div>
+            </div>
+
+            <table class="ng-table" style="background:#ffffff; border-radius:8px; overflow:hidden;">
+              <thead>
+                <tr>
+                  <th>UBICACIÓN / NOMBRE</th>
+                  <th>COORDENADAS [LAT, LONG]</th>
+                  <th>FRECUENCIA / DISTANCIA</th>
+                  <th>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <strong>${sch.name}</strong>
+                    <br><small style="font-family:monospace; color:#64748b;">ID: ${sch.id}</small>
+                  </td>
+                  <td><span style="font-family:monospace; font-size:12px;">${sch.cords || `${sch.latitude || 0}, ${sch.longitude || 0}`}</span></td>
+                  <td>Cada ${sch.frequency || 0} min · ${sch.distance || 0} m</td>
+                  <td>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                      <button class="ng-btn ng-btn-secondary view-qr-btn" data-schid="${sch.id}" data-schname="${sch.name}" title="Ver Código QR">
+                        <i class="fa-solid fa-qrcode" style="color:var(--ng-accent);"></i> QR
+                      </button>
+                      <button class="ng-btn-icon edit-sch-btn" data-schidx="${idx}" title="Editar Ubicación/Horario">
+                        <i class="fa-solid fa-pen" style="color:var(--ng-accent);"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      });
+    }
+
+    let guardsHtml = '';
+    if (guards.length === 0) {
+      guardsHtml = `<div style="padding:16px; color:#64748b; font-style:italic; font-size:13px;">No hay guardias asignados a esta rutina.</div>`;
+    } else {
+      guardsHtml = `<div style="display:flex; flex-direction:column;">`;
+      guards.forEach((g, idx) => {
+        const firstName = g.user?.firstName || '';
+        const lastName = g.user?.lastName || '';
+        const fullName = `${firstName} ${lastName}`.trim() || 'Guardia';
+        const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'GU';
+        const subtext = g.user?.dni || (g.user?.username ? `${g.user.username}` : '');
+        const isLast = idx === guards.length - 1;
+
+        guardsHtml += `
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; ${isLast ? '' : 'border-bottom:1px solid var(--ng-border);'}">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="ng-avatar" style="width:38px; height:38px; font-size:13px; background:#F1F5F9; color:var(--ng-primary); border:1px solid var(--ng-border); font-weight:700;">
+                ${initials}
+              </div>
+              <div>
+                <strong style="display:block; color:var(--ng-primary); font-size:13.5px; font-weight:700;">${fullName}</strong>
+                <small style="color:var(--ng-text-muted); font-size:11.5px;">${subtext}</small>
+              </div>
+            </div>
+            <button class="ng-btn-icon remove-guard-btn" data-guardid="${g.id}" title="Quitar guardia">
+              <i class="fa-solid fa-trash" style="color:#dc2626;"></i>
+            </button>
+          </div>
+        `;
+      });
+      guardsHtml += `</div>`;
+    }
+
+    this.content.innerHTML = `
+      <div class="ng-container">
+        <!-- HEADER TOP -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <button class="ng-btn ng-btn-secondary" id="back-to-list-btn">
+              <i class="fa-solid fa-arrow-left"></i> Volver a lista
+            </button>
+            <div>
+              <h1 style="font-size:1.5rem; font-weight:800; color:var(--ng-primary); margin:0; display:flex; align-items:center; gap:10px;">
+                ${routine.name}
+              </h1>
+              <small style="font-family:monospace; color:var(--ng-text-muted);">ID: ${routine.id}</small>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            ${activeBadge}
+            ${locationBadge}
+            <button class="ng-btn ng-btn-secondary" id="detail-edit-routine-btn">
+              <i class="fa-solid fa-pen"></i> Editar Datos
+            </button>
+          </div>
+        </div>
+
+        <!-- LAYOUT DE 2 COLUMNAS (IZQ: UBICACIONES / HORARIOS, DER: GUARDIAS ASIGNADOS) -->
+        <div class="ng-detail-grid">
+          <!-- COLUMNA IZQUIERDA: HORARIOS Y UBICACIONES -->
+          <div>
+            <div class="ng-card">
+              <div class="ng-card-header">
+                <h2 class="ng-card-title">
+                  <i class="fa-solid fa-layer-group" style="color:var(--ng-accent);"></i>
+                  Horarios y Ubicaciones (${schedules.length})
+                </h2>
+                <button class="ng-btn ng-btn-primary" id="detail-add-location-btn">
+                  <i class="fa-solid fa-plus"></i> Agregar Ubicación
+                </button>
+              </div>
+              ${schedulesHtml}
+            </div>
+          </div>
+
+          <!-- COLUMNA DERECHA: GUARDIAS ASIGNADOS -->
+          <div>
+            <div class="ng-card">
+              <div class="ng-card-header">
+                <h2 class="ng-card-title" style="font-size:12px; text-transform:uppercase; letter-spacing:0.04em;">
+                  <i class="fa-solid fa-user-shield" style="color:var(--ng-accent);"></i>
+                  Guardias Asignados (${guards.length})
+                </h2>
+                <button class="ng-btn ng-btn-primary" id="detail-add-guard-btn" style="padding:6px 10px; font-size:12px;">
+                  <i class="fa-solid fa-user-plus"></i> Asignar
+                </button>
+              </div>
+              ${guardsHtml}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Event Listeners for Detail View
+    document.getElementById('back-to-list-btn')?.addEventListener('click', () => {
+      this.render(infoPage.offset, infoPage.currentPage, infoPage.search);
+    });
+
+    document.getElementById('detail-edit-routine-btn')?.addEventListener('click', () => {
+      this.RInterface('Routine', routineId, 'detail');
+    });
+
+    // Add Location directly on detail page
+    document.getElementById('detail-add-location-btn')?.addEventListener('click', () => {
+      this.openAddScheduleModalDirect(routineId);
+    });
+
+    // Edit Location directly on detail page
+    document.querySelectorAll('.edit-sch-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const schIdx = parseInt(btn.dataset.schidx);
+        const schItem = schedules[schIdx];
+        if (schItem) {
+          this.openEditScheduleModalDirect(schItem, routineId);
+        }
+      });
+    });
+
+    // Assign Guard directly on detail page
+    document.getElementById('detail-add-guard-btn')?.addEventListener('click', () => {
+      this.openSelectGuardsModalDirect(routineId);
+    });
+
+    // Remove Guard Event directly on detail page
+    document.querySelectorAll('.remove-guard-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const guardId = btn.dataset.guardid;
+        if (confirm("¿Desea eliminar esta asignación de guardia?")) {
+          try {
+            await deleteEntity('RoutineUser', guardId);
+            this.renderDetail(routineId, source);
+          } catch (e) {
+            alert("Error al eliminar la asignación del guardia.");
+          }
+        }
+      });
+    });
+
+    // View QR Modal Event
+    document.querySelectorAll('.view-qr-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const schId = btn.dataset.schid;
+        const schName = btn.dataset.schname;
+        this.openQRModal(schId, schName);
+      });
+    });
+  }
+
+  async openAddScheduleModalDirect(routineId) {
+    this.openAddScheduleModal(async (newSch) => {
+      try {
+        const businessData = await currentBusiness();
+        const dt = currentDateTime();
+        const rawSch = JSON.stringify({
+          "name": newSch.name.toUpperCase(),
+          "cords": newSch.cords,
+          "latitude": newSch.latitude,
+          "longitude": newSch.longitude,
+          "frequency": `${newSch.frequency}`,
+          "distance": `${newSch.distance}`,
+          "business": { "id": `${businessData.business.id}` },
+          "customer": { "id": `${customerId}` },
+          "routine": { "id": `${routineId}` },
+          "scheduleTime": newSch.scheduleTime,
+          "scheduleTimeEnd": newSch.scheduleTimeEnd,
+          "creationDate": `${dt.date}`,
+          "creationTime": `${dt.timeHHMMSS}`
         });
-        const renderInterface = async () => {
-            this.entityDialogContainer.innerHTML = '';
-            this.entityDialogContainer.style.display = 'flex';
-            this.entityDialogContainer.innerHTML = `
-        <div class="entity_editor" id="entity-editor">
-          <div class="entity_editor_header">
-            <div class="user_info">
-              <div class="avatar"><i class="fa-solid fa-gear"></i></div>
-              <h1 class="entity_editor_title">Registrar <br><small>Rutina</small></h1>
-            </div>
+        const saved = await registerEntity(rawSch, 'RoutineSchedule');
+        if (saved && saved.id) {
+            await generateRoutineTimes(saved.id);
+        }
+        this.renderDetail(routineId, 'list');
+      } catch (err) {
+        alert("Error al agregar la ubicación/horario.");
+      }
+    });
+  }
 
-            <button class="btn btn_close_editor" id="close"><i class="fa-regular fa-x"></i></button>
+  async openEditScheduleModalDirect(sch, routineId) {
+    this.dialogContainer.style.display = 'flex';
+    this.dialogContainer.innerHTML = `
+      <div class="dialog_content" id="dialog-content">
+        <div class="ng-modal-card" style="max-width:520px; width:90%;">
+          <div class="ng-modal-header">
+            <h2 class="ng-modal-title"><i class="fa-solid fa-pen-to-square" style="color:var(--ng-accent);"></i> Editar Ubicación / Horario</h2>
+            <button class="ng-btn-icon" id="cancel-sch-modal-x"><i class="fa-solid fa-xmark"></i></button>
           </div>
 
-          <!-- EDITOR BODY -->
-          <div class="entity_editor_body">
-            <div class="material_input">
-              <input type="text" id="entity-name" autocomplete="none">
-              <label for="entity-name">Nombre</label>
-            </div>
-
-            <div class="input_checkbox">
-                <label><input type="checkbox" class="checkbox" id="entity-active" checked> Activo</label>
-            </div>
-
-            <div class="input_checkbox">
-                <label><input type="checkbox" class="checkbox" id="entity-checkLocation"> Validar Ubicación</label>
-            </div>
-
+          <div class="ng-form-group">
+            <label class="ng-label" for="sch-modal-name">Nombre de Ubicación</label>
+            <input type="text" class="ng-input" id="sch-modal-name" value="${sch.name || ''}" autocomplete="off">
           </div>
-          <!-- END EDITOR BODY -->
 
-          <div class="entity_editor_footer">
-            <button class="btn btn_primary btn_widder" id="register-entity">Guardar</button>
+          <div class="ng-form-group">
+            <label class="ng-label" for="sch-modal-cords">Coordenadas [Lat, Long]</label>
+            <input type="text" class="ng-input" id="sch-modal-cords" value="${sch.cords || `${sch.latitude || 0}, ${sch.longitude || 0}`}" autocomplete="off">
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div class="ng-form-group">
+              <label class="ng-label" for="sch-modal-start">Hora Inicio</label>
+              <input type="time" class="ng-input" id="sch-modal-start" value="${sch.scheduleTime || '19:00'}">
+            </div>
+            <div class="ng-form-group">
+              <label class="ng-label" for="sch-modal-end">Hora Fin</label>
+              <input type="time" class="ng-input" id="sch-modal-end" value="${sch.scheduleTimeEnd || '07:00'}">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div class="ng-form-group">
+              <label class="ng-label" for="sch-modal-freq">Frecuencia (minutos)</label>
+              <select class="ng-select" id="sch-modal-freq">
+                <option value="10" ${`${sch.frequency}` === '10' ? 'selected' : ''}>10 min</option>
+                <option value="15" ${`${sch.frequency}` === '15' ? 'selected' : ''}>15 min</option>
+                <option value="30" ${`${sch.frequency}` === '30' ? 'selected' : ''}>30 min</option>
+                <option value="60" ${`${sch.frequency}` === '60' ? 'selected' : ''}>60 min</option>
+                <option value="120" ${`${sch.frequency}` === '120' ? 'selected' : ''}>120 min</option>
+                <option value="180" ${`${sch.frequency}` === '180' ? 'selected' : ''}>180 min</option>
+                <option value="240" ${`${sch.frequency}` === '240' ? 'selected' : ''}>240 min</option>
+              </select>
+            </div>
+
+            <div class="ng-form-group">
+              <label class="ng-label" for="sch-modal-dist">Distancia Radio (metros)</label>
+              <select class="ng-select" id="sch-modal-dist">
+                <option value="5" ${`${sch.distance}` === '5' ? 'selected' : ''}>5 m</option>
+                <option value="10" ${`${sch.distance}` === '10' ? 'selected' : ''}>10 m</option>
+                <option value="20" ${`${sch.distance}` === '20' ? 'selected' : ''}>20 m</option>
+                <option value="30" ${`${sch.distance}` === '30' ? 'selected' : ''}>30 m</option>
+                <option value="50" ${`${sch.distance}` === '50' ? 'selected' : ''}>50 m</option>
+                <option value="60" ${`${sch.distance}` === '60' ? 'selected' : ''}>60 m</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="ng-modal-footer">
+            <button class="ng-btn ng-btn-secondary" id="cancel-sch-modal">Cancelar</button>
+            <button class="ng-btn ng-btn-primary" id="save-sch-modal"><i class="fa-solid fa-floppy-disk"></i> Guardar Cambios</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('cancel-sch-modal-x')?.addEventListener('click', () => {
+      new CloseDialog().x(document.getElementById('dialog-content'));
+    });
+
+    document.getElementById('cancel-sch-modal')?.addEventListener('click', () => {
+      new CloseDialog().x(document.getElementById('dialog-content'));
+    });
+
+    document.getElementById('save-sch-modal')?.addEventListener('click', async () => {
+      const name = document.getElementById('sch-modal-name')?.value.trim();
+      const cords = document.getElementById('sch-modal-cords')?.value.trim();
+      const start = document.getElementById('sch-modal-start')?.value;
+      const end = document.getElementById('sch-modal-end')?.value;
+      const freq = document.getElementById('sch-modal-freq')?.value;
+      const dist = document.getElementById('sch-modal-dist')?.value;
+
+      if (!name) {
+        alert("Ingrese el nombre de la ubicación.");
+        return;
+      }
+
+      const coordsArr = cords ? cords.split(',') : [sch.latitude || "-2.18679", sch.longitude || "-79.89489"];
+      const lat = parseFloat(coordsArr[0]?.trim() || "-2.18679");
+      const lng = parseFloat(coordsArr[1]?.trim() || "-79.89489");
+
+      const rawSch = JSON.stringify({
+        "name": name.toUpperCase(),
+        "cords": `${lat}, ${lng}`,
+        "latitude": `${lat}`,
+        "longitude": `${lng}`,
+        "frequency": `${freq}`,
+        "distance": `${dist}`,
+        "scheduleTime": start,
+        "scheduleTimeEnd": end
+      });
+
+      try {
+        await updateEntity('RoutineSchedule', sch.id, rawSch).then(async (res) => {
+          await generateRoutineTimes(entityId);
+          new CloseDialog().x(document.getElementById('dialog-content'));
+          this.renderDetail(routineId, 'list');
+        });
+      } catch (e) {
+        alert("Error al actualizar la ubicación.");
+      }
+    });
+  }
+
+  async openSelectGuardsModalDirect(routineId) {
+    this.openSelectGuardsModal(async (selectedGuards) => {
+      if (selectedGuards.length === 0) return;
+      try {
+        const businessData = await currentBusiness();
+        const dt = currentDateTime();
+
+        for (let i = 0; i < selectedGuards.length; i++) {
+          const g = selectedGuards[i];
+          const existGuard = await getDetails2('routine.id', routineId, 'user.id', g.id, 'RoutineUser');
+          if (existGuard.length === 0) {
+            const rawGuard = JSON.stringify({
+              "business": { "id": `${businessData.business.id}` },
+              "customer": { "id": `${customerId}` },
+              "routine": { "id": `${routineId}` },
+              "user": { "id": `${g.id}` },
+              "creationDate": `${dt.date}`,
+              "creationTime": `${dt.timeHHMMSS}`
+            });
+            await registerEntity(rawGuard, 'RoutineUser');
+          }
+        }
+        this.renderDetail(routineId, 'list');
+      } catch (err) {
+        alert("Error al asignar guardias.");
+      }
+    });
+  }
+
+  openQRModal(schId, schName) {
+    this.dialogContainer.style.display = 'flex';
+    this.dialogContainer.innerHTML = `
+      <div class="dialog_content" id="dialog-content">
+        <div class="ng-modal-card" style="max-width:400px; width:90%; text-align:center;">
+          <div class="ng-modal-header">
+            <h2 class="ng-modal-title"><i class="fa-solid fa-qrcode" style="color:var(--ng-accent);"></i> Código QR</h2>
+            <button class="ng-btn-icon" id="close-qr-modal-x"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <p style="color:var(--ng-text-muted); font-size:13px; margin-bottom:16px;">${schName}</p>
+
+          <div style="background:#ffffff; padding:16px; border:1px solid var(--ng-border); border-radius:10px; display:inline-block; margin-bottom:16px;">
+            <canvas id="qrcode-canvas" width="200" height="200"></canvas>
+          </div>
+
+          <p style="font-family:monospace; font-size:11px; color:#64748b; margin-bottom:20px;">ID: ${schId}</p>
+
+          <div class="ng-modal-footer" style="justify-content:center;">
+            <button class="ng-btn ng-btn-secondary" id="close-qr-modal">Cerrar</button>
+            <button class="ng-btn ng-btn-primary" id="download-qr-btn">
+              <i class="fa-solid fa-download"></i> Descargar PNG
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const qrCanvas = document.getElementById("qrcode-canvas");
+    let qrInst;
+    // @ts-ignore
+    if (window.QRious) {
+      // @ts-ignore
+      qrInst = new window.QRious({
+        element: qrCanvas,
+        value: schId,
+        size: 200,
+        backgroundAlpha: 1,
+        foreground: "#1B2A4E",
+        level: "H"
+      });
+    }
+
+    document.getElementById('close-qr-modal-x')?.addEventListener('click', () => {
+      new CloseDialog().x(document.getElementById('dialog-content'));
+    });
+
+    document.getElementById('close-qr-modal')?.addEventListener('click', () => {
+      new CloseDialog().x(document.getElementById('dialog-content'));
+    });
+
+    document.getElementById('download-qr-btn')?.addEventListener('click', () => {
+      const enlace = document.createElement("a");
+      enlace.href = qrCanvas.toDataURL("image/png");
+      enlace.download = `QR_${schName.replace(/\s+/g, '_')}_${schId.substring(0, 8)}.png`;
+      enlace.click();
+    });
+  }
+
+  // =========================================================================
+  // WIZARD CREADOR EN 4 PASOS (NTL-155)
+  // =========================================================================
+  async renderWizard() {
+    let currentStep = 1;
+    let wizardData = {
+      name: '',
+      isActive: true,
+      checkLocation: true
+    };
+    let wizardSchedules = [];
+    let wizardGuards = [];
+
+    const drawWizardStep = async () => {
+      let stepContent = '';
+
+      if (currentStep === 1) {
+        stepContent = `
+          <div class="ng-card">
+            <div class="ng-card-header">
+              <h3 class="ng-card-title"><i class="fa-solid fa-file-signature" style="color:var(--ng-accent);"></i> Paso 1: Datos Principales de la Rutina</h3>
+            </div>
+
+            <div class="ng-form-group">
+              <label class="ng-label" for="wizard-name">Nombre de la Rutina</label>
+              <input type="text" class="ng-input" id="wizard-name" value="${wizardData.name}" placeholder="Ej: RONDA PERIMETRAL NOCTURNA" autocomplete="off">
+            </div>
+
+            <div class="ng-form-group">
+              <label class="ng-toggle">
+                <input type="checkbox" id="wizard-active" ${wizardData.isActive ? 'checked' : ''}>
+                <span>Estado Activo</span>
+              </label>
+            </div>
+
+            <div class="ng-form-group" style="margin-bottom:0;">
+              <label class="ng-toggle">
+                <input type="checkbox" id="wizard-checkLocation" ${wizardData.checkLocation ? 'checked' : ''}>
+                <span>Validar Ubicación GPS</span>
+              </label>
+            </div>
+          </div>
+        `;
+      } else if (currentStep === 2) {
+        let schedulesTableRows = wizardSchedules.length === 0
+          ? `<tr><td colspan="5" style="text-align:center; color:#64748b;">No ha agregado ninguna ubicación u horario.</td></tr>`
+          : wizardSchedules.map((s, idx) => `
+            <tr>
+              <td><strong>${s.name}</strong></td>
+              <td>${s.scheduleTime} - ${s.scheduleTimeEnd}</td>
+              <td>Cada ${s.frequency} min</td>
+              <td>${s.distance} m</td>
+              <td>
+                <button class="ng-btn-icon remove-sch-step" data-idx="${idx}"><i class="fa-solid fa-trash" style="color:#dc2626;"></i></button>
+              </td>
+            </tr>
+          `).join('');
+
+        stepContent = `
+          <div class="ng-card">
+            <div class="ng-card-header">
+              <h3 class="ng-card-title"><i class="fa-solid fa-map-location-dot" style="color:var(--ng-accent);"></i> Paso 2: Definición de Horarios y Ubicaciones</h3>
+              <button class="ng-btn ng-btn-primary" id="wizard-add-sch-btn"><i class="fa-solid fa-plus"></i> Agregar Ubicación</button>
+            </div>
+
+            <table class="ng-table">
+              <thead>
+                <tr>
+                  <th>NOMBRE UBICACIÓN</th>
+                  <th>HORARIO (INICIO - FIN)</th>
+                  <th>FRECUENCIA</th>
+                  <th>DISTANCIA</th>
+                  <th>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${schedulesTableRows}
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else if (currentStep === 3) {
+        let guardsTableRows = wizardGuards.length === 0
+          ? `<tr><td colspan="3" style="text-align:center; color:#64748b;">No ha seleccionado ningún guardia.</td></tr>`
+          : wizardGuards.map((g, idx) => `
+            <tr>
+              <td><strong>${g.fullName}</strong></td>
+              <td>${g.username}</td>
+              <td>
+                <button class="ng-btn-icon remove-guard-step" data-idx="${idx}"><i class="fa-solid fa-trash" style="color:#dc2626;"></i></button>
+              </td>
+            </tr>
+          `).join('');
+
+        stepContent = `
+          <div class="ng-card">
+            <div class="ng-card-header">
+              <h3 class="ng-card-title"><i class="fa-solid fa-user-shield" style="color:var(--ng-accent);"></i> Paso 3: Asignación de Guardias</h3>
+              <button class="ng-btn ng-btn-primary" id="wizard-add-guard-btn"><i class="fa-solid fa-user-plus"></i> Seleccionar Guardias</button>
+            </div>
+
+            <table class="ng-table">
+              <thead>
+                <tr>
+                  <th>GUARDIA</th>
+                  <th>USUARIO</th>
+                  <th>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${guardsTableRows}
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else if (currentStep === 4) {
+        stepContent = `
+          <div class="ng-card">
+            <div class="ng-card-header">
+              <h3 class="ng-card-title"><i class="fa-solid fa-clipboard-check" style="color:var(--ng-accent);"></i> Paso 4: Resumen y Confirmación</h3>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+              <div style="background:var(--ng-surface-2); padding:16px; border-radius:10px; border:1px solid var(--ng-border);">
+                <p style="margin-bottom:8px;"><strong>Rutina:</strong> ${wizardData.name}</p>
+                <p style="margin-bottom:8px;"><strong>Estado:</strong> ${wizardData.isActive ? '<span class="ng-badge ng-badge-ok">ACTIVO</span>' : '<span class="ng-badge ng-badge-bad">INACTIVO</span>'}</p>
+                <p><strong>Validación GPS:</strong> ${wizardData.checkLocation ? '<span class="ng-badge ng-badge-info">SI</span>' : '<span class="ng-badge ng-badge-neu">NO</span>'}</p>
+              </div>
+
+              <div style="background:var(--ng-surface-2); padding:16px; border-radius:10px; border:1px solid var(--ng-border);">
+                <p style="margin-bottom:8px;"><strong>Total Ubicaciones:</strong> ${wizardSchedules.length}</p>
+                <p><strong>Total Guardias:</strong> ${wizardGuards.length}</p>
+              </div>
+            </div>
+
+            <p style="color:var(--ng-text-muted); font-size:13px; margin:0;">Al hacer clic en "Guardar Rutina Completa", el sistema registrará la rutina y asociará automáticamente sus ubicaciones y guardias.</p>
+          </div>
+        `;
+      }
+
+      this.content.innerHTML = `
+        <div class="ng-container" style="max-width:900px; margin:0 auto;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h1 style="font-size:1.4rem; font-weight:800; color:var(--ng-primary); margin:0;">
+              Wizard de Creación de Rutina Unificada
+            </h1>
+            <button class="ng-btn ng-btn-secondary" id="wizard-cancel-btn">Cancelar</button>
+          </div>
+
+          <!-- STEPS BAR -->
+          <div class="ng-wizard-steps">
+            <div class="ng-wizard-step ${currentStep >= 1 ? (currentStep === 1 ? 'active' : 'completed') : ''}">
+              <div class="ng-wizard-step-num">1</div>
+              <span>Datos</span>
+            </div>
+            <div class="ng-wizard-step ${currentStep >= 2 ? (currentStep === 2 ? 'active' : 'completed') : ''}">
+              <div class="ng-wizard-step-num">2</div>
+              <span>Ubicaciones</span>
+            </div>
+            <div class="ng-wizard-step ${currentStep >= 3 ? (currentStep === 3 ? 'active' : 'completed') : ''}">
+              <div class="ng-wizard-step-num">3</div>
+              <span>Guardias</span>
+            </div>
+            <div class="ng-wizard-step ${currentStep >= 4 ? (currentStep === 4 ? 'active' : 'completed') : ''}">
+              <div class="ng-wizard-step-num">4</div>
+              <span>Confirmación</span>
+            </div>
+          </div>
+
+          <!-- STEP CONTENT -->
+          ${stepContent}
+
+          <!-- WIZARD FOOTER CONTROLS -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+            <button class="ng-btn ng-btn-secondary" id="wizard-prev-btn" ${currentStep === 1 ? 'disabled style="opacity:0.5;"' : ''}>
+              <i class="fa-solid fa-arrow-left"></i> Anterior
+            </button>
+
+            ${currentStep < 4
+          ? `<button class="ng-btn ng-btn-primary" id="wizard-next-btn">Siguiente <i class="fa-solid fa-arrow-right"></i></button>`
+          : `<button class="ng-btn ng-btn-primary" id="wizard-save-btn"><i class="fa-solid fa-floppy-disk"></i> Guardar Rutina Completa</button>`
+        }
           </div>
         </div>
       `;
-            // @ts-ignore
-            inputObserver();
-            this.close();
-            const registerButton = document.getElementById('register-entity');
-            registerButton.addEventListener('click', async() => {
-                const inputsCollection = {
-                    name: document.getElementById('entity-name'),
-                    active: document.getElementById('entity-active'),
-                    checkLocation: document.getElementById('entity-checkLocation')
-                };
-                const raw = JSON.stringify({
-                    "name": `${inputsCollection.name.value}`,
-                    "business": {
-                        "id": `${Config.currentUser.business.id}`},
-                    "customer": {
-                      "id": `${customerId}`},
-                    "isActive": `${inputsCollection.active.checked ? true : false}`,
-                    "checkLocation": `${inputsCollection.checkLocation.checked ? true : false}`,
-                    'creationDate': `${currentDateTime().date}`,
-                    'creationTime': `${currentDateTime().timeHHMMSS}`,
-                });
-                if(inputsCollection.name.value == '' || inputsCollection.name.value == null || inputsCollection.name.value == undefined){
-                  alert("Debe completar el nombre");
-                }else{
-                  registerEntity(raw, 'Routine').then((res) => {
-                    setTimeout(() => {
-                        const container = document.getElementById('entity-editor-container');
-                        new CloseDialog().x(container);
-                        new Routines().render(Config.offset, Config.currentPage, infoPage.search);
-                    }, 1000);
-                  });
-                }
-            });
-        };
-        const reg = async (raw) => {
-        };
-    }
-    edit(container, data) {
-        // Edit entity
-        const edit = document.querySelectorAll('#edit-entity');
-        edit.forEach((edit) => {
-            const entityId = edit.dataset.entityid;
-            edit.addEventListener('click', () => {
-                RInterface('Routine', entityId);
-            });
+
+      // Bind Cancel
+      document.getElementById('wizard-cancel-btn')?.addEventListener('click', () => {
+        this.render(infoPage.offset, infoPage.currentPage, infoPage.search);
+      });
+
+      // Bind Prev
+      document.getElementById('wizard-prev-btn')?.addEventListener('click', () => {
+        if (currentStep > 1) {
+          saveStepState();
+          currentStep--;
+          drawWizardStep();
+        }
+      });
+
+      // Bind Next
+      document.getElementById('wizard-next-btn')?.addEventListener('click', () => {
+        if (currentStep === 1) {
+          const nameInput = document.getElementById('wizard-name');
+          if (!nameInput || !nameInput.value.trim()) {
+            alert("Por favor ingrese el nombre de la rutina.");
+            return;
+          }
+        }
+        saveStepState();
+        currentStep++;
+        drawWizardStep();
+      });
+
+      // Bind Save
+      document.getElementById('wizard-save-btn')?.addEventListener('click', () => {
+        this.saveCompleteRoutine(wizardData, wizardSchedules, wizardGuards);
+      });
+
+      // Step 2 Add Schedule Event
+      document.getElementById('wizard-add-sch-btn')?.addEventListener('click', () => {
+        this.openAddScheduleModal((newSch) => {
+          wizardSchedules.push(newSch);
+          drawWizardStep();
         });
-        const RInterface = async (entities, entityID) => {
-            const data = await getEntityData(entities, entityID);
-            this.entityDialogContainer.innerHTML = '';
-            this.entityDialogContainer.style.display = 'flex';
-            this.entityDialogContainer.innerHTML = `
-        <div class="entity_editor" id="entity-editor">
-          <div class="entity_editor_header">
-            <div class="user_info">
-              <div class="avatar"><i class="fa-regular fa-gear"></i></div>
-              <h1 class="entity_editor_title">Editar <br><small>${data.name}</small></h1>
-            </div>
+      });
 
-            <button class="btn btn_close_editor" id="close"><i class="fa-solid fa-x"></i></button>
+      // Step 2 Remove Schedule Event
+      document.querySelectorAll('.remove-sch-step').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx);
+          wizardSchedules.splice(idx, 1);
+          drawWizardStep();
+        });
+      });
+
+      // Step 3 Add Guard Event
+      document.getElementById('wizard-add-guard-btn')?.addEventListener('click', () => {
+        this.openSelectGuardsModal((selectedGuards) => {
+          selectedGuards.forEach(sg => {
+            if (!wizardGuards.some(g => g.id === sg.id)) {
+              wizardGuards.push(sg);
+            }
+          });
+          drawWizardStep();
+        });
+      });
+
+      // Step 3 Remove Guard Event
+      document.querySelectorAll('.remove-guard-step').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx);
+          wizardGuards.splice(idx, 1);
+          drawWizardStep();
+        });
+      });
+    };
+
+    const saveStepState = () => {
+      if (currentStep === 1) {
+        const nameInput = document.getElementById('wizard-name');
+        const activeInput = document.getElementById('wizard-active');
+        const checkLocInput = document.getElementById('wizard-checkLocation');
+        if (nameInput) wizardData.name = nameInput.value.trim().toUpperCase();
+        if (activeInput) wizardData.isActive = activeInput.checked;
+        if (checkLocInput) wizardData.checkLocation = checkLocInput.checked;
+      }
+    };
+
+    drawWizardStep();
+  }
+
+  openAddScheduleModal(onAdd) {
+    this.dialogContainer.style.display = 'flex';
+    this.dialogContainer.innerHTML = `
+      <div class="dialog_content" id="dialog-content">
+        <div class="ng-modal-card" style="max-width:520px; width:90%;">
+          <div class="ng-modal-header">
+            <h2 class="ng-modal-title"><i class="fa-solid fa-map-location-dot" style="color:var(--ng-accent);"></i> Agregar Ubicación / Horario</h2>
+            <button class="ng-btn-icon" id="cancel-sch-modal-x"><i class="fa-solid fa-xmark"></i></button>
           </div>
 
-          <!-- EDITOR BODY -->
-          <div class="entity_editor_body">
-
-            <div class="material_input">
-              <input type="text"
-                id="entity-name"
-                class="input_filled"
-                value="${data?.name ?? ''}">
-              <label for="entity-name">Nombre</label>
-            </div>
-
-            <div class="input_checkbox">
-                <label><input type="checkbox" class="checkbox" id="entity-active"> Activo</label>
-            </div>
-
-            <div class="input_checkbox">
-                <label><input type="checkbox" class="checkbox" id="entity-checkLocation"> Validar Ubicación</label>
-            </div>
-
-            <br>
-            <br>
-
-            <div class="input_detail">
-                <label for="creation-date"><i class="fa-solid fa-calendar"></i></label>
-                <input type="date" id="creation-date" class="input_filled" value="${data.creationDate}" readonly>
-            </div>
-            <br>
-            <div class="input_detail">
-                <label for="creation-time"><i class="fa-solid fa-clock"></i></label>
-                <input type="time" id="creation-time" class="input_filled" value="${data.creationTime}" readonly>
-            </div>
-            <br>
-            <div class="input_detail">
-                <label for="log-user"><i class="fa-solid fa-user"></i></label>
-                <input type="text" id="log-user" class="input_filled" value="${data.createdBy}" readonly>
-            </div>
-
+          <div class="ng-form-group">
+            <label class="ng-label" for="sch-modal-name">Nombre de Ubicación</label>
+            <input type="text" class="ng-input" id="sch-modal-name" placeholder="Ej: PUNTO ENTRADA PRINCIPAL" autocomplete="off">
           </div>
-          <!-- END EDITOR BODY -->
 
-          <div class="entity_editor_footer">
-            <button class="btn btn_primary btn_widder" id="update-changes">Guardar</button>
+          <div class="ng-form-group">
+            <label class="ng-label" for="sch-modal-cords">Coordenadas [Lat, Long]</label>
+            <input type="text" class="ng-input" id="sch-modal-cords" value="-2.18679, -79.89489" autocomplete="off">
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div class="ng-form-group">
+              <label class="ng-label" for="sch-modal-start">Hora Inicio</label>
+              <input type="time" class="ng-input" id="sch-modal-start" value="19:00">
+            </div>
+            <div class="ng-form-group">
+              <label class="ng-label" for="sch-modal-end">Hora Fin</label>
+              <input type="time" class="ng-input" id="sch-modal-end" value="07:00">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div class="ng-form-group">
+              <label class="ng-label" for="sch-modal-freq">Frecuencia (minutos)</label>
+              <select class="ng-select" id="sch-modal-freq">
+                <option value="10">10 min</option>
+                <option value="15">15 min</option>
+                <option value="30">30 min</option>
+                <option value="60" selected>60 min</option>
+                <option value="120">120 min</option>
+                <option value="180">180 min</option>
+                <option value="240">240 min</option>
+              </select>
+            </div>
+
+            <div class="ng-form-group">
+              <label class="ng-label" for="sch-modal-dist">Distancia Radio (metros)</label>
+              <select class="ng-select" id="sch-modal-dist">
+                <option value="5">5 m</option>
+                <option value="10" selected>10 m</option>
+                <option value="20">20 m</option>
+                <option value="30">30 m</option>
+                <option value="50">50 m</option>
+                <option value="60">60 m</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="ng-modal-footer">
+            <button class="ng-btn ng-btn-secondary" id="cancel-sch-modal">Cancelar</button>
+            <button class="ng-btn ng-btn-primary" id="save-sch-modal"><i class="fa-solid fa-plus"></i> Agregar Ubicación</button>
           </div>
         </div>
-      `;
-            const checkboxActive = document.getElementById('entity-active');
-            if (data.isActive === true) {
-              checkboxActive?.setAttribute('checked', 'true');
-            }
+      </div>
+    `;
 
-            const checkbox2Active = document.getElementById('entity-checkLocation');
-            if (data.checkLocation === true) {
-              checkbox2Active?.setAttribute('checked', 'true');
-            }
+    document.getElementById('cancel-sch-modal-x')?.addEventListener('click', () => {
+      new CloseDialog().x(document.getElementById('dialog-content'));
+    });
 
-            inputObserver();
-            this.close();
-            UUpdate(entityID);
-        };
-        const UUpdate = async (entityId) => {
-            const updateButton = document.getElementById('update-changes');
-            const $value = {
-              // @ts-ignore
-              name: document.getElementById('entity-name'),
-              // @ts-ignore
-              active: document.getElementById('entity-active'),
-              checkLocation: document.getElementById('entity-checkLocation')
-          };
-            updateButton.addEventListener('click', () => {
-              let raw = JSON.stringify({
-                  // @ts-ignore
-                  "name": `${$value.name.value}`,
-                  "isActive": `${$value.active.checked ? true : false}`,
-                  "checkLocation": `${$value.checkLocation.checked ? true : false}`
-              });
-              if($value.name.value == '' || $value.name.value == null || $value.name.value == undefined){
-                alert("Debe completar el nombre");
-              }else{
-                update(raw);
-              }
-            });
-            const update = (raw) => {
-              updateEntity('Routine', entityId, raw)
-                  .then((res) => {
-                  setTimeout(async () => {
-                      let tableBody;
-                      let container;
-                      let data;
-                      //data = await getRoutines();
-                      new CloseDialog()
-                          .x(container =
-                          document.getElementById('entity-editor-container'));
-                      new Routines().render(infoPage.offset, infoPage.currentPage, infoPage.search);
-                  }, 100);
-              });
-          };
-        };
+    document.getElementById('cancel-sch-modal')?.addEventListener('click', () => {
+      new CloseDialog().x(document.getElementById('dialog-content'));
+    });
+
+    document.getElementById('save-sch-modal')?.addEventListener('click', () => {
+      const name = document.getElementById('sch-modal-name')?.value.trim().toUpperCase();
+      const cords = document.getElementById('sch-modal-cords')?.value.trim();
+      const start = document.getElementById('sch-modal-start')?.value;
+      const end = document.getElementById('sch-modal-end')?.value;
+      const freq = document.getElementById('sch-modal-freq')?.value;
+      const dist = document.getElementById('sch-modal-dist')?.value;
+
+      if (!name) {
+        alert("Ingrese el nombre de la ubicación.");
+        return;
+      }
+
+      const coordsArr = cords ? cords.split(',') : ["-2.18679", "-79.89489"];
+      const lat = parseFloat(coordsArr[0]?.trim() || "-2.18679");
+      const lng = parseFloat(coordsArr[1]?.trim() || "-79.89489");
+
+      onAdd({
+        name,
+        cords: `${lat}, ${lng}`,
+        latitude: `${lat}`,
+        longitude: `${lng}`,
+        scheduleTime: start,
+        scheduleTimeEnd: end,
+        frequency: freq,
+        distance: dist
+      });
+
+      new CloseDialog().x(document.getElementById('dialog-content'));
+    });
+  }
+
+  async openSelectGuardsModal(onSelect) {
+    this.dialogContainer.style.display = 'flex';
+    this.dialogContainer.innerHTML = `
+      <div class="dialog_content" id="dialog-content">
+        <div class="ng-modal-card" style="max-width:620px; width:90%;">
+          <div class="ng-modal-header">
+            <h2 class="ng-modal-title"><i class="fa-solid fa-user-plus" style="color:var(--ng-accent);"></i> Seleccionar Guardias</h2>
+            <button class="ng-btn-icon" id="cancel-guard-modal-x"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+
+          <div style="display:flex; gap:8px; margin-bottom:16px;">
+            <input type="search" class="ng-input" id="search-guard-modal" placeholder="Buscar guardia por nombre o usuario..." style="flex:1;">
+            <button class="ng-btn ng-btn-primary" id="btn-search-guard-modal"><i class="fa-solid fa-search"></i> Buscar</button>
+          </div>
+
+          <div style="max-height:320px; overflow-y:auto; border:1px solid var(--ng-border); border-radius:10px; margin-bottom:16px;">
+            <table class="ng-table">
+              <thead>
+                <tr>
+                  <th style="width:40px;"></th>
+                  <th>GUARDIA</th>
+                  <th>USUARIO</th>
+                </tr>
+              </thead>
+              <tbody id="guards-modal-body">
+                <tr><td colspan="3" style="text-align:center;">Cargando guardias...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ng-modal-footer">
+            <button class="ng-btn ng-btn-secondary" id="cancel-guard-modal">Cancelar</button>
+            <button class="ng-btn ng-btn-primary" id="save-guard-modal"><i class="fa-solid fa-check"></i> Seleccionar Guardias</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const fetchAndRenderGuards = async (search = "") => {
+      const tbody = document.getElementById('guards-modal-body');
+      if (!tbody) return;
+      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Cargando...</td></tr>`;
+
+      try {
+        let raw = JSON.stringify({
+          "filter": {
+            "conditions": [
+              { "property": "customer.id", "operator": "=", "value": `${customerId}` },
+              { "property": "state.name", "operator": "=", "value": `Enabled` },
+              { "property": "userType", "operator": "=", "value": `GUARD` },
+              { "property": "isSuper", "operator": "=", "value": `${false}` }
+            ]
+          },
+          sort: "+username",
+          limit: 50,
+          fetchPlan: 'full'
+        });
+
+        if (search) {
+          raw = JSON.stringify({
+            "filter": {
+              "conditions": [
+                {
+                  "group": "OR",
+                  "conditions": [
+                    { "property": "firstName", "operator": "contains", "value": `${search.toLowerCase()}` },
+                    { "property": "lastName", "operator": "contains", "value": `${search.toLowerCase()}` },
+                    { "property": "username", "operator": "contains", "value": `${search.toLowerCase()}` }
+                  ]
+                },
+                { "property": "customer.id", "operator": "=", "value": `${customerId}` },
+                { "property": "state.name", "operator": "=", "value": `Enabled` },
+                { "property": "userType", "operator": "=", "value": `GUARD` }
+              ]
+            },
+            sort: "+username",
+            limit: 50,
+            fetchPlan: 'full'
+          });
+        }
+
+        const data = await getFilterEntityData("User", raw) || [];
+        if (data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">No se encontraron guardias.</td></tr>`;
+        } else {
+          tbody.innerHTML = data.map(u => `
+            <tr>
+              <td><input type="checkbox" class="guard-chk" data-uid="${u.id}" data-fullname="${u.firstName || ''} ${u.lastName || ''}" data-username="${u.username || ''}"></td>
+              <td>${u.firstName || ''} ${u.lastName || ''}</td>
+              <td>${u.username || ''}</td>
+            </tr>
+          `).join('');
+        }
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#dc2626;">Error al cargar guardias.</td></tr>`;
+      }
+    };
+
+    fetchAndRenderGuards();
+
+    document.getElementById('btn-search-guard-modal')?.addEventListener('click', () => {
+      const searchVal = document.getElementById('search-guard-modal')?.value.trim();
+      fetchAndRenderGuards(searchVal);
+    });
+
+    document.getElementById('cancel-guard-modal-x')?.addEventListener('click', () => {
+      new CloseDialog().x(document.getElementById('dialog-content'));
+    });
+
+    document.getElementById('cancel-guard-modal')?.addEventListener('click', () => {
+      new CloseDialog().x(document.getElementById('dialog-content'));
+    });
+
+    document.getElementById('save-guard-modal')?.addEventListener('click', () => {
+      const selected = [];
+      document.querySelectorAll('.guard-chk:checked').forEach(chk => {
+        selected.push({
+          id: chk.dataset.uid,
+          fullName: chk.dataset.fullname.trim() || 'Guardia',
+          username: chk.dataset.username
+        });
+      });
+      onSelect(selected);
+      new CloseDialog().x(document.getElementById('dialog-content'));
+    });
+  }
+
+  // =========================================================================
+  // PERSISTENCIA EN CASCADA / ENVOÍO COMPLETO (NTL-155)
+  // =========================================================================
+  async saveCompleteRoutine(routineData, schedulesData, guardsData) {
+    this.dialogContainer.style.display = 'flex';
+    this.dialogContainer.innerHTML = `
+      <div class="dialog_content" id="dialog-content">
+        <div class="ng-modal-card" style="max-width:450px; width:90%; padding:28px; text-align:center;">
+          <div style="margin-bottom:16px;">
+            <i class="fa-solid fa-spinner fa-spin fa-3x" style="color:var(--ng-accent);"></i>
+          </div>
+          <h3 id="progress-modal-title" style="color:var(--ng-primary); font-size:16px; margin-bottom:8px;">Guardando Rutina Completa...</h3>
+          <p id="progress-modal-status" style="color:var(--ng-text-muted); font-size:13px; margin-bottom:0;">Iniciando registro de datos...</p>
+        </div>
+      </div>
+    `;
+
+    const statusEl = document.getElementById('progress-modal-status');
+    const businessData = await currentBusiness();
+    const dt = currentDateTime();
+
+    try {
+      // 1. Crear Routine (convert name to UPPERCASE)
+      if (statusEl) statusEl.innerText = "Registrando datos de la rutina madre...";
+      const routineName = routineData.name.trim().toUpperCase();
+      const rawRoutine = JSON.stringify({
+        "name": routineName,
+        "business": { "id": `${businessData.business.id}` },
+        "customer": { "id": `${customerId}` },
+        "isActive": routineData.isActive,
+        "checkLocation": routineData.checkLocation,
+        "creationDate": `${dt.date}`,
+        "creationTime": `${dt.timeHHMMSS}`
+      });
+
+      let createdRoutineRes = await registerEntity(rawRoutine, 'Routine');
+      let createdRoutineId = createdRoutineRes?.id;
+
+      // Fallback si res no trae id directo
+      if (!createdRoutineId) {
+        if (statusEl) statusEl.innerText = "Verificando ID asignado...";
+        const rawLookup = JSON.stringify({
+          "filter": {
+            "conditions": [
+              { "property": "name", "operator": "=", "value": `${routineName}` },
+              { "property": "customer.id", "operator": "=", "value": `${customerId}` }
+            ]
+          },
+          sort: "-createdDate",
+          limit: 1,
+          fetchPlan: 'full'
+        });
+        const lookupRes = await getFilterEntityData("Routine", rawLookup);
+        if (lookupRes && lookupRes.length > 0) {
+          createdRoutineId = lookupRes[0].id;
+        }
+      }
+
+      if (!createdRoutineId) {
+        throw new Error("No se pudo obtener el ID de la rutina creada.");
+      }
+
+      // 2. Crear RoutineSchedules (convert schedule name to UPPERCASE)
+      if (schedulesData.length > 0) {
+        if (statusEl) statusEl.innerText = `Generando ${schedulesData.length} ubicaciones / horarios...`;
+        for (let i = 0; i < schedulesData.length; i++) {
+          const sch = schedulesData[i];
+          const schName = sch.name.trim().toUpperCase();
+          const rawSch = JSON.stringify({
+            "name": schName,
+            "cords": sch.cords,
+            "latitude": sch.latitude,
+            "longitude": sch.longitude,
+            "frequency": `${sch.frequency}`,
+            "distance": `${sch.distance}`,
+            "business": { "id": `${businessData.business.id}` },
+            "customer": { "id": `${customerId}` },
+            "routine": { "id": `${createdRoutineId}` },
+            "scheduleTime": sch.scheduleTime,
+            "scheduleTimeEnd": sch.scheduleTimeEnd,
+            "creationDate": `${dt.date}`,
+            "creationTime": `${dt.timeHHMMSS}`
+          });
+          const saved = await registerEntity(rawSch, 'RoutineSchedule');
+          if (saved && saved.id) {
+              await generateRoutineTimes(saved.id);
+          }
+        }
+      }
+
+      // 3. Crear RoutineUsers
+      if (guardsData.length > 0) {
+        if (statusEl) statusEl.innerText = `Asignando ${guardsData.length} guardias...`;
+        for (let i = 0; i < guardsData.length; i++) {
+          const g = guardsData[i];
+          const rawGuard = JSON.stringify({
+            "business": { "id": `${businessData.business.id}` },
+            "customer": { "id": `${customerId}` },
+            "routine": { "id": `${createdRoutineId}` },
+            "user": { "id": `${g.id}` },
+            "creationDate": `${dt.date}`,
+            "creationTime": `${dt.timeHHMMSS}`
+          });
+          await registerEntity(rawGuard, 'RoutineUser');
+        }
+      }
+
+      if (statusEl) statusEl.innerText = "¡Rutina creada exitosamente!";
+      await sleep(800);
+      new CloseDialog().x(document.getElementById('dialog-content'));
+
+      // Render Detail View for newly created routine
+      this.renderDetail(createdRoutineId, 'list');
+
+    } catch (err) {
+      console.error("Error al guardar rutina completa:", err);
+      new CloseDialog().x(document.getElementById('dialog-content'));
+      alert("Ocurrió un error al guardar la rutina completa: " + (err.message || err));
     }
+  }
+
+  // =========================================================================
+  // MÉTODOS EXISTENTES Y AUXILIARES
+  // =========================================================================
+
+  register() {
+    const openEditor = document.getElementById('new-entity');
+    if (openEditor) {
+      openEditor.onclick = () => this.renderWizard();
+    }
+  }
+
+  edit(container, data) {
+    const editBtns = document.querySelectorAll('#edit-entity');
+    editBtns.forEach((edit) => {
+      const entityId = edit.dataset.entityid;
+      edit.addEventListener('click', () => {
+        this.RInterface('Routine', entityId, 'list');
+      });
+    });
+  }
+
+  async RInterface(entities, entityID, origin = 'list') {
+    const data = await getEntityData(entities, entityID);
+    this.entityDialogContainer.innerHTML = '';
+    this.entityDialogContainer.style.display = 'flex';
+    this.entityDialogContainer.innerHTML = `
+      <div class="ng-modal-card" id="entity-editor" style="max-width:480px; width:90%;">
+        <div class="ng-modal-header">
+          <h2 class="ng-modal-title"><i class="fa-solid fa-gear" style="color:var(--ng-accent);"></i> Editar Datos de Rutina</h2>
+          <button class="ng-btn-icon" id="close"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="ng-form-group">
+          <label class="ng-label" for="entity-name">Nombre de la Rutina</label>
+          <input type="text" id="entity-name" class="ng-input" value="${data?.name ?? ''}" autocomplete="off">
+        </div>
+
+        <div class="ng-form-group">
+          <label class="ng-toggle">
+            <input type="checkbox" id="entity-active">
+            <span>Estado Activo</span>
+          </label>
+        </div>
+
+        <div class="ng-form-group">
+          <label class="ng-toggle">
+            <input type="checkbox" id="entity-checkLocation">
+            <span>Validar Ubicación GPS</span>
+          </label>
+        </div>
+
+        <div style="background:var(--ng-surface-2); padding:12px; border-radius:8px; margin-top:16px;">
+          <small style="color:var(--ng-text-muted); display:block; margin-bottom:4px;"><i class="fa-solid fa-calendar"></i> Creado: ${data.creationDate} ${data.creationTime}</small>
+          <small style="color:var(--ng-text-muted); display:block;"><i class="fa-solid fa-user"></i> Por: ${data.createdBy || 'Sistema'}</small>
+        </div>
+
+        <div class="ng-modal-footer">
+          <button class="ng-btn ng-btn-secondary" id="cancel-edit-btn">Cancelar</button>
+          <button class="ng-btn ng-btn-primary" id="update-changes"><i class="fa-solid fa-floppy-disk"></i> Guardar Cambios</button>
+        </div>
+      </div>
+    `;
+
+    const checkboxActive = document.getElementById('entity-active');
+    if (data.isActive === true) {
+      checkboxActive?.setAttribute('checked', 'true');
+    }
+
+    const checkbox2Active = document.getElementById('entity-checkLocation');
+    if (data.checkLocation === true) {
+      checkbox2Active?.setAttribute('checked', 'true');
+    }
+
+    this.close();
+
+    document.getElementById('cancel-edit-btn')?.addEventListener('click', () => {
+      new CloseDialog().x(document.getElementById('entity-editor-container'));
+    });
+
+    const updateButton = document.getElementById('update-changes');
+    updateButton?.addEventListener('click', () => {
+      const nameVal = document.getElementById('entity-name')?.value.trim().toUpperCase();
+      const activeVal = document.getElementById('entity-active')?.checked;
+      const checkLocVal = document.getElementById('entity-checkLocation')?.checked;
+
+      if (!nameVal) {
+        alert("Debe completar el nombre");
+        return;
+      }
+
+      let raw = JSON.stringify({
+        "name": `${nameVal}`,
+        "isActive": activeVal ? true : false,
+        "checkLocation": checkLocVal ? true : false
+      });
+
+      updateEntity('Routine', entityID, raw).then(() => {
+        setTimeout(() => {
+          new CloseDialog().x(document.getElementById('entity-editor-container'));
+          if (origin === 'detail') {
+            this.renderDetail(entityID, 'list');
+          } else {
+            this.render(infoPage.offset, infoPage.currentPage, infoPage.search);
+          }
+        }, 100);
+      });
+    });
+  }
 
   export2() {
     const exportRegisters = document.querySelectorAll('#export2-entity');
     exportRegisters.forEach((exports) => {
-        const entityId = exports.dataset.entityid;
-        exports.addEventListener('click', () => {
-            this.entityDialogContainer.innerHTML = '';
-            this.entityDialogContainer.style.display = 'flex';
-            this.entityDialogContainer.innerHTML = `
+      const entityId = exports.dataset.entityid;
+      exports.addEventListener('click', () => {
+        this.entityDialogContainer.innerHTML = '';
+        this.entityDialogContainer.style.display = 'flex';
+        this.entityDialogContainer.innerHTML = `
             <div class="entity_editor" id="entity-editor">
             <div class="entity_editor_header">
                 <div class="user_info">
@@ -470,8 +1521,7 @@ export class Routines {
             <div class="entity_editor_body">
                 <div class="material_input">
                     <label for="status-export">Estados del registro</label>
-                    <br>
-                    <br>
+                    <br><br>
                     <select name="status-export" id="status-export">
                         <option value="Todos">Todos</option>
                         <option value="Marcadas" selected>Marcadas</option>
@@ -481,8 +1531,7 @@ export class Routines {
                 <br>
                 <div class="material_input">
                     <label for="export-format">Formato de archivo</label>
-                    <br>
-                    <br>
+                    <br><br>
                     <select name="export-format" id="export-format">
                         <option value="pdf" selected>PDF (con imágenes)</option>
                         <option value="excel">Excel / CSV (solo datos)</option>
@@ -518,11 +1567,9 @@ export class Routines {
                     </div>
                 </div>
 
-                <br>
-                <br>
+                <br><br>
 
             </div>
-            <!-- END EDITOR BODY -->
 
             <div class="entity_editor_footer">
                 <button class="btn btn_primary btn_widder" id="export-data">Listo</button>
@@ -530,59 +1577,54 @@ export class Routines {
             </div>
         `;
 
-            inputObserver();
-            let fecha = new Date(); //Fecha actual
-            let mes = fecha.getMonth()+1; //obteniendo mes
-            let dia = fecha.getDate(); //obteniendo dia
-            let anio = fecha.getFullYear(); //obteniendo año
-            if(dia<10)
-                dia='0'+dia; //agrega cero si el menor de 10
-            if(mes<10)
-                mes='0'+mes //agrega cero si el menor de 10
-            // @ts-ignore
-            //document.getElementById("entity-date").value = anio+"-"+mes+"-"+dia;
-            document.getElementById("start-date").value = anio+"-"+mes+"-"+dia;
-            // @ts-ignore
-            document.getElementById("end-date").value = anio+"-"+mes+"-"+dia;
+        inputObserver();
+        let fecha = new Date();
+        let mes = fecha.getMonth() + 1;
+        let dia = fecha.getDate();
+        let anio = fecha.getFullYear();
+        if (dia < 10) dia = '0' + dia;
+        if (mes < 10) mes = '0' + mes;
 
-            document.getElementById("start-time").value = "00:00";
-            document.getElementById("end-time").value = "23:59";
+        document.getElementById("start-date").value = anio + "-" + mes + "-" + dia;
+        document.getElementById("end-date").value = anio + "-" + mes + "-" + dia;
+        document.getElementById("start-time").value = "00:00";
+        document.getElementById("end-time").value = "23:59";
 
-            const _closeButton = document.getElementById('close');
-            const exportButton = document.getElementById('export-data');
-            const statusExport = document.getElementById('status-export');
-            const exportFormat = document.getElementById('export-format');
-            const flipImage = document.getElementById('entity-flip-image');
+        const _closeButton = document.getElementById('close');
+        const exportButton = document.getElementById('export-data');
+        const statusExport = document.getElementById('status-export');
+        const exportFormat = document.getElementById('export-format');
+        const flipImage = document.getElementById('entity-flip-image');
 
-            exportFormat.addEventListener('change', () => {
-                const flipContainer = document.getElementById('flip-image-container');
-                if (exportFormat.value === 'excel') {
-                    flipContainer.style.display = 'none';
-                } else {
-                    flipContainer.style.display = 'block';
-                }
-            });
+        exportFormat?.addEventListener('change', () => {
+          const flipContainer = document.getElementById('flip-image-container');
+          if (exportFormat.value === 'excel') {
+            flipContainer.style.display = 'none';
+          } else {
+            flipContainer.style.display = 'block';
+          }
+        });
 
-            let onPressed = false;
-            exportButton.addEventListener('click', async () => {
-                const startDate = document.getElementById('start-date').value;
-                const endDate = document.getElementById('end-date').value;
-                const startTime = document.getElementById('start-time').value;
-                const endTime = document.getElementById('end-time').value;
+        let onPressed = false;
+        exportButton?.addEventListener('click', async () => {
+          const startDate = document.getElementById('start-date').value;
+          const endDate = document.getElementById('end-date').value;
+          const startTime = document.getElementById('start-time').value;
+          const endTime = document.getElementById('end-time').value;
 
-                if (startDate > endDate) {
-                    alert('La fecha "Desde" no puede ser mayor que la fecha "Hasta"');
-                    return;
-                }
-                if (startDate === endDate && startTime > endTime) {
-                    alert('La hora de inicio no puede ser mayor que la hora de fin para el mismo día');
-                    return;
-                }
+          if (startDate > endDate) {
+            alert('La fecha "Desde" no puede ser mayor que la fecha "Hasta"');
+            return;
+          }
+          if (startDate === endDate && startTime > endTime) {
+            alert('La hora de inicio no puede ser mayor que la hora de fin para el mismo día');
+            return;
+          }
 
-                if (!onPressed) {
-                    onPressed = true;
-                    this.dialogContainer.style.display = 'block';
-                    this.dialogContainer.innerHTML = `
+          if (!onPressed) {
+            onPressed = true;
+            this.dialogContainer.style.display = 'block';
+            this.dialogContainer.innerHTML = `
                 <div class="dialog_content" id="dialog-content">
                     <div class="dialog" style="width: 450px; max-width: 90%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
                         <div class="dialog_container padding_16">
@@ -621,244 +1663,187 @@ export class Routines {
                         </div>
                     </div>
                 </div>
-                `;
-                    inputObserver();
-                    let status = false;
-                    let conditionStatus = '<>';
-                    if (statusExport.value == 'Marcadas') {
-                        status = true;
-                    }
-                    else if (statusExport.value == 'NoMarcadas') {
-                        status = true;
-                        conditionStatus = '=';
-                    }
-                    const messageTotal = document.getElementById("export-total");
-                    const messageExport = document.getElementById("message-export");
-                    const messageLabel = document.getElementById("export-status-label");
-                    const progressBarContainer = document.getElementById("progress-bar-container");
-                    const progressBar = document.getElementById("progress-bar");
-                    const timeContainer = document.getElementById("time-container");
-                    const timeEstimate = document.getElementById("time-estimate");
-                    const errorLog = document.getElementById("error-log");
-                    const errorContainer = document.getElementById("error-container");
-                    const _closeButton = document.getElementById('cancel');
-                    _closeButton.onclick = () => {
-                        onPressed = false;
-                        const _dialog = document.getElementById('dialog-content');
-                        new CloseDialog().x(_dialog);
-                    };
-                    const _values = {
-                        start: document.getElementById('start-date'),
-                        end: document.getElementById('end-date'),
-                        startTime: document.getElementById('start-time'),
-                        endTime: document.getElementById('end-time'),
-                    };
+            `;
+            inputObserver();
+            let status = false;
+            let conditionStatus = '<>';
+            if (statusExport.value == 'Marcadas') {
+              status = true;
+            } else if (statusExport.value == 'NoMarcadas') {
+              status = true;
+              conditionStatus = '=';
+            }
 
-                    const timeConditions = [];
-                    if (_values.startTime.value <= _values.endTime.value) {
-                        timeConditions.push(
-                            { "property": "creationTime", "operator": ">=", "value": `${_values.startTime.value}:00` },
-                            { "property": "creationTime", "operator": "<=", "value": `${_values.endTime.value}:59` }
-                        );
-                    } else {
-                        timeConditions.push({
-                            "group": "OR",
-                            "conditions": [
-                                { "property": "creationTime", "operator": ">=", "value": `${_values.startTime.value}:00` },
-                                { "property": "creationTime", "operator": "<=", "value": `${_values.endTime.value}:59` }
-                            ]
-                        });
-                    }
+            const messageTotal = document.getElementById("export-total");
+            const messageExport = document.getElementById("message-export");
+            const messageLabel = document.getElementById("export-status-label");
+            const progressBarContainer = document.getElementById("progress-bar-container");
+            const progressBar = document.getElementById("progress-bar");
+            const errorLog = document.getElementById("error-log");
+            const errorContainer = document.getElementById("error-container");
+            const _cancelButton = document.getElementById('cancel');
 
-                    const checkEmail = { checked: false };
-                    const checkAllCustomers = { checked: false };
-
-                    let rawToExport = (offset) => {
-                        let rawExport = JSON.stringify({
-                            "filter": {
-                                "conditions": [
-                                    {
-                                        "property": `customer.id`,
-                                        "operator": "=",
-                                        "value": `${customerId}`
-                                    },
-                                    {
-                                        "property": "routine.id",
-                                        "operator": `=`,
-                                        "value": `${entityId}`
-                                    },
-                                    {
-                                        "property": "routineState.name",
-                                        "operator": `${conditionStatus}`,
-                                        "value": `${status ? 'No cumplido' : ""}`
-                                    },
-                                    {
-                                        "property": "creationDate",
-                                        "operator": ">=",
-                                        "value": `${_values.start.value}`
-                                    },
-                                    {
-                                        "property": "creationDate",
-                                        "operator": "<=",
-                                        "value": `${_values.end.value}`
-                                    },
-                                    ...timeConditions
-                                ],
-                            },
-                            sort: `-createdDate`,
-                            limit: Config.limitExport,
-                            offset: offset,
-                            fetchPlan: 'full',
-                        });
-                        return rawExport;
-                    };
-                        let rawExport = rawToExport(0);
-                        const totalRegisters = await getFilterEntityCount("RoutineRegister", rawExport);
-                        if (totalRegisters === undefined) {
-                            onPressed = false;
-                            errorContainer.style.display = 'block';
-                            errorLog.innerHTML += `<div style="margin-bottom: 4px; color: #721c24; background: #f8d7da; padding: 4px 8px; border-radius: 4px; border: 1px solid #f5c6cb;">
-                                <i class="fa-solid fa-circle-xmark"></i> Ocurrió un error al exportar.
-                            </div>`;
-                            messageLabel.innerText = "Error en el proceso";
-                            const cancelButton = document.getElementById('cancel');
-                            if (cancelButton) cancelButton.innerText = "Cerrar Ventana";
-                        }
-                        else if (totalRegisters === 0) {
-                            onPressed = false;
-                            errorContainer.style.display = 'block';
-                            errorLog.innerHTML += `<div style="margin-bottom: 4px; color: #475569; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
-                                <i class="fa-solid fa-file-circle-xmark"></i> No hay ningún registro para exportar.
-                            </div>`;
-                            messageLabel.innerText = "Sin registros";
-                            const cancelButton = document.getElementById('cancel');
-                            if (cancelButton) cancelButton.innerText = "Cerrar Ventana";
-                        }
-                        else {
-                            progressBarContainer.style.display = 'block';
-                            messageLabel.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> Obteniendo registros...`;
-                            messageTotal.innerText = `0 / ${totalRegisters}`;
-                            const pages = Math.ceil(totalRegisters / Config.limitExport);
-                            let array = [];
-                            let registers = [];
-                            let offset = 0;
-                            for (let i = 0; i < pages; i++) {
-                                if (onPressed) {
-                                    rawExport = rawToExport(offset);
-                                    array[i] = await getFilterEntityData("RoutineRegister", rawExport); //await getEvents();
-                                    for (let y = 0; y < array[i].length; y++) {
-                                        registers.push(array[i][y]);
-                                    }
-                                    messageTotal.innerText = `${registers.length} / ${totalRegisters}`;
-                                    messageExport.innerText = `Cargando: ${registers.length} registros`;
-                                    progressBar.style.width = `${(registers.length / totalRegisters) * 50}%`;
-                                    offset = Config.limitExport + (offset);
-                                    await sleep(Config.timeOutExport);
-                                }
-                            }
-
-                            messageLabel.innerHTML = `<i class="fa-solid fa-image"></i> Descargando datos...`;
-                            messageExport.innerText = `Procesando imágenes...`;
-                            let rows = [];
-                            for (let i = 0; i < registers.length; i++) {
-                                if (!onPressed) break;
-                                let register = registers[i];
-
-                                if (i % 5 === 0 || i === registers.length - 1) {
-                                    messageTotal.innerText = `${i + 1} / ${registers.length} registros`;
-                                }
-
-                                let image = '';
-                                if (exportFormat.value === 'pdf') {
-                                    if (register.attachment !== undefined) {
-                                        image = await getFile(register.attachment);
-                                    }
-                                }
-
-                                let obj = {
-                                    "cliente": `${register?.customer?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                                    "rutina": `${register?.routine?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                                    "ubicacion": `${register?.routineSchedule?.name.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim()}`,
-                                    "intervaloInicio": `${register?.routineSchedule?.scheduleTime ?? ''}`,
-                                    "intervaloFin": `${register?.routineSchedule?.scheduleTimeEnd ?? ''}`,
-                                    "inicio": `${_values.start.value} ${_values.startTime.value}`,
-                                    "fin": `${_values.end.value} ${_values.endTime.value}`,
-                                    "fecha": `${register.creationDate}`,
-                                    "hora": `${register.creationTime}`,
-                                    "fechaObjetivo": `${register?.targetDate ?? ''}`,
-                                    "horaObjetivo": `${register?.targetTime ?? ''}`,
-                                    "INTERVALO DESDE": `${register?.targetDate ?? ''} ${register?.targetTime ?? ''}`.trim(),
-                                    "INTERVALO HASTA": `${register?.targetDate2 ?? ''} ${register?.targetTime2 ?? ''}`.trim(),
-                                    "NOVEDAD REVISADA EN": `${register?.consoleDate ?? ''} ${register?.consoleTime ?? ''}`.trim(),
-                                    "OBSERVACIÓN DE CONSOLA": `${(register?.consoleDate ?? register?.consoleTime) ? (register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? '') : ''}`,
-                                    "USUARIO DE CONSOLA": `${register?.consoleUser ?? register?.consoleUserId?.username ?? ''}`,
-                                    "estado": `${register?.routineState?.name ?? ''}`,
-                                    "latitud": `${register?.latitude ?? ''}`,
-                                    "longitud": `${register?.longitude ?? ''}`,
-                                    "cords": `${register?.latitude ?? ''}\n${register?.longitude ?? ''}`,
-                                    "usuario": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
-                                    "observacion": `${register?.observation?.split("\n").join(". ").replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2580-\u27BF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() ?? ''}`,
-                                };
-
-                                if (exportFormat.value === 'pdf') {
-                                    obj.imagen = image;
-                                    obj.imageTag = i + 1;
-                                }
-
-                                rows.push(obj);
-                                progressBar.style.width = `${50 + ((i + 1) / registers.length) * 50}%`;
-                            }
-
-                            // @ts-ignore
-                            const customer = await getEntityData('Customer', customerId);
-
-                            if (onPressed) {
-                                if (exportFormat.value === 'pdf') {
-                                    messageLabel.innerHTML = `<i class="fa-solid fa-file-pdf"></i> Generando documento...`;
-                                    messageExport.innerText = `Preparando PDF para ${customer?.name ?? ''}...`;
-                                    // @ts-ignore
-                                    await exportRoutinePdf2(rows, [], flipImage.checked ? true : false, false, customer?.email ?? '', 1, 1);
-                                } else {
-                                    messageLabel.innerHTML = `<i class="fa-solid fa-file-excel"></i> Generando Excel...`;
-                                    messageExport.innerText = `Preparando archivo para ${customer?.name ?? ''}...`;
-                                    const d = new Date();
-                                    await generateRoutineReportXlsx(rows, {
-                                        customerName: customer?.name ?? '',
-                                        startDate: _values.start.value,
-                                        endDate: _values.end.value,
-                                        startTime: _values.startTime.value,
-                                        endTime: _values.endTime.value,
-                                        filename: `Reporte_Rutina_${customer.name.replace(/\s+/g, '_')}_${d.getDate()}_${d.getMonth() + 1}.xlsx`,
-                                    });
-                                }
-                            }
-
-                            const hasIssues = errorLog.innerHTML !== "";
-                            if (hasIssues) {
-                                messageLabel.innerText = "Proceso terminado con observaciones";
-                                const cancelButton = document.getElementById('cancel');
-                                if (cancelButton) cancelButton.innerText = "Cerrar Ventana";
-                            } else {
-                                const _dialog = document.getElementById('dialog-content');
-                                new CloseDialog().x(_dialog);
-                            }
-                            onPressed = false;
-                        }
-                    }
-                });
-            _closeButton.onclick = () => {
-                onPressed = false;
-                const editor = document.getElementById('entity-editor-container');
-                new CloseDialog().x(editor);
+            _cancelButton.onclick = () => {
+              onPressed = false;
+              new CloseDialog().x(document.getElementById('dialog-content'));
             };
+
+            const _values = {
+              start: document.getElementById('start-date'),
+              end: document.getElementById('end-date'),
+              startTime: document.getElementById('start-time'),
+              endTime: document.getElementById('end-time'),
+            };
+
+            const timeConditions = [];
+            if (_values.startTime.value <= _values.endTime.value) {
+              timeConditions.push(
+                { "property": "creationTime", "operator": ">=", "value": `${_values.startTime.value}:00` },
+                { "property": "creationTime", "operator": "<=", "value": `${_values.endTime.value}:59` }
+              );
+            } else {
+              timeConditions.push({
+                "group": "OR",
+                "conditions": [
+                  { "property": "creationTime", "operator": ">=", "value": `${_values.startTime.value}:00` },
+                  { "property": "creationTime", "operator": "<=", "value": `${_values.endTime.value}:59` }
+                ]
+              });
+            }
+
+            let rawToExport = (offset) => {
+              return JSON.stringify({
+                "filter": {
+                  "conditions": [
+                    { "property": `customer.id`, "operator": "=", "value": `${customerId}` },
+                    { "property": "routine.id", "operator": `=`, "value": `${entityId}` },
+                    { "property": "routineState.name", "operator": `${conditionStatus}`, "value": `${status ? 'No cumplido' : ""}` },
+                    { "property": "creationDate", "operator": ">=", "value": `${_values.start.value}` },
+                    { "property": "creationDate", "operator": "<=", "value": `${_values.end.value}` },
+                    ...timeConditions
+                  ],
+                },
+                sort: `-createdDate`,
+                limit: Config.limitExport,
+                offset: offset,
+                fetchPlan: 'full',
+              });
+            };
+
+            let rawExport = rawToExport(0);
+            const totalRegisters = await getFilterEntityCount("RoutineRegister", rawExport);
+            if (totalRegisters === undefined) {
+              onPressed = false;
+              errorContainer.style.display = 'block';
+              errorLog.innerHTML += `<div style="margin-bottom: 4px; color: #721c24; background: #f8d7da; padding: 4px 8px; border-radius: 4px;">Error al exportar.</div>`;
+              messageLabel.innerText = "Error en el proceso";
+            } else if (totalRegisters === 0) {
+              onPressed = false;
+              errorContainer.style.display = 'block';
+              errorLog.innerHTML += `<div style="margin-bottom: 4px; color: #475569; background: #f1f5f9; padding: 4px 8px; border-radius: 4px;">No hay ningún registro para exportar.</div>`;
+              messageLabel.innerText = "Sin registros";
+            } else {
+              progressBarContainer.style.display = 'block';
+              messageLabel.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> Obteniendo registros...`;
+              messageTotal.innerText = `0 / ${totalRegisters}`;
+              const pages = Math.ceil(totalRegisters / Config.limitExport);
+              let array = [];
+              let registers = [];
+              let offset = 0;
+              for (let i = 0; i < pages; i++) {
+                if (onPressed) {
+                  rawExport = rawToExport(offset);
+                  array[i] = await getFilterEntityData("RoutineRegister", rawExport);
+                  for (let y = 0; y < array[i].length; y++) {
+                    registers.push(array[i][y]);
+                  }
+                  messageTotal.innerText = `${registers.length} / ${totalRegisters}`;
+                  messageExport.innerText = `Cargando: ${registers.length} registros`;
+                  progressBar.style.width = `${(registers.length / totalRegisters) * 50}%`;
+                  offset = Config.limitExport + (offset);
+                  await sleep(Config.timeOutExport);
+                }
+              }
+
+              messageLabel.innerHTML = `<i class="fa-solid fa-image"></i> Descargando datos...`;
+              messageExport.innerText = `Procesando imágenes...`;
+              let rows = [];
+              for (let i = 0; i < registers.length; i++) {
+                if (!onPressed) break;
+                let register = registers[i];
+                let image = '';
+                if (exportFormat.value === 'pdf') {
+                  if (register.attachment !== undefined) {
+                    image = await getFile(register.attachment);
+                  }
+                }
+
+                let obj = {
+                  "cliente": `${register?.customer?.name ?? ''}`,
+                  "rutina": `${register?.routine?.name ?? ''}`,
+                  "ubicacion": `${register?.routineSchedule?.name ?? ''}`,
+                  "intervaloInicio": `${register?.routineSchedule?.scheduleTime ?? ''}`,
+                  "intervaloFin": `${register?.routineSchedule?.scheduleTimeEnd ?? ''}`,
+                  "inicio": `${_values.start.value} ${_values.startTime.value}`,
+                  "fin": `${_values.end.value} ${_values.endTime.value}`,
+                  "fecha": `${register.creationDate}`,
+                  "hora": `${register.creationTime}`,
+                  "estado": `${register?.routineState?.name ?? ''}`,
+                  "latitud": `${register?.latitude ?? ''}`,
+                  "longitud": `${register?.longitude ?? ''}`,
+                  "usuario": `${register.user?.firstName ?? ''} ${register.user?.lastName ?? ''}`,
+                  "observacion": `${register?.observation ?? ''}`,
+                };
+
+                if (exportFormat.value === 'pdf') {
+                  obj.imagen = image;
+                  obj.imageTag = i + 1;
+                }
+
+                rows.push(obj);
+                progressBar.style.width = `${50 + ((i + 1) / registers.length) * 50}%`;
+              }
+
+              const customer = await getEntityData('Customer', customerId);
+              if (onPressed) {
+                if (exportFormat.value === 'pdf') {
+                  messageLabel.innerHTML = `<i class="fa-solid fa-file-pdf"></i> Generando documento...`;
+                  await exportRoutinePdf2(rows, [], flipImage?.checked ? true : false, false, customer?.email ?? '', 1, 1);
+                } else {
+                  messageLabel.innerHTML = `<i class="fa-solid fa-file-excel"></i> Generando Excel...`;
+                  const d = new Date();
+                  await generateRoutineReportXlsx(rows, {
+                    customerName: customer?.name ?? '',
+                    startDate: _values.start.value,
+                    endDate: _values.end.value,
+                    startTime: _values.startTime.value,
+                    endTime: _values.endTime.value,
+                    filename: `Reporte_Rutina_${(customer?.name || '').replace(/\s+/g, '_')}_${d.getDate()}_${d.getMonth() + 1}.xlsx`,
+                  });
+                }
+              }
+
+              new CloseDialog().x(document.getElementById('dialog-content'));
+              onPressed = false;
+            }
+          }
         });
+
+        _closeButton.onclick = () => {
+          onPressed = false;
+          new CloseDialog().x(document.getElementById('entity-editor-container'));
+        };
+      });
     });
-}
-  ex(){
+  }
+
+  ex() {
     const exportRegisters = document.getElementById('ex-entity');
+    if (!exportRegisters) return;
+
     exportRegisters.addEventListener('click', async () => {
-        this.dialogContainer.style.display = 'block';
-        this.dialogContainer.innerHTML = `
+      this.dialogContainer.style.display = 'block';
+      this.dialogContainer.innerHTML = `
         <div class="dialog_content" id="dialog-content">
             <div class="dialog">
                 <div class="dialog_container padding_8">
@@ -879,17 +1864,18 @@ export class Routines {
                 </div>
             </div>
         </div>`;
-        inputObserver();
-        const _closeButton = document.getElementById('cancel');
-        const exportButton = document.getElementById('export-data');
-        const _dialog = document.getElementById('dialog-content');
-        const _checkAllCustomer = document.getElementById('check-allCustomer');
-        let onPressed = false;
-        exportButton.addEventListener('click', async () => {
-            if(!onPressed){
-                onPressed = true;
-                this.dialogContainer.style.display = 'block';
-                this.dialogContainer.innerHTML = `
+
+      inputObserver();
+      const _closeButton = document.getElementById('cancel');
+      const exportButton = document.getElementById('export-data');
+      const _checkAllCustomer = document.getElementById('check-allCustomer');
+      let onPressed = false;
+
+      exportButton?.addEventListener('click', async () => {
+        if (!onPressed) {
+          onPressed = true;
+          this.dialogContainer.style.display = 'block';
+          this.dialogContainer.innerHTML = `
                 <div class="dialog_content" id="dialog-content">
                     <div class="dialog" style="width: 450px; max-width: 90%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
                         <div class="dialog_container padding_16">
@@ -908,150 +1894,97 @@ export class Routines {
                                     </div>
                                     <p id="message-export" style="margin: 4px 0 0 0; font-size: 13px; color: #334155; font-weight: 500;"></p>
                                 </div>
-
-                                <div id="error-container" style="display: none;">
-                                    <div id="error-log" style="background: #fafafa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; max-height: 120px; overflow-y: scroll; font-size: 11.5px; line-height: 1.5; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;"></div>
-                                </div>
                             </div>
 
                             <div class="dialog_footer" style="margin-top: 20px; padding-top: 12px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end;">
-                                <button class="btn btn_secondary" id="cancel" style="border-radius: 6px; padding: 8px 16px;">Cancelar</button>
+                                <button class="btn btn_secondary" id="cancel">Cancelar</button>
                             </div>
                         </div>
                     </div>
                 </div>
                 `;
-                inputObserver();
-                const messageTotal = document.getElementById("export-total");
-                const messageExport = document.getElementById("message-export");
-                const messageLabel = document.getElementById("export-status-label");
-                const progressBar = document.getElementById("progress-bar");
-                const errorLog = document.getElementById("error-log");
-                const errorContainer = document.getElementById("error-container");
-                const _closeButton = document.getElementById('cancel');
-                _closeButton.onclick = () => {
-                    onPressed = false;
-                    const _dialog = document.getElementById('dialog-content');
-                    new CloseDialog().x(_dialog);
-                };
-                let rawToExport=(offset)=>{
-                    const raw = JSON.stringify({
-                        "filter": {
-                            "conditions": [
-                                {
-                                    "property": `${_checkAllCustomer.checked ? 'business.id' : 'customer.id'}`,
-                                    "operator": "=",
-                                    "value": `${_checkAllCustomer.checked ? Config.currentUser.business.id : customerId}`
-                                },
-                                {
-                                    "property": "business.state.name",
-                                    "operator": "=",
-                                    "value": `Enabled`
-                                },
-                            ]
-                        },
-                        sort: "+customer.name,+routine.name",
-                        limit: Config.limitExport,
-                        offset: offset,
-                        fetchPlan: 'full',
-                    });
-                    return raw;
+
+          inputObserver();
+          const messageTotal = document.getElementById("export-total");
+          const progressBar = document.getElementById("progress-bar");
+          const _cancelButton = document.getElementById('cancel');
+
+          _cancelButton.onclick = () => {
+            onPressed = false;
+            new CloseDialog().x(document.getElementById('dialog-content'));
+          };
+
+          let rawToExport = (offset) => {
+            return JSON.stringify({
+              "filter": {
+                "conditions": [
+                  {
+                    "property": `${_checkAllCustomer.checked ? 'business.id' : 'customer.id'}`,
+                    "operator": "=",
+                    "value": `${_checkAllCustomer.checked ? Config.currentUser.business.id : customerId}`
+                  },
+                  { "property": "business.state.name", "operator": "=", "value": `Enabled` }
+                ]
+              },
+              sort: "+customer.name,+routine.name",
+              limit: Config.limitExport,
+              offset: offset,
+              fetchPlan: 'full',
+            });
+          };
+
+          let rawExport = rawToExport(0);
+          const totalRegisters = await getFilterEntityCount("RoutineSchedule", rawExport);
+          if (totalRegisters && totalRegisters > 0) {
+            messageTotal.innerText = `0 / ${totalRegisters}`;
+            const pages = Math.ceil(totalRegisters / Config.limitExport);
+            let array = [];
+            let dataToExport = [];
+            let offset = 0;
+            for (let i = 0; i < pages; i++) {
+              if (onPressed) {
+                rawExport = rawToExport(offset);
+                array[i] = await getFilterEntityData("RoutineSchedule", rawExport);
+                for (let y = 0; y < array[i].length; y++) {
+                  dataToExport.push({
+                    "Empresa": array[i][y].customer?.name ?? '',
+                    "Rutina": array[i][y].routine?.name ?? '',
+                    "Activo": array[i][y].routine?.isActive ? "Si" : "No",
+                    "GPS": array[i][y].routine?.checkLocation ? "Si" : "No",
+                    "Ubicacion": array[i][y].name ?? '',
+                    "Coordenadas": array[i][y].cords ?? '',
+                    "Horario": `${array[i][y].scheduleTime ?? ''} - ${array[i][y].scheduleTimeEnd ?? ''}`,
+                    "Frecuencia": array[i][y].frequency ?? 0,
+                    "Distancia": array[i][y].distance ?? 0
+                  });
                 }
-                let rawExport = rawToExport(0);
-                const totalRegisters = await getFilterEntityCount("RoutineSchedule", rawExport);
-                if(totalRegisters === undefined){
-                    onPressed = false;
-                    errorContainer.style.display = 'block';
-                    errorLog.innerHTML += `<div style="margin-bottom: 4px; color: #721c24; background: #f8d7da; padding: 4px 8px; border-radius: 4px; border: 1px solid #f5c6cb;">
-                        <i class="fa-solid fa-circle-xmark"></i> Ocurrió un error al exportar.
-                    </div>`;
-                    messageLabel.innerText = "Error en el proceso";
-                    const cancelButton = document.getElementById('cancel');
-                    if (cancelButton) cancelButton.innerText = "Cerrar Ventana";
-                }else if(totalRegisters===0){
-                    onPressed = false;
-                    errorContainer.style.display = 'block';
-                    errorLog.innerHTML += `<div style="margin-bottom: 4px; color: #475569; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
-                        <i class="fa-solid fa-file-circle-xmark"></i> No hay ningún registro para exportar.
-                    </div>`;
-                    messageLabel.innerText = "Sin registros";
-                    const cancelButton = document.getElementById('cancel');
-                    if (cancelButton) cancelButton.innerText = "Cerrar Ventana";
-                }else {
-                    messageTotal.innerText = `0 / ${totalRegisters}`;
-                    const pages = Math.ceil(totalRegisters / Config.limitExport);
-                    let array = [];
-                    let dataToExport = [];
-                    let offset = 0;
-                    for(let i = 0; i < pages; i++){
-                        if(onPressed){
-                            rawExport = rawToExport(offset);
-                            array[i] = await getFilterEntityData("RoutineSchedule", rawExport); //await getEvents();
-                            for(let y=0; y<array[i].length; y++){
-                                dataToExport.push({
-                                    "Empresa":array[i][y].customer.name,
-                                    "Rutina":array[i][y].routine.name,
-                                    "Activo":array[i][y].routine.isActive ? "Si" : "No",
-                                    "GPS":array[i][y].routine.checkLocation ? "Si" : "No",
-                                    "Ubicacion":array[i][y].name,
-                                    "Coordenadas":array[i][y].cords,
-                                    "Horario":`${array[i][y].scheduleTime} - ${array[i][y].scheduleTimeEnd ?? ''}`,
-                                    "Frecuencia":array[i][y].frequency ?? 0,
-                                    "Distancia":array[i][y].distance ?? 0
-                                });
-                            }
-                            messageTotal.innerText = `${dataToExport.length} / ${totalRegisters}`;
-                            progressBar.style.width = `${(dataToExport.length / totalRegisters) * 100}%`;
-                            offset = Config.limitExport + (offset);
-                            await sleep(Config.timeOutExport);
-                        }
-                    }
-                
-                    generateFileSimpleXls(dataToExport,"Rutinas","csv");
-                    const hasIssues = errorLog.innerHTML !== "";
-                    if (hasIssues) {
-                        messageLabel.innerText = "Proceso terminado con observaciones";
-                        const cancelButton = document.getElementById('cancel');
-                        if (cancelButton) cancelButton.innerText = "Cerrar Ventana";
-                    } else {
-                        const _dialog = document.getElementById('dialog-content');
-                        new CloseDialog().x(_dialog);
-                    }
-                    onPressed = false;
-                }
+                messageTotal.innerText = `${dataToExport.length} / ${totalRegisters}`;
+                progressBar.style.width = `${(dataToExport.length / totalRegisters) * 100}%`;
+                offset = Config.limitExport + (offset);
+                await sleep(Config.timeOutExport);
+              }
             }
-        });
-        _closeButton.addEventListener('click', () => {
-            new CloseDialog().x(_dialog);
-        });     
+            generateFileSimpleXls(dataToExport, "Rutinas", "csv");
+          }
+
+          new CloseDialog().x(document.getElementById('dialog-content'));
+          onPressed = false;
+        }
+      });
+
+      _closeButton?.addEventListener('click', () => {
+        new CloseDialog().x(document.getElementById('dialog-content'));
+      });
     });
   }
-  
-    location() {
-      const locationRoutine = document.querySelectorAll('#location-entity');
-      locationRoutine.forEach((buttonKey) => {
-            buttonKey.addEventListener('click', async () => {
-                let entityId = buttonKey.dataset.entityid;
-                new Locations().render(Config.offset, Config.currentPage, "", entityId);
-            });
-        });
-  }
-  assignGuard() {
-    const userRoutine = document.querySelectorAll('#guard-entity');
-    userRoutine.forEach((buttonKey) => {
-          buttonKey.addEventListener('click', async () => {
-              let entityId = buttonKey.dataset.entityid;
-              new RoutineUsers().render(Config.offset, Config.currentPage, "", entityId);
-          });
-      });
-}
-    close() {
-        const closeButton = document.getElementById('close');
-        const editor = document.getElementById('entity-editor-container');
-        closeButton.addEventListener('click', () => {
-            //console.log('close');
-            new CloseDialog().x(editor);
-        });
-    }
-}
 
+  close() {
+    const closeButton = document.getElementById('close');
+    const editor = document.getElementById('entity-editor-container');
+    if (closeButton && editor) {
+      closeButton.addEventListener('click', () => {
+        new CloseDialog().x(editor);
+      });
+    }
+  }
+}

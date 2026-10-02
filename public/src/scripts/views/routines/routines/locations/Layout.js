@@ -11,6 +11,12 @@ export const tableLayout = `
         <h2 id="datatable_subtitle" style="color:blue;">Cargando...</h2>
       </div>
       <div class="datatable_tools" id="datatable-tools">
+        <button
+          class="datatable_button"
+          id="btnBack"
+          title="Volver a la rutina">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
         <input type="search"
         class="search_input"
         placeholder="Buscar"
