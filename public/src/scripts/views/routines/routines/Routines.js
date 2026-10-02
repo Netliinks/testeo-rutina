@@ -661,6 +661,18 @@ export class Routines {
         return;
       }
 
+      const timeIni = start.split(':');
+      const hourIni = parseInt(timeIni[0].trim());
+      const minIni = parseInt(timeIni[1].trim());
+      const timeEnd = end.split(':');
+      const hourEnd = parseInt(timeEnd[0].trim());
+      const minEnd = parseInt(timeEnd[1].trim());
+
+      if(hourIni == hourEnd && minIni > minEnd){
+          alert("Minutos iniciales no pueden ser mayores a las del final en horas iguales.");
+          return;
+      } 
+
       const coordsArr = cords ? cords.split(',') : [sch.latitude || "-2.18679", sch.longitude || "-79.89489"];
       const lat = parseFloat(coordsArr[0]?.trim() || "-2.18679");
       const lng = parseFloat(coordsArr[1]?.trim() || "-79.89489");
@@ -1226,6 +1238,18 @@ export class Routines {
         alert("Ingrese el nombre de la ubicación.");
         return;
       }
+
+      const timeIni = start.split(':');
+      const hourIni = parseInt(timeIni[0].trim());
+      const minIni = parseInt(timeIni[1].trim());
+      const timeEnd = end.split(':');
+      const hourEnd = parseInt(timeEnd[0].trim());
+      const minEnd = parseInt(timeEnd[1].trim());
+
+      if(hourIni == hourEnd && minIni > minEnd){
+          alert("Minutos iniciales no pueden ser mayores a las del final en horas iguales.");
+          return;
+      } 
 
       const coordsArr = cords ? cords.split(',') : ["-2.18679", "-79.89489"];
       const lat = parseFloat(coordsArr[0]?.trim() || "-2.18679");
