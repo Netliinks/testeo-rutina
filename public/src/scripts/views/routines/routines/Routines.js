@@ -545,6 +545,11 @@ export class Routines {
 
   async openAddScheduleModalDirect(routineId) {
     this.openAddScheduleModal(async (newSch) => {
+      const registerBtn = document.getElementById('save-sch-modal');
+      registerBtn.setAttribute('disabled', 'true');
+      registerBtn.classList.add('ng-btn-disabled');
+      const originalText = registerBtn?.innerHTML;
+      registerBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Agregando...`;
       try {
         const businessData = await currentBusiness();
         const dt = currentDateTime();
@@ -569,7 +574,11 @@ export class Routines {
         }
         this.renderDetail(routineId, 'list');
       } catch (err) {
+        console.error("Error al agregar la ubicación/horario:", err);
         alert("Error al agregar la ubicación/horario.");
+        registerBtn.removeAttribute('disabled');
+        registerBtn.classList.remove('ng-btn-disabled');
+        registerBtn.innerHTML = originalText;
       }
     });
   }
@@ -649,6 +658,11 @@ export class Routines {
     });
 
     document.getElementById('save-sch-modal')?.addEventListener('click', async () => {
+      const updateBtn = document.getElementById('save-sch-modal');
+      updateBtn.setAttribute('disabled', 'true');
+      updateBtn.classList.add('ng-btn-disabled');
+      const originalText = updateBtn.innerHTML;
+      updateBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
       const name = document.getElementById('sch-modal-name')?.value.trim();
       const cords = document.getElementById('sch-modal-cords')?.value.trim();
       const start = document.getElementById('sch-modal-start')?.value;
@@ -695,7 +709,11 @@ export class Routines {
           this.renderDetail(routineId, 'list');
         });
       } catch (e) {
+        console.error("Error al actualizar la ubicación:", e);
         alert("Error al actualizar la ubicación.");
+        updateBtn.removeAttribute('disabled');
+        updateBtn.classList.remove('ng-btn-disabled');
+        updateBtn.innerHTML = originalText;
       }
     });
   }
@@ -2092,7 +2110,7 @@ export class Routines {
                 await sleep(Config.timeOutExport);
               }
             }
-            generateFileSimpleXls(dataToExport, "Rutinas", "csv");
+            generateFileSimpleXls(dataToExport, "Rutinas", "xls");
           }
 
           new CloseDialog().x(document.getElementById('dialog-content'));
