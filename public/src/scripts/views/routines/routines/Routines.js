@@ -372,6 +372,9 @@ export class Routines {
                       <button class="ng-btn-icon edit-sch-btn" data-schidx="${idx}" title="Editar Ubicación/Horario">
                         <i class="fa-solid fa-pen" style="color:var(--ng-accent);"></i>
                       </button>
+                      <button class="ng-btn-icon view-sch-btn" data-schid="${sch.id}" title="Ver Tiempos">
+                        <i class="fa-solid fa-eye" style="color:var(--ng-accent);"></i>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -499,6 +502,14 @@ export class Routines {
         if (schItem) {
           this.openEditScheduleModalDirect(schItem, routineId);
         }
+      });
+    });
+
+    //View times
+    document.querySelectorAll('.view-sch-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const schId = btn.dataset.schid;
+        this.openViewScheduleModalDirect(0,schId);
       });
     });
 
@@ -667,7 +678,7 @@ export class Routines {
 
       try {
         await updateEntity('RoutineSchedule', sch.id, rawSch).then(async (res) => {
-          await generateRoutineTimes(entityId);
+          await generateRoutineTimes(sch.id);
           new CloseDialog().x(document.getElementById('dialog-content'));
           this.renderDetail(routineId, 'list');
         });
@@ -675,6 +686,99 @@ export class Routines {
         alert("Error al actualizar la ubicación.");
       }
     });
+  }
+
+  async openViewScheduleModalDirect(offset, schId) {
+    const id = schId;
+        const dialogContainer = document.getElementById('app-dialogs');
+        //const guards = await getDetails('routine.id', routine.id, 'RoutineUser');
+        let raw = JSON.stringify({
+            "filter": {
+                "conditions": [
+                    {
+                        "property": "routineSchedule.id",
+                        "operator": "=",
+                        "value": `${id}`
+                    }
+                ],
+            },
+            sort: "+routineTimePoint",
+            limit: Config.modalRows,
+            offset: offset
+        });
+        let dataModal = await getFilterEntityData("RoutineTime", raw);
+        dialogContainer.style.display = 'block';
+        dialogContainer.innerHTML = `
+              <div class="dialog_content" id="dialog-content">
+                  <div class="dialog">
+                      <div class="dialog_container padding_8">
+                          <div class="dialog_header">
+                              <h2>Tiempos Calculados</h2>
+                          </div>
+
+                          <div class="dialog_message padding_8">
+                              <div class="dashboard_datatable">
+                                  <table class="datatable_content margin_t_16">
+                                  <thead>
+                                      <tr>
+                                      <th>Tiempo</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody id="datatable-modal-body">
+                                  </tbody>
+                                  </table>
+                              </div>
+                              <br>
+                          </div>
+
+                          <div class="dialog_footer">
+                              <button class="btn btn_primary" id="prevModal"><i class="fa-solid fa-arrow-left"></i></button>
+                              <button class="btn btn_primary" id="nextModal"><i class="fa-solid fa-arrow-right"></i></button>
+                              <button class="btn btn_danger" id="cancel">Cancelar</button>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          `;
+        inputObserver();
+        const datetableBody = document.getElementById('datatable-modal-body');
+        if (dataModal.length === 0) {
+            let row = document.createElement('tr');
+            row.innerHTML = `
+                  <td>No hay datos</td>
+                  <td></td>
+                  <td></td>
+              `;
+            datetableBody.appendChild(row);
+        }
+        else {
+            for (let i = 0; i < dataModal.length; i++) {
+                let time = dataModal[i];
+                let row = document.createElement('tr');
+                row.innerHTML += `
+                    <td>${time?.routineTimePoint ?? ''}</td>
+                `;
+                datetableBody.appendChild(row);
+            }
+        }
+        const _closeButton = document.getElementById('cancel');
+        const _dialog = document.getElementById('dialog-content');
+        const prevModalButton = document.getElementById('prevModal');
+        const nextModalButton = document.getElementById('nextModal');
+
+        _closeButton.onclick = () => {
+            new CloseDialog().x(_dialog);
+        };
+        nextModalButton.onclick = () => {
+            offset = Config.modalRows + (offset);
+            this.openViewScheduleModalDirect(offset, id);
+        };
+        prevModalButton.onclick = () => {
+            if(offset > 0){
+              offset = offset - Config.modalRows;
+              this.openViewScheduleModalDirect(offset, id);
+            }
+        };
   }
 
   async openSelectGuardsModalDirect(routineId) {
