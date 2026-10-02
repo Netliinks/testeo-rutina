@@ -549,7 +549,7 @@ export class Routines {
       registerBtn.setAttribute('disabled', 'true');
       registerBtn.classList.add('ng-btn-disabled');
       const originalText = registerBtn?.innerHTML;
-      registerBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Agregando...`;
+      registerBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
       try {
         const businessData = await currentBusiness();
         const dt = currentDateTime();
@@ -662,7 +662,7 @@ export class Routines {
       updateBtn.setAttribute('disabled', 'true');
       updateBtn.classList.add('ng-btn-disabled');
       const originalText = updateBtn.innerHTML;
-      updateBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
+      updateBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Actualizando...`;
       const name = document.getElementById('sch-modal-name')?.value.trim();
       const cords = document.getElementById('sch-modal-cords')?.value.trim();
       const start = document.getElementById('sch-modal-start')?.value;
