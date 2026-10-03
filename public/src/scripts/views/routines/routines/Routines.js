@@ -656,7 +656,8 @@ export class Routines {
         if (saved && saved.id) {
           await generateRoutineTimes(saved.id);
         }
-        new CloseDialog().x(document.getElementById('dialog-content'));
+        const dialog = document.getElementById('dialog-content');
+        if (dialog) new CloseDialog().x(dialog);
         this.renderDetail(routineId, scheduleOffset, guardOffset);
       } catch (err) {
         console.error("Error al agregar la ubicación/horario:", err);
@@ -798,7 +799,8 @@ export class Routines {
       try {
         await updateEntity('RoutineSchedule', sch.id, rawSch);
         await generateRoutineTimes(sch.id);
-        new CloseDialog().x(document.getElementById('dialog-content'));
+        const dialog = document.getElementById('dialog-content');
+        if (dialog) new CloseDialog().x(dialog);
         this.renderDetail(routineId, scheduleOffset, guardOffset);
       } catch (e) {
         console.error("Error al actualizar la ubicación:", e);
@@ -909,8 +911,16 @@ export class Routines {
 
         for (let i = 0; i < selectedGuards.length; i++) {
           const g = selectedGuards[i];
-          const existGuard = await getDetails2('routine.id', routineId, 'user.id', g.id, 'RoutineUser');
-          if (existGuard.length === 0) {
+          const rawCheck = JSON.stringify({
+            "filter": {
+              "conditions": [
+                { "property": "routine.id", "operator": "=", "value": `${routineId}` },
+                { "property": "user.id", "operator": "=", "value": `${g.id}` }
+              ]
+            }
+          });
+          const existGuardCount = await getFilterEntityCount('RoutineUser', rawCheck) || 0;
+          if (existGuardCount === 0) {
             const rawGuard = JSON.stringify({
               "business": { "id": `${businessData.business.id}` },
               "customer": { "id": `${customerId}` },
@@ -922,7 +932,8 @@ export class Routines {
             await registerEntity(rawGuard, 'RoutineUser');
           }
         }
-        new CloseDialog().x(document.getElementById('dialog-content'));
+        const dialog = document.getElementById('dialog-content');
+        if (dialog) new CloseDialog().x(dialog);
         this.renderDetail(routineId, scheduleOffset, guardOffset);
       } catch (err) {
         alert("Error al asignar guardias.");
@@ -1222,6 +1233,8 @@ export class Routines {
       document.getElementById('wizard-add-sch-btn')?.addEventListener('click', () => {
         this.openAddScheduleModal((newSch) => {
           wizardSchedules.push(newSch);
+          const dialog = document.getElementById('dialog-content');
+          if (dialog) new CloseDialog().x(dialog);
           drawWizardStep();
         });
       });
@@ -1243,6 +1256,8 @@ export class Routines {
               wizardGuards.push(sg);
             }
           });
+          const dialog = document.getElementById('dialog-content');
+          if (dialog) new CloseDialog().x(dialog);
           drawWizardStep();
         });
       });
