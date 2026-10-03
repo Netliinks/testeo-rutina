@@ -195,7 +195,7 @@ export class Routines {
     detailBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
         const entityId = btn.dataset.entityid;
-        this.renderDetail(entityId, 'list');
+        this.renderDetail(entityId, 0, 0);
       });
     });
   }
@@ -263,45 +263,65 @@ export class Routines {
   }
 
   // =========================================================================
-  // VISTA DE DETALLE UNIFICADA (NTL-155)
+  // VISTA DE DETALLE UNIFICADA (NTL-155) CON PAGINACIÓN EN HORARIOS Y GUARDIAS
   // =========================================================================
-  async renderDetail(routineId, source = 'list') {
+  async renderDetail(routineId, scheduleOffset = 0, guardOffset = 0) {
     this.content.innerHTML = `<div class="ng-container" style="text-align:center; padding:40px;"><i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--ng-primary);"></i><p style="margin-top:12px; font-weight:600;">Cargando detalle de rutina...</p></div>`;
+
+    const limitSchedules = 5;
+    const limitGuards = 5;
 
     let routine;
     let schedules = [];
+    let totalSchedules = 0;
     let guards = [];
+    let totalGuards = 0;
 
     try {
       routine = await getEntityData("Routine", routineId);
 
-      // Fetch RoutineSchedules
-      const rawSchedules = JSON.stringify({
+      // Raw for RoutineSchedules Count & Data
+      const rawSchedulesBase = {
         "filter": {
           "conditions": [
             { "property": "customer.id", "operator": "=", "value": `${customerId}` },
             { "property": "routine.id", "operator": "=", "value": `${routineId}` }
           ]
-        },
-        sort: "-createdDate",
-        //limit: 100,
-        fetchPlan: 'full'
-      });
-      schedules = await getFilterEntityData("RoutineSchedule", rawSchedules) || [];
+        }
+      };
 
-      // Fetch RoutineUsers
-      const rawUsers = JSON.stringify({
+      totalSchedules = await getFilterEntityCount("RoutineSchedule", JSON.stringify(rawSchedulesBase)) || 0;
+
+      const rawSchedulesPaginated = JSON.stringify({
+        ...rawSchedulesBase,
+        sort: "-createdDate",
+        limit: limitSchedules,
+        offset: scheduleOffset,
+        fetchPlan: 'full'
+      });
+      schedules = await getFilterEntityData("RoutineSchedule", rawSchedulesPaginated) || [];
+
+      // Raw for RoutineUsers Count & Data
+      const rawUsersBase = {
         "filter": {
           "conditions": [
             { "property": "customer.id", "operator": "=", "value": `${customerId}` },
             { "property": "routine.id", "operator": "=", "value": `${routineId}` }
           ]
-        },
+        }
+      };
+
+      totalGuards = await getFilterEntityCount("RoutineUser", JSON.stringify(rawUsersBase)) || 0;
+
+      const rawUsersPaginated = JSON.stringify({
+        ...rawUsersBase,
         sort: "-createdDate",
-        //limit: 100,
+        limit: limitGuards,
+        offset: guardOffset,
         fetchPlan: 'full'
       });
-      guards = await getFilterEntityData("RoutineUser", rawUsers) || [];
+      guards = await getFilterEntityData("RoutineUser", rawUsersPaginated) || [];
+
     } catch (err) {
       console.error("Error al cargar detalle de rutina:", err);
       alert("No se pudieron obtener los datos completos de la rutina.");
@@ -330,7 +350,7 @@ export class Routines {
           <div style="background:var(--ng-surface-2); border:1px solid var(--ng-border); border-radius:10px; padding:16px; margin-bottom:16px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
               <div>
-                <strong style="color:var(--ng-primary); font-size:15px; text-transform:uppercase;">UBICACIÓN ${idx + 1} · ${sch.name}</strong>
+                <strong style="color:var(--ng-primary); font-size:15px; text-transform:uppercase;">UBICACIÓN ${scheduleOffset + idx + 1} · ${sch.name}</strong>
                 <div style="display:flex; align-items:center; gap:12px; margin-top:4px; flex-wrap:wrap;">
                   <span style="font-family:monospace; font-size:18px; font-weight:700; color:#1e293b;">
                     <i class="fa-solid fa-clock" style="color:var(--ng-accent); margin-right:4px;"></i>
@@ -383,6 +403,25 @@ export class Routines {
           </div>
         `;
       });
+
+      // Schedules Pagination Controls
+      const totalSchedulePages = Math.ceil(totalSchedules / limitSchedules) || 1;
+      const currentSchedulePage = Math.floor(scheduleOffset / limitSchedules) + 1;
+      schedulesHtml += `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid var(--ng-border);">
+          <span style="font-size:12px; color:var(--ng-text-muted);">
+            Página ${currentSchedulePage} de ${totalSchedulePages} (${totalSchedules} ubicaciones)
+          </span>
+          <div style="display:flex; gap:6px;">
+            <button class="ng-btn ng-btn-secondary" id="prev-sch-page-btn" ${scheduleOffset <= 0 ? 'disabled style="opacity:0.5;"' : ''}>
+              <i class="fa-solid fa-chevron-left"></i> Anterior
+            </button>
+            <button class="ng-btn ng-btn-secondary" id="next-sch-page-btn" ${scheduleOffset + limitSchedules >= totalSchedules ? 'disabled style="opacity:0.5;"' : ''}>
+              Siguiente <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      `;
     }
 
     let guardsHtml = '';
@@ -416,6 +455,25 @@ export class Routines {
         `;
       });
       guardsHtml += `</div>`;
+
+      // Guards Pagination Controls
+      const totalGuardPages = Math.ceil(totalGuards / limitGuards) || 1;
+      const currentGuardPage = Math.floor(guardOffset / limitGuards) + 1;
+      guardsHtml += `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid var(--ng-border);">
+          <span style="font-size:11px; color:var(--ng-text-muted);">
+            Pág. ${currentGuardPage}/${totalGuardPages} (${totalGuards})
+          </span>
+          <div style="display:flex; gap:6px;">
+            <button class="ng-btn ng-btn-secondary" id="prev-guard-page-btn" style="padding:4px 8px;" ${guardOffset <= 0 ? 'disabled style="opacity:0.5;"' : ''}>
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button class="ng-btn ng-btn-secondary" id="next-guard-page-btn" style="padding:4px 8px;" ${guardOffset + limitGuards >= totalGuards ? 'disabled style="opacity:0.5;"' : ''}>
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      `;
     }
 
     this.content.innerHTML = `
@@ -451,7 +509,7 @@ export class Routines {
               <div class="ng-card-header">
                 <h2 class="ng-card-title">
                   <i class="fa-solid fa-layer-group" style="color:var(--ng-accent);"></i>
-                  Horarios y Ubicaciones (${schedules.length})
+                  Horarios y Ubicaciones (${totalSchedules})
                 </h2>
                 <button class="ng-btn ng-btn-primary" id="detail-add-location-btn">
                   <i class="fa-solid fa-plus"></i> Agregar Ubicación
@@ -467,7 +525,7 @@ export class Routines {
               <div class="ng-card-header">
                 <h2 class="ng-card-title" style="font-size:12px; text-transform:uppercase; letter-spacing:0.04em;">
                   <i class="fa-solid fa-user-shield" style="color:var(--ng-accent);"></i>
-                  Guardias Asignados (${guards.length})
+                  Guardias Asignados (${totalGuards})
                 </h2>
                 <button class="ng-btn ng-btn-primary" id="detail-add-guard-btn" style="padding:6px 10px; font-size:12px;">
                   <i class="fa-solid fa-user-plus"></i> Asignar
@@ -489,9 +547,35 @@ export class Routines {
       this.RInterface('Routine', routineId, 'detail');
     });
 
+    // Schedules Pagination Events
+    document.getElementById('prev-sch-page-btn')?.addEventListener('click', () => {
+      if (scheduleOffset > 0) {
+        this.renderDetail(routineId, scheduleOffset - limitSchedules, guardOffset);
+      }
+    });
+
+    document.getElementById('next-sch-page-btn')?.addEventListener('click', () => {
+      if (scheduleOffset + limitSchedules < totalSchedules) {
+        this.renderDetail(routineId, scheduleOffset + limitSchedules, guardOffset);
+      }
+    });
+
+    // Guards Pagination Events
+    document.getElementById('prev-guard-page-btn')?.addEventListener('click', () => {
+      if (guardOffset > 0) {
+        this.renderDetail(routineId, scheduleOffset, guardOffset - limitGuards);
+      }
+    });
+
+    document.getElementById('next-guard-page-btn')?.addEventListener('click', () => {
+      if (guardOffset + limitGuards < totalGuards) {
+        this.renderDetail(routineId, scheduleOffset, guardOffset + limitGuards);
+      }
+    });
+
     // Add Location directly on detail page
     document.getElementById('detail-add-location-btn')?.addEventListener('click', () => {
-      this.openAddScheduleModalDirect(routineId);
+      this.openAddScheduleModalDirect(routineId, scheduleOffset, guardOffset);
     });
 
     // Edit Location directly on detail page
@@ -500,34 +584,39 @@ export class Routines {
         const schIdx = parseInt(btn.dataset.schidx);
         const schItem = schedules[schIdx];
         if (schItem) {
-          this.openEditScheduleModalDirect(schItem, routineId);
+          this.openEditScheduleModalDirect(schItem, routineId, scheduleOffset, guardOffset);
         }
       });
     });
 
-    //View times
+    // View times
     document.querySelectorAll('.view-sch-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const schId = btn.dataset.schid;
-        this.openViewScheduleModalDirect(0,schId);
+        this.openViewScheduleModalDirect(0, schId);
       });
     });
 
     // Assign Guard directly on detail page
     document.getElementById('detail-add-guard-btn')?.addEventListener('click', () => {
-      this.openSelectGuardsModalDirect(routineId);
+      this.openSelectGuardsModalDirect(routineId, scheduleOffset, guardOffset);
     });
 
     // Remove Guard Event directly on detail page
     document.querySelectorAll('.remove-guard-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const guardId = btn.dataset.guardid;
+      btn.addEventListener('click', async (e) => {
+        const guardBtn = e.currentTarget;
+        const guardId = guardBtn.dataset.guardid;
         if (confirm("¿Desea eliminar esta asignación de guardia?")) {
+          guardBtn.setAttribute('disabled', 'true');
+          guardBtn.classList.add('ng-btn-disabled');
           try {
             await deleteEntity('RoutineUser', guardId);
-            this.renderDetail(routineId, source);
+            this.renderDetail(routineId, scheduleOffset, guardOffset);
           } catch (e) {
             alert("Error al eliminar la asignación del guardia.");
+            guardBtn.removeAttribute('disabled');
+            guardBtn.classList.remove('ng-btn-disabled');
           }
         }
       });
@@ -543,13 +632,8 @@ export class Routines {
     });
   }
 
-  async openAddScheduleModalDirect(routineId) {
-    this.openAddScheduleModal(async (newSch) => {
-      const registerBtn = document.getElementById('save-sch-modal');
-      registerBtn.setAttribute('disabled', 'true');
-      registerBtn.classList.add('ng-btn-disabled');
-      const originalText = registerBtn?.innerHTML;
-      registerBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
+  async openAddScheduleModalDirect(routineId, scheduleOffset = 0, guardOffset = 0) {
+    this.openAddScheduleModal(async (newSch, resetModalBtn) => {
       try {
         const businessData = await currentBusiness();
         const dt = currentDateTime();
@@ -570,20 +654,19 @@ export class Routines {
         });
         const saved = await registerEntity(rawSch, 'RoutineSchedule');
         if (saved && saved.id) {
-            await generateRoutineTimes(saved.id);
+          await generateRoutineTimes(saved.id);
         }
-        this.renderDetail(routineId, 'list');
+        new CloseDialog().x(document.getElementById('dialog-content'));
+        this.renderDetail(routineId, scheduleOffset, guardOffset);
       } catch (err) {
         console.error("Error al agregar la ubicación/horario:", err);
         alert("Error al agregar la ubicación/horario.");
-        registerBtn.removeAttribute('disabled');
-        registerBtn.classList.remove('ng-btn-disabled');
-        registerBtn.innerHTML = originalText;
+        if (typeof resetModalBtn === 'function') resetModalBtn();
       }
     });
   }
 
-  async openEditScheduleModalDirect(sch, routineId) {
+  async openEditScheduleModalDirect(sch, routineId, scheduleOffset = 0, guardOffset = 0) {
     this.dialogContainer.style.display = 'flex';
     this.dialogContainer.innerHTML = `
       <div class="dialog_content" id="dialog-content">
@@ -657,12 +740,20 @@ export class Routines {
       new CloseDialog().x(document.getElementById('dialog-content'));
     });
 
-    document.getElementById('save-sch-modal')?.addEventListener('click', async () => {
-      const updateBtn = document.getElementById('save-sch-modal');
+    document.getElementById('save-sch-modal')?.addEventListener('click', async (e) => {
+      const updateBtn = e.currentTarget;
+      if (updateBtn.disabled) return;
       updateBtn.setAttribute('disabled', 'true');
       updateBtn.classList.add('ng-btn-disabled');
       const originalText = updateBtn.innerHTML;
       updateBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Actualizando...`;
+
+      const resetBtn = () => {
+        updateBtn.removeAttribute('disabled');
+        updateBtn.classList.remove('ng-btn-disabled');
+        updateBtn.innerHTML = originalText;
+      };
+
       const name = document.getElementById('sch-modal-name')?.value.trim();
       const cords = document.getElementById('sch-modal-cords')?.value.trim();
       const start = document.getElementById('sch-modal-start')?.value;
@@ -672,6 +763,7 @@ export class Routines {
 
       if (!name) {
         alert("Ingrese el nombre de la ubicación.");
+        resetBtn();
         return;
       }
 
@@ -682,10 +774,11 @@ export class Routines {
       const hourEnd = parseInt(timeEnd[0].trim());
       const minEnd = parseInt(timeEnd[1].trim());
 
-      if(hourIni == hourEnd && minIni > minEnd){
-          alert("Minutos iniciales no pueden ser mayores a las del final en horas iguales.");
-          return;
-      } 
+      if (hourIni == hourEnd && minIni > minEnd) {
+        alert("Minutos iniciales no pueden ser mayores a las del final en horas iguales.");
+        resetBtn();
+        return;
+      }
 
       const coordsArr = cords ? cords.split(',') : [sch.latitude || "-2.18679", sch.longitude || "-79.89489"];
       const lat = parseFloat(coordsArr[0]?.trim() || "-2.18679");
@@ -703,117 +796,113 @@ export class Routines {
       });
 
       try {
-        await updateEntity('RoutineSchedule', sch.id, rawSch).then(async (res) => {
-          await generateRoutineTimes(sch.id);
-          new CloseDialog().x(document.getElementById('dialog-content'));
-          this.renderDetail(routineId, 'list');
-        });
+        await updateEntity('RoutineSchedule', sch.id, rawSch);
+        await generateRoutineTimes(sch.id);
+        new CloseDialog().x(document.getElementById('dialog-content'));
+        this.renderDetail(routineId, scheduleOffset, guardOffset);
       } catch (e) {
         console.error("Error al actualizar la ubicación:", e);
         alert("Error al actualizar la ubicación.");
-        updateBtn.removeAttribute('disabled');
-        updateBtn.classList.remove('ng-btn-disabled');
-        updateBtn.innerHTML = originalText;
+        resetBtn();
       }
     });
   }
 
   async openViewScheduleModalDirect(offset, schId) {
     const id = schId;
-        const dialogContainer = document.getElementById('app-dialogs');
-        //const guards = await getDetails('routine.id', routine.id, 'RoutineUser');
-        let raw = JSON.stringify({
-            "filter": {
-                "conditions": [
-                    {
-                        "property": "routineSchedule.id",
-                        "operator": "=",
-                        "value": `${id}`
-                    }
-                ],
-            },
-            sort: "+routineTimePoint",
-            limit: Config.modalRows,
-            offset: offset
-        });
-        let dataModal = await getFilterEntityData("RoutineTime", raw);
-        dialogContainer.style.display = 'block';
-        dialogContainer.innerHTML = `
-              <div class="dialog_content" id="dialog-content">
-                  <div class="dialog">
-                      <div class="dialog_container padding_8">
-                          <div class="dialog_header">
-                              <h2>Tiempos Calculados</h2>
-                          </div>
+    const dialogContainer = document.getElementById('app-dialogs');
+    let raw = JSON.stringify({
+      "filter": {
+        "conditions": [
+          {
+            "property": "routineSchedule.id",
+            "operator": "=",
+            "value": `${id}`
+          }
+        ],
+      },
+      sort: "+routineTimePoint",
+      limit: Config.modalRows,
+      offset: offset
+    });
+    let dataModal = await getFilterEntityData("RoutineTime", raw);
+    dialogContainer.style.display = 'block';
+    dialogContainer.innerHTML = `
+      <div class="dialog_content" id="dialog-content">
+        <div class="dialog">
+          <div class="dialog_container padding_8">
+            <div class="dialog_header">
+              <h2>Tiempos Calculados</h2>
+            </div>
 
-                          <div class="dialog_message padding_8">
-                              <div class="dashboard_datatable">
-                                  <table class="datatable_content margin_t_16">
-                                  <thead>
-                                      <tr>
-                                      <th>Tiempo</th>
-                                      </tr>
-                                  </thead>
-                                  <tbody id="datatable-modal-body">
-                                  </tbody>
-                                  </table>
-                              </div>
-                              <br>
-                          </div>
-
-                          <div class="dialog_footer">
-                              <button class="btn btn_primary" id="prevModal"><i class="fa-solid fa-arrow-left"></i></button>
-                              <button class="btn btn_primary" id="nextModal"><i class="fa-solid fa-arrow-right"></i></button>
-                              <button class="btn btn_danger" id="cancel">Cancelar</button>
-                          </div>
-                      </div>
-                  </div>
+            <div class="dialog_message padding_8">
+              <div class="dashboard_datatable">
+                <table class="datatable_content margin_t_16">
+                  <thead>
+                    <tr>
+                      <th>Tiempo</th>
+                    </tr>
+                  </thead>
+                  <tbody id="datatable-modal-body">
+                  </tbody>
+                </table>
               </div>
-          `;
-        inputObserver();
-        const datetableBody = document.getElementById('datatable-modal-body');
-        if (dataModal.length === 0) {
-            let row = document.createElement('tr');
-            row.innerHTML = `
-                  <td>No hay datos</td>
-                  <td></td>
-                  <td></td>
-              `;
-            datetableBody.appendChild(row);
-        }
-        else {
-            for (let i = 0; i < dataModal.length; i++) {
-                let time = dataModal[i];
-                let row = document.createElement('tr');
-                row.innerHTML += `
-                    <td>${time?.routineTimePoint ?? ''}</td>
-                `;
-                datetableBody.appendChild(row);
-            }
-        }
-        const _closeButton = document.getElementById('cancel');
-        const _dialog = document.getElementById('dialog-content');
-        const prevModalButton = document.getElementById('prevModal');
-        const nextModalButton = document.getElementById('nextModal');
+              <br>
+            </div>
 
-        _closeButton.onclick = () => {
-            new CloseDialog().x(_dialog);
-        };
-        nextModalButton.onclick = () => {
-            offset = Config.modalRows + (offset);
-            this.openViewScheduleModalDirect(offset, id);
-        };
-        prevModalButton.onclick = () => {
-            if(offset > 0){
-              offset = offset - Config.modalRows;
-              this.openViewScheduleModalDirect(offset, id);
-            }
-        };
+            <div class="dialog_footer">
+              <button class="btn btn_primary" id="prevModal"><i class="fa-solid fa-arrow-left"></i></button>
+              <button class="btn btn_primary" id="nextModal"><i class="fa-solid fa-arrow-right"></i></button>
+              <button class="btn btn_danger" id="cancel">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    inputObserver();
+    const datetableBody = document.getElementById('datatable-modal-body');
+    if (!dataModal || dataModal.length === 0) {
+      let row = document.createElement('tr');
+      row.innerHTML = `
+        <td>No hay datos</td>
+      `;
+      datetableBody.appendChild(row);
+    } else {
+      for (let i = 0; i < dataModal.length; i++) {
+        let time = dataModal[i];
+        let row = document.createElement('tr');
+        row.innerHTML += `
+          <td>${time?.routineTimePoint ?? ''}</td>
+        `;
+        datetableBody.appendChild(row);
+      }
+    }
+    const _closeButton = document.getElementById('cancel');
+    const _dialog = document.getElementById('dialog-content');
+    const prevModalButton = document.getElementById('prevModal');
+    const nextModalButton = document.getElementById('nextModal');
+
+    _closeButton.onclick = () => {
+      new CloseDialog().x(_dialog);
+    };
+    nextModalButton.onclick = () => {
+      offset = Config.modalRows + (offset);
+      this.openViewScheduleModalDirect(offset, id);
+    };
+    prevModalButton.onclick = () => {
+      if (offset > 0) {
+        offset = offset - Config.modalRows;
+        this.openViewScheduleModalDirect(offset, id);
+      }
+    };
   }
 
-  async openSelectGuardsModalDirect(routineId) {
-    this.openSelectGuardsModal(async (selectedGuards) => {
-      if (selectedGuards.length === 0) return;
+  async openSelectGuardsModalDirect(routineId, scheduleOffset = 0, guardOffset = 0) {
+    this.openSelectGuardsModal(async (selectedGuards, resetModalBtn) => {
+      if (selectedGuards.length === 0) {
+        if (typeof resetModalBtn === 'function') resetModalBtn();
+        return;
+      }
       try {
         const businessData = await currentBusiness();
         const dt = currentDateTime();
@@ -833,9 +922,11 @@ export class Routines {
             await registerEntity(rawGuard, 'RoutineUser');
           }
         }
-        this.renderDetail(routineId, 'list');
+        new CloseDialog().x(document.getElementById('dialog-content'));
+        this.renderDetail(routineId, scheduleOffset, guardOffset);
       } catch (err) {
         alert("Error al asignar guardias.");
+        if (typeof resetModalBtn === 'function') resetModalBtn();
       }
     });
   }
@@ -1113,8 +1204,18 @@ export class Routines {
       });
 
       // Bind Save
-      document.getElementById('wizard-save-btn')?.addEventListener('click', () => {
-        this.saveCompleteRoutine(wizardData, wizardSchedules, wizardGuards);
+      document.getElementById('wizard-save-btn')?.addEventListener('click', (e) => {
+        const btn = e.currentTarget;
+        if (btn.disabled) return;
+        btn.setAttribute('disabled', 'true');
+        btn.classList.add('ng-btn-disabled');
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
+
+        this.saveCompleteRoutine(wizardData, wizardSchedules, wizardGuards, () => {
+          btn.removeAttribute('disabled');
+          btn.classList.remove('ng-btn-disabled');
+          btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Guardar Rutina Completa`;
+        });
       });
 
       // Step 2 Add Schedule Event
@@ -1244,7 +1345,20 @@ export class Routines {
       new CloseDialog().x(document.getElementById('dialog-content'));
     });
 
-    document.getElementById('save-sch-modal')?.addEventListener('click', () => {
+    document.getElementById('save-sch-modal')?.addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      if (btn.disabled) return;
+      btn.setAttribute('disabled', 'true');
+      btn.classList.add('ng-btn-disabled');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
+
+      const resetBtn = () => {
+        btn.removeAttribute('disabled');
+        btn.classList.remove('ng-btn-disabled');
+        btn.innerHTML = originalText;
+      };
+
       const name = document.getElementById('sch-modal-name')?.value.trim().toUpperCase();
       const cords = document.getElementById('sch-modal-cords')?.value.trim();
       const start = document.getElementById('sch-modal-start')?.value;
@@ -1254,6 +1368,7 @@ export class Routines {
 
       if (!name) {
         alert("Ingrese el nombre de la ubicación.");
+        resetBtn();
         return;
       }
 
@@ -1264,10 +1379,11 @@ export class Routines {
       const hourEnd = parseInt(timeEnd[0].trim());
       const minEnd = parseInt(timeEnd[1].trim());
 
-      if(hourIni == hourEnd && minIni > minEnd){
-          alert("Minutos iniciales no pueden ser mayores a las del final en horas iguales.");
-          return;
-      } 
+      if (hourIni == hourEnd && minIni > minEnd) {
+        alert("Minutos iniciales no pueden ser mayores a las del final en horas iguales.");
+        resetBtn();
+        return;
+      }
 
       const coordsArr = cords ? cords.split(',') : ["-2.18679", "-79.89489"];
       const lat = parseFloat(coordsArr[0]?.trim() || "-2.18679");
@@ -1282,13 +1398,12 @@ export class Routines {
         scheduleTimeEnd: end,
         frequency: freq,
         distance: dist
-      });
-
-      new CloseDialog().x(document.getElementById('dialog-content'));
+      }, resetBtn);
     });
   }
 
   async openSelectGuardsModal(onSelect) {
+    const modalLimitGuards = 10;
     this.dialogContainer.style.display = 'flex';
     this.dialogContainer.innerHTML = `
       <div class="dialog_content" id="dialog-content">
@@ -1303,7 +1418,7 @@ export class Routines {
             <button class="ng-btn ng-btn-primary" id="btn-search-guard-modal"><i class="fa-solid fa-search"></i> Buscar</button>
           </div>
 
-          <div style="max-height:320px; overflow-y:auto; border:1px solid var(--ng-border); border-radius:10px; margin-bottom:16px;">
+          <div style="max-height:300px; overflow-y:auto; border:1px solid var(--ng-border); border-radius:10px; margin-bottom:12px;">
             <table class="ng-table">
               <thead>
                 <tr>
@@ -1318,6 +1433,19 @@ export class Routines {
             </table>
           </div>
 
+          <!-- PAGINACIÓN EN MODAL DE GUARDIAS -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-top:8px; border-top:1px solid var(--ng-border);">
+            <span id="guards-modal-page-info" style="font-size:12px; color:var(--ng-text-muted);">Página 1</span>
+            <div style="display:flex; gap:6px;">
+              <button class="ng-btn ng-btn-secondary" id="prev-guard-modal-page" style="padding:4px 10px; font-size:12px;" disabled>
+                <i class="fa-solid fa-chevron-left"></i> Anterior
+              </button>
+              <button class="ng-btn ng-btn-secondary" id="next-guard-modal-page" style="padding:4px 10px; font-size:12px;" disabled>
+                Siguiente <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+
           <div class="ng-modal-footer">
             <button class="ng-btn ng-btn-secondary" id="cancel-guard-modal">Cancelar</button>
             <button class="ng-btn ng-btn-primary" id="save-guard-modal"><i class="fa-solid fa-check"></i> Seleccionar Guardias</button>
@@ -1326,50 +1454,57 @@ export class Routines {
       </div>
     `;
 
-    const fetchAndRenderGuards = async (search = "") => {
+    let currentModalOffset = 0;
+    let currentSearchQuery = "";
+    let totalGuardsModal = 0;
+
+    const fetchAndRenderGuards = async (search = "", offset = 0) => {
+      currentModalOffset = offset;
+      currentSearchQuery = search;
+
       const tbody = document.getElementById('guards-modal-body');
+      const pageInfo = document.getElementById('guards-modal-page-info');
+      const prevBtn = document.getElementById('prev-guard-modal-page');
+      const nextBtn = document.getElementById('next-guard-modal-page');
+
       if (!tbody) return;
       tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Cargando...</td></tr>`;
 
       try {
-        let raw = JSON.stringify({
-          "filter": {
-            "conditions": [
-              { "property": "customer.id", "operator": "=", "value": `${customerId}` },
-              { "property": "state.name", "operator": "=", "value": `Enabled` },
-              { "property": "userType", "operator": "=", "value": `GUARD` },
-              { "property": "isSuper", "operator": "=", "value": `${false}` }
-            ]
-          },
-          sort: "+username",
-          //limit: 50,
-          fetchPlan: 'full'
-        });
+        const conditions = [
+          { "property": "customer.id", "operator": "=", "value": `${customerId}` },
+          { "property": "state.name", "operator": "=", "value": `Enabled` },
+          { "property": "userType", "operator": "=", "value": `GUARD` },
+          { "property": "isSuper", "operator": "=", "value": `${false}` }
+        ];
 
         if (search) {
-          raw = JSON.stringify({
-            "filter": {
-              "conditions": [
-                {
-                  "group": "OR",
-                  "conditions": [
-                    { "property": "firstName", "operator": "contains", "value": `${search.toLowerCase()}` },
-                    { "property": "lastName", "operator": "contains", "value": `${search.toLowerCase()}` },
-                    { "property": "username", "operator": "contains", "value": `${search.toLowerCase()}` }
-                  ]
-                },
-                { "property": "customer.id", "operator": "=", "value": `${customerId}` },
-                { "property": "state.name", "operator": "=", "value": `Enabled` },
-                { "property": "userType", "operator": "=", "value": `GUARD` }
-              ]
-            },
-            sort: "+username",
-            //limit: 50,
-            fetchPlan: 'full'
+          conditions.unshift({
+            "group": "OR",
+            "conditions": [
+              { "property": "firstName", "operator": "contains", "value": `${search.toLowerCase()}` },
+              { "property": "lastName", "operator": "contains", "value": `${search.toLowerCase()}` },
+              { "property": "username", "operator": "contains", "value": `${search.toLowerCase()}` }
+            ]
           });
         }
 
-        const data = await getFilterEntityData("User", raw) || [];
+        const rawCount = JSON.stringify({
+          "filter": { "conditions": conditions }
+        });
+
+        totalGuardsModal = await getFilterEntityCount("User", rawCount) || 0;
+
+        const rawData = JSON.stringify({
+          "filter": { "conditions": conditions },
+          sort: "+username",
+          limit: modalLimitGuards,
+          offset: offset,
+          fetchPlan: 'full'
+        });
+
+        const data = await getFilterEntityData("User", rawData) || [];
+
         if (data.length === 0) {
           tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">No se encontraron guardias.</td></tr>`;
         } else {
@@ -1381,6 +1516,35 @@ export class Routines {
             </tr>
           `).join('');
         }
+
+        // Update pagination controls
+        const totalPages = Math.ceil(totalGuardsModal / modalLimitGuards) || 1;
+        const currentPageNum = Math.floor(offset / modalLimitGuards) + 1;
+
+        if (pageInfo) {
+          pageInfo.innerText = `Página ${currentPageNum} de ${totalPages} (${totalGuardsModal} guardias)`;
+        }
+
+        if (prevBtn) {
+          if (offset <= 0) {
+            prevBtn.setAttribute('disabled', 'true');
+            prevBtn.style.opacity = '0.5';
+          } else {
+            prevBtn.removeAttribute('disabled');
+            prevBtn.style.opacity = '1';
+          }
+        }
+
+        if (nextBtn) {
+          if (offset + modalLimitGuards >= totalGuardsModal) {
+            nextBtn.setAttribute('disabled', 'true');
+            nextBtn.style.opacity = '0.5';
+          } else {
+            nextBtn.removeAttribute('disabled');
+            nextBtn.style.opacity = '1';
+          }
+        }
+
       } catch (err) {
         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#dc2626;">Error al cargar guardias.</td></tr>`;
       }
@@ -1390,7 +1554,26 @@ export class Routines {
 
     document.getElementById('btn-search-guard-modal')?.addEventListener('click', () => {
       const searchVal = document.getElementById('search-guard-modal')?.value.trim();
-      fetchAndRenderGuards(searchVal);
+      fetchAndRenderGuards(searchVal, 0);
+    });
+
+    document.getElementById('search-guard-modal')?.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        const searchVal = document.getElementById('search-guard-modal')?.value.trim();
+        fetchAndRenderGuards(searchVal, 0);
+      }
+    });
+
+    document.getElementById('prev-guard-modal-page')?.addEventListener('click', () => {
+      if (currentModalOffset > 0) {
+        fetchAndRenderGuards(currentSearchQuery, currentModalOffset - modalLimitGuards);
+      }
+    });
+
+    document.getElementById('next-guard-modal-page')?.addEventListener('click', () => {
+      if (currentModalOffset + modalLimitGuards < totalGuardsModal) {
+        fetchAndRenderGuards(currentSearchQuery, currentModalOffset + modalLimitGuards);
+      }
     });
 
     document.getElementById('cancel-guard-modal-x')?.addEventListener('click', () => {
@@ -1401,7 +1584,20 @@ export class Routines {
       new CloseDialog().x(document.getElementById('dialog-content'));
     });
 
-    document.getElementById('save-guard-modal')?.addEventListener('click', () => {
+    document.getElementById('save-guard-modal')?.addEventListener('click', (e) => {
+      const saveBtn = e.currentTarget;
+      if (saveBtn.disabled) return;
+      saveBtn.setAttribute('disabled', 'true');
+      saveBtn.classList.add('ng-btn-disabled');
+      const originalText = saveBtn.innerHTML;
+      saveBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Asignando...`;
+
+      const resetBtn = () => {
+        saveBtn.removeAttribute('disabled');
+        saveBtn.classList.remove('ng-btn-disabled');
+        saveBtn.innerHTML = originalText;
+      };
+
       const selected = [];
       document.querySelectorAll('.guard-chk:checked').forEach(chk => {
         selected.push({
@@ -1410,15 +1606,21 @@ export class Routines {
           username: chk.dataset.username
         });
       });
-      onSelect(selected);
-      new CloseDialog().x(document.getElementById('dialog-content'));
+
+      if (selected.length === 0) {
+        alert("Seleccione al menos un guardia para asignar.");
+        resetBtn();
+        return;
+      }
+
+      onSelect(selected, resetBtn);
     });
   }
 
   // =========================================================================
   // PERSISTENCIA EN CASCADA / ENVOÍO COMPLETO (NTL-155)
   // =========================================================================
-  async saveCompleteRoutine(routineData, schedulesData, guardsData) {
+  async saveCompleteRoutine(routineData, schedulesData, guardsData, onErrorCallback) {
     this.dialogContainer.style.display = 'flex';
     this.dialogContainer.innerHTML = `
       <div class="dialog_content" id="dialog-content">
@@ -1500,7 +1702,7 @@ export class Routines {
           });
           const saved = await registerEntity(rawSch, 'RoutineSchedule');
           if (saved && saved.id) {
-              await generateRoutineTimes(saved.id);
+            await generateRoutineTimes(saved.id);
           }
         }
       }
@@ -1527,12 +1729,15 @@ export class Routines {
       new CloseDialog().x(document.getElementById('dialog-content'));
 
       // Render Detail View for newly created routine
-      this.renderDetail(createdRoutineId, 'list');
+      this.renderDetail(createdRoutineId, 0, 0);
 
     } catch (err) {
       console.error("Error al guardar rutina completa:", err);
       new CloseDialog().x(document.getElementById('dialog-content'));
       alert("Ocurrió un error al guardar la rutina completa: " + (err.message || err));
+      if (typeof onErrorCallback === 'function') {
+        onErrorCallback();
+      }
     }
   }
 
@@ -1616,13 +1821,27 @@ export class Routines {
     });
 
     const updateButton = document.getElementById('update-changes');
-    updateButton?.addEventListener('click', () => {
+    updateButton?.addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      if (btn.disabled) return;
+      btn.setAttribute('disabled', 'true');
+      btn.classList.add('ng-btn-disabled');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
+
+      const resetBtn = () => {
+        btn.removeAttribute('disabled');
+        btn.classList.remove('ng-btn-disabled');
+        btn.innerHTML = originalText;
+      };
+
       const nameVal = document.getElementById('entity-name')?.value.trim().toUpperCase();
       const activeVal = document.getElementById('entity-active')?.checked;
       const checkLocVal = document.getElementById('entity-checkLocation')?.checked;
 
       if (!nameVal) {
         alert("Debe completar el nombre");
+        resetBtn();
         return;
       }
 
@@ -1636,11 +1855,15 @@ export class Routines {
         setTimeout(() => {
           new CloseDialog().x(document.getElementById('entity-editor-container'));
           if (origin === 'detail') {
-            this.renderDetail(entityID, 'list');
+            this.renderDetail(entityID, 0, 0);
           } else {
             this.render(infoPage.offset, infoPage.currentPage, infoPage.search);
           }
         }, 100);
+      }).catch(err => {
+        console.error("Error al actualizar rutina:", err);
+        alert("Error al actualizar la rutina.");
+        resetBtn();
       });
     });
   }

@@ -2547,6 +2547,21 @@ i {
   border-top: 1px solid var(--ng-border);
 }
 
+.ng-btn-disabled,
+.ng-btn[disabled] {
+  opacity: 0.65 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+.ng-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+
 .ng-detail-grid {
   display: grid;
   grid-template-columns: 1fr 320px;
