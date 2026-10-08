@@ -156,7 +156,7 @@ export class Routines {
 
         const locationBadge = routine?.checkLocation
           ? `<span class="ng-badge ng-badge-info"><i class="fa-solid fa-location-crosshairs" style="margin-right:4px;"></i> VÁLIDA UBICACIÓN</span>`
-          : `<span class="ng-badge ng-badge-neu">SIN VALIDAR</span>`;
+          : `<span class="ng-badge ng-badge-neu">SIN VALIDAR UBICACIÓN</span>`;
 
         row.innerHTML = `
           <td>
@@ -334,7 +334,7 @@ export class Routines {
 
     const locationBadge = routine?.checkLocation
       ? `<span class="ng-badge ng-badge-info"><i class="fa-solid fa-location-crosshairs" style="margin-right:4px;"></i> VÁLIDA UBICACIÓN</span>`
-      : `<span class="ng-badge ng-badge-neu">SIN VALIDAR</span>`;
+      : `<span class="ng-badge ng-badge-neu">SIN VALIDAR UBICACIÓN</span>`;
 
     let schedulesHtml = '';
     if (schedules.length === 0) {
@@ -356,7 +356,7 @@ export class Routines {
                     <i class="fa-solid fa-clock" style="color:var(--ng-accent); margin-right:4px;"></i>
                     ${sch.scheduleTime || '00:00'} - ${sch.scheduleTimeEnd || '00:00'}
                   </span>
-                  ${formatDayPills(sch.weekDay)}
+                  <!-- ${formatDayPills(sch.weekDay)} -->
                 </div>
               </div>
 
@@ -768,22 +768,62 @@ export class Routines {
         return;
       }
 
-      const timeIni = start.split(':');
-      const hourIni = parseInt(timeIni[0].trim());
-      const minIni = parseInt(timeIni[1].trim());
-      const timeEnd = end.split(':');
-      const hourEnd = parseInt(timeEnd[0].trim());
-      const minEnd = parseInt(timeEnd[1].trim());
-
-      if (hourIni == hourEnd && minIni > minEnd) {
-        alert("Minutos iniciales no pueden ser mayores a las del final en horas iguales.");
+      if (!start || !end) {
+        alert("Configure la hora de inicio y fin correctamente.");
         resetBtn();
         return;
       }
 
-      const coordsArr = cords ? cords.split(',') : [sch.latitude || "-2.18679", sch.longitude || "-79.89489"];
-      const lat = parseFloat(coordsArr[0]?.trim() || "-2.18679");
-      const lng = parseFloat(coordsArr[1]?.trim() || "-79.89489");
+      const timeIni = start.split(':');
+      const hourIni = parseInt(timeIni[0]?.trim());
+      const minIni = parseInt(timeIni[1]?.trim());
+      const timeEnd = end.split(':');
+      const hourEnd = parseInt(timeEnd[0]?.trim());
+      const minEnd = parseInt(timeEnd[1]?.trim());
+
+      if (hourIni === hourEnd && minIni === minEnd) {
+        alert("La hora de inicio y la hora de fin no pueden ser iguales. Por favor configure el tiempo correcto.");
+        resetBtn();
+        return;
+      }
+
+      if (hourIni === hourEnd && minIni > minEnd) {
+        alert("Minutos iniciales no pueden ser mayores a los del final en horas iguales. Por favor configure el tiempo correcto.");
+        resetBtn();
+        return;
+      }
+
+      let lat = parseFloat(sch.latitude || "-2.18679");
+      let lng = parseFloat(sch.longitude || "-79.89489");
+
+      if (cords) {
+        const coordsArr = cords.split(',');
+        if (coordsArr.length >= 2) {
+          const parsedLat = parseFloat(coordsArr[0].trim());
+          const parsedLng = parseFloat(coordsArr[1].trim());
+          if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+            lat = parsedLat;
+            lng = parsedLng;
+          } else {
+            alert("Coordenadas inválidas. Ingrese valores numéricos para Latitud y Longitud.");
+            resetBtn();
+            return;
+          }
+        } else {
+          alert("Formato de coordenadas inválido. Ingrese Latitud y Longitud separadas por coma (ej: -2.18679, -79.89489).");
+          resetBtn();
+          return;
+        }
+      } else {
+        alert("Ingrese las coordenadas de la ubicación.");
+        resetBtn();
+        return;
+      }
+
+      const timeChanged = `${sch.scheduleTime ?? ''}` !== `${start ?? ''}`;
+      const timeEndChanged = `${sch.scheduleTimeEnd ?? ''}` !== `${end ?? ''}`;
+      const freqChanged = `${sch.frequency ?? ''}` !== `${freq ?? ''}`;
+      const hasTimeOrFrequencyChanged = timeChanged || timeEndChanged || freqChanged;
 
       const rawSch = JSON.stringify({
         "name": name.toUpperCase(),
@@ -798,7 +838,9 @@ export class Routines {
 
       try {
         await updateEntity('RoutineSchedule', sch.id, rawSch);
-        await generateRoutineTimes(sch.id);
+        if (hasTimeOrFrequencyChanged) {
+          await generateRoutineTimes(sch.id);
+        }
         const dialog = document.getElementById('dialog-content');
         if (dialog) new CloseDialog().x(dialog);
         this.renderDetail(routineId, scheduleOffset, guardOffset);
@@ -1387,22 +1429,57 @@ export class Routines {
         return;
       }
 
-      const timeIni = start.split(':');
-      const hourIni = parseInt(timeIni[0].trim());
-      const minIni = parseInt(timeIni[1].trim());
-      const timeEnd = end.split(':');
-      const hourEnd = parseInt(timeEnd[0].trim());
-      const minEnd = parseInt(timeEnd[1].trim());
-
-      if (hourIni == hourEnd && minIni > minEnd) {
-        alert("Minutos iniciales no pueden ser mayores a las del final en horas iguales.");
+      if (!start || !end) {
+        alert("Configure la hora de inicio y fin correctamente.");
         resetBtn();
         return;
       }
 
-      const coordsArr = cords ? cords.split(',') : ["-2.18679", "-79.89489"];
-      const lat = parseFloat(coordsArr[0]?.trim() || "-2.18679");
-      const lng = parseFloat(coordsArr[1]?.trim() || "-79.89489");
+      const timeIni = start.split(':');
+      const hourIni = parseInt(timeIni[0]?.trim());
+      const minIni = parseInt(timeIni[1]?.trim());
+      const timeEnd = end.split(':');
+      const hourEnd = parseInt(timeEnd[0]?.trim());
+      const minEnd = parseInt(timeEnd[1]?.trim());
+
+      if (hourIni === hourEnd && minIni === minEnd) {
+        alert("La hora de inicio y la hora de fin no pueden ser iguales. Por favor configure el tiempo correcto.");
+        resetBtn();
+        return;
+      }
+
+      if (hourIni === hourEnd && minIni > minEnd) {
+        alert("Minutos iniciales no pueden ser mayores a los del final en horas iguales. Por favor configure el tiempo correcto.");
+        resetBtn();
+        return;
+      }
+
+      let lat = -2.18679;
+      let lng = -79.89489;
+
+      if (cords) {
+        const coordsArr = cords.split(',');
+        if (coordsArr.length >= 2) {
+          const parsedLat = parseFloat(coordsArr[0].trim());
+          const parsedLng = parseFloat(coordsArr[1].trim());
+          if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+            lat = parsedLat;
+            lng = parsedLng;
+          } else {
+            alert("Coordenadas inválidas. Ingrese valores numéricos para Latitud y Longitud.");
+            resetBtn();
+            return;
+          }
+        } else {
+          alert("Formato de coordenadas inválido. Ingrese Latitud y Longitud separadas por coma (ej: -2.18679, -79.89489).");
+          resetBtn();
+          return;
+        }
+      } else {
+        alert("Ingrese las coordenadas de la ubicación.");
+        resetBtn();
+        return;
+      }
 
       onAdd({
         name,

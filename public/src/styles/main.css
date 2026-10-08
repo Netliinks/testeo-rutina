@@ -742,19 +742,26 @@ table button:hover {
   background-color: #E9EAEF;
 }
 .datatable_content tbody tr {
-  transition: 0.2s all ease-in;
+  transition: 0.2s all ease-in-out;
 }
 .datatable_content tbody tr:nth-child(even) {
-  background-color: #F5F6FA;
+  background-color: #F8FAFC;
 }
 .datatable_content tbody tr:hover {
-  background-color: #6F7ADD;
+  background-color: #EFF6FF !important;
+  box-shadow: inset 4px 0 0 0 #2563EB;
 }
 .datatable_content tbody tr:hover td {
-  color: #FFFFFF;
+  color: #1E293B;
+}
+.datatable_content tbody tr:hover td strong {
+  color: #1B2A4E;
+}
+.datatable_content tbody tr:hover td small {
+  color: #2563EB;
 }
 .datatable_content tbody tr:hover td .fa-solid, .datatable_content tbody tr:hover td .fa-regular {
-  color: #FFFFFF;
+  color: #2563EB;
 }
 .datatable_content tbody tr td {
   padding: 4px 8px;
@@ -2324,8 +2331,12 @@ i {
   vertical-align: middle;
 }
 
+.ng-table tr {
+  transition: all 0.15s ease-in-out;
+}
+
 .ng-table tr:hover td {
-  background-color: #F8FAFC;
+  background-color: #EFF6FF;
 }
 
 .ng-btn {
