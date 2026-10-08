@@ -14,7 +14,7 @@ const currentPage = Config.currentPage;
 let currentUserInfo; 
 let currentCustomer;
 const customerId = localStorage.getItem('customer_id');
-let isSame = customerId == Config.idEsmeraldas ? true : customerId == Config.idFloralVC ? true : false;
+//let isSame = customerId == Config.idEsmeraldas ? true : customerId == Config.idFloralVC ? true : false;
 let infoPage = {
     count: 0,
     offset: Config.offset,
@@ -260,6 +260,7 @@ export class Clients {
             renderInterface('User');
         });
         const renderInterface = async (entities) => {
+            const isSame = Config.isDepartmentEnabled(customerId);
             const naDepartment = await searchUniversalValue("name", "=", "N/A", "Department");
             this.entityDialogContainer.innerHTML = '';
             this.entityDialogContainer.style.display = 'flex';
@@ -610,6 +611,7 @@ export class Clients {
             });
         });
         const RInterface = async (entities, entityID) => {
+            const isSame = Config.isDepartmentEnabled(customerId);
             const data = await getEntityData(entities, entityID);
             this.entityDialogContainer.innerHTML = '';
             this.entityDialogContainer.style.display = 'flex';

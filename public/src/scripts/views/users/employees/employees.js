@@ -14,7 +14,7 @@ const currentPage = Config.currentPage;
 let currentUserInfo; 
 let currentCustomer;
 const customerId = localStorage.getItem('customer_id');
-let isSame = customerId == Config.idEsmeraldas ? true : customerId == Config.idFloralVC ? true : false;
+//let isSame = customerId == Config.idEsmeraldas ? true : customerId == Config.idFloralVC ? true : false;
 let infoPage = {
     count: 0,
     offset: Config.offset,
@@ -332,6 +332,7 @@ export class Employees {
             renderInterface('User');
         });
         const renderInterface = async (entities) => {
+            const isSame = Config.isDepartmentEnabled(customerId);
             const naDepartment = await searchUniversalValue("name", "=", "N/A", "Department");
             this.entityDialogContainer.innerHTML = '';
             this.entityDialogContainer.style.display = 'flex';
@@ -375,6 +376,13 @@ export class Employees {
                 id="entity-phone"
                 maxlength="10" autocomplete="none">
               <label for="entity-phone">Teléfono</label>
+            </div>
+
+            <div class="material_input">
+              <input type="text"
+                id="entity-vehicularplate"
+                autocomplete="none">
+              <label for="entity-vehicularplate">Placa vehicular</label>
             </div>
 
             <div class="material_input">
@@ -490,7 +498,8 @@ export class Employees {
                     //departments: document.getElementById('entity-department'),
                     email: document.getElementById('entity-email'),
                     allowVisits: document.getElementById('allow-visits'),
-                    department: document.getElementById('entity-department')
+                    department: document.getElementById('entity-department'),
+                    vehicularPlate: document.getElementById('entity-vehicularplate')
                 };
                 const raw = JSON.stringify({
                     "lastName": `${_values.lastName.value}`,
@@ -524,6 +533,7 @@ export class Employees {
                     },
                     "phone": `${_values.phoneNumer.value}`,
                     "dni": `${_values.dni.value}`,
+                    "vehicularPlate": `${_values.vehicularPlate.value}`,
                     "userType": "EMPLOYEE",
                     "username": `${_values.username.value}@${currentCustomer.name.toLowerCase().replace(/\s+/g, '')}.com`,
                     "createVisit": `${_values.allowVisits.checked ? true : false}`
@@ -711,6 +721,7 @@ export class Employees {
             });
         });
         const RInterface = async (entities, entityID) => {
+            const isSame = Config.isDepartmentEnabled(customerId);
             const data = await getEntityData(entities, entityID);
             this.entityDialogContainer.innerHTML = '';
             this.entityDialogContainer.style.display = 'flex';
@@ -763,6 +774,14 @@ export class Employees {
                         maxlength="10"
                         value="${data?.phone ?? ''}">
                     <label for="entity-phone">Teléfono</label>
+                    </div>
+
+                    <div class="material_input">
+                    <input type="text"
+                        id="entity-vehicularplate"
+                        class="input_filled"
+                        value="${data?.vehicularPlate ?? ''}">
+                    <label for="entity-vehicularplate">Placa vehicular</label>
                     </div>
 
                     <div class="material_input">
@@ -834,11 +853,6 @@ export class Employees {
                     </div>
   
                     <br>
-                    <div style="display:flex;justify-content:center">
-                        <img alt="Código QR ${data?.dni ?? ''}" id="qrcode">
-                        <br>
-                        <button id="btnDescargar">Descargar</button>
-                    </div>
                     <!--
                     <div class="material_input">
                     <input type="password" id="tempPass" >
@@ -864,28 +878,8 @@ export class Employees {
             this.selectDepartment();
             //inputSelect('Department', 'entity-department');
             //inputSelect('Business', 'entity-business');
-            const qr = document.getElementById("qrcode");
-            // @ts-ignore
-            new QRious({
-                element: qr,
-                value: data.id,
-                size: 250,
-                backgroundAlpha: 1,
-                foreground: "#1D4C82FF",
-                level: "H", // Puede ser L,M,Q y H (L es el de menor nivel, H el mayor)
-            });
-            download(qr, data);
             this.close();
             updateEmployee(entityID);
-        };
-        const download = (qr, data) => {
-            const btnDescargar = document.getElementById('btnDescargar');
-            btnDescargar.addEventListener('click', () => {
-                const enlace = document.createElement("a");
-                enlace.href = qr.src;
-                enlace.download = `Código QR ${data?.dni ?? ''}.png`;
-                enlace.click();
-            });
         };
         const updateEmployee = async (employeeId) => {
             let updateButton;
@@ -903,6 +897,7 @@ export class Employees {
                     turnChange: document.getElementById('end-time'),
                     allowVisits: document.getElementById('allow-visits'),
                     //email: document.getElementById('entity-email'),
+                    vehicularPlate: document.getElementById('entity-vehicularplate')
                 };
                 let employeeRaw = JSON.stringify({
                     "firstName": `${_values.firstName.value}`,
@@ -921,6 +916,7 @@ export class Employees {
                     //"email": `${_values.email.value}`,
                     "phone": `${_values.phone.value}`,
                     "dni": `${_values.dni.value}`,
+                    "vehicularPlate": `${_values.vehicularPlate?.value}`,
                 });
                 /*const existEmail = await getVerifyEmail(_values.email.value);
                 if(existEmail == true){

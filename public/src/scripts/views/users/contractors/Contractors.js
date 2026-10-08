@@ -372,6 +372,13 @@ export class Contractors {
             </div>
 
             <div class="material_input">
+              <input type="text"
+                id="entity-vehicularplate"
+                autocomplete="none">
+              <label for="entity-vehicularplate">Placa vehicular</label>
+            </div>
+
+            <div class="material_input">
               <input type="text" id="entity-username" class="input_filled" placeholder="john.doe@ejemplo.com" readonly>
               <label for="entity-username"><i class="input_locked fa-solid fa-lock"></i> Nombre de usuario</label>
             </div>
@@ -473,6 +480,7 @@ export class Contractors {
                     turnChange: document.getElementById('end-time'),
                     //departments: document.getElementById('entity-department'),
                     email: document.getElementById('entity-email'),
+                    vehicularPlate: document.getElementById('entity-vehicularplate'),
                 };
                 const contractorRaw = JSON.stringify({
                     "lastName": `${_values.lastName.value}`,
@@ -506,6 +514,7 @@ export class Contractors {
                     },
                     "phone": `${_values.phoneNumer.value}`,
                     "dni": `${_values.dni.value}`,
+                    "vehicularPlate": `${_values.vehicularPlate.value}`,
                     "userType": "CONTRACTOR",
                     "username": `${_values.username.value}@${currentCustomer.name.toLowerCase().replace(/\s+/g, '')}.com`,
                 });
@@ -733,6 +742,14 @@ export class Contractors {
                     </div>
 
                     <div class="material_input">
+                    <input type="text"
+                        id="entity-vehicularplate"
+                        class="input_filled"
+                        value="${data?.vehicularPlate ?? ''}">
+                    <label for="entity-vehicularplate">Placa vehicular</label>
+                    </div>
+
+                    <div class="material_input">
                     <input type="text" id="entity-username" class="input_filled" value="${data.username}" readonly>
                     <label for="entity-username">Nombre de usuario</label>
                     </div>
@@ -792,11 +809,6 @@ export class Contractors {
                     </div>
 
                     <br>
-                    <div style="display:flex;justify-content:center">
-                        <img alt="Código QR ${data?.dni ?? ''}" id="qrcode">
-                        <br>
-                        <button id="btnDescargar">Descargar</button>
-                    </div>
                     <!--
                     <div class="material_input">
                     <input type="password" id="tempPass" >
@@ -818,28 +830,8 @@ export class Contractors {
             inputSelect('State', 'entity-state', data.state.name);
             //inputSelect('Business', 'entity-business');
             //inputSelect('Contractor', 'entity-contractor');
-            const qr = document.getElementById("qrcode");
-            // @ts-ignore
-            new QRious({
-                element: qr,
-                value: data.id,
-                size: 250,
-                backgroundAlpha: 1,
-                foreground: "#1D4C82FF",
-                level: "H", // Puede ser L,M,Q y H (L es el de menor nivel, H el mayor)
-            });
-            download(qr, data);
             this.close();
             updatecontractor(entityID);
-        };
-        const download = (qr, data) => {
-            const btnDescargar = document.getElementById('btnDescargar');
-            btnDescargar.addEventListener('click', () => {
-                const enlace = document.createElement("a");
-                enlace.href = qr.src;
-                enlace.download = `Código QR ${data?.dni ?? ''}.png`;
-                enlace.click();
-            });
         };
         const updatecontractor = async (contractorId) => {
             let updateButton;
@@ -856,6 +848,7 @@ export class Contractors {
                     turnChange: document.getElementById('end-time'),
                     //contractor: document.getElementById('entity-contractor'),
                     //email: document.getElementById('entity-email'),
+                    vehicularPlate: document.getElementById('entity-vehicularplate'),
                 };
                 let contractorRaw = JSON.stringify({
                     //"lastName": `${_values.lastName.value}`,
@@ -870,6 +863,7 @@ export class Contractors {
                     "phone": `${_values.phone.value}`,
                     //"email": `${_values.email.value}`,
                     "dni": `${_values.dni.value}`,
+                    "vehicularPlate": `${_values.vehicularPlate?.value}`,
                     //"contractor": {
                     //    "id": `${_values.contractor.optionid}`
                     //}
