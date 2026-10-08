@@ -141,7 +141,6 @@ export class Customers {
           <td>${customer?.permitRoutine ? 'Si' : 'No'}</td>
           <td>${customer?.permitVisitStatic ? 'Si' : 'No'}</td>
           <td>${customer?.permitPersonalStatic ? 'Si' : 'No'}</td>
-          <td>${customer?.licenseType ? customer?.licenseType : ''}</td>
           <td class="entity_options">
               <button class="button" id="edit-entity" data-entityId="${customer.id}">
                 <i class="fa-solid fa-pen"></i>

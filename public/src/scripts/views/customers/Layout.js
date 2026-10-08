@@ -65,9 +65,6 @@ export const tableLayout = `
             QR Personal Fijo <i class="fa-regular fa-filter"></i>
         </span></th>
 
-        <th><span data-type="license">
-            Licencia <i class="fa-regular fa-filter"></i>
-        </span></th>
 
         <th class="header_filled"></th>
 
