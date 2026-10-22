@@ -1,4 +1,5 @@
 import { getEntitiesData, getUserInfo, getFilterEntityData, getEntityData, registerEntity, _userAgent, updateEntity, getFile, sendMail2 } from "../endpoints.js"
+import { getReportLogo } from "../tools.js";
 //import { getDetails, getSearch } from "../tools.js";
 export const exportRoutinePdf = async (ar, start, end) => {
   //let control = await getSearch("service.id", ar.id, "Control")
@@ -8,7 +9,7 @@ export const exportRoutinePdf = async (ar, start, end) => {
     var doc = new jsPDF()
     let listImages = []
     const listRoutines = ['-2.1564602,-79.8936213','-2.1549851,-79.8949893','-2.1520254,-79.8977429','-2.1496744,-79.9004169','-2.1482098,-79.9032946','-2.1476567,-79.906736','-2.1469948,-79.9113936','-2.1455394,-79.914659'];
-    doc.addImage("./public/src/assets/pictures/header-routine.png", "PNG", 3, 3, 203, 25);
+    doc.addImage(getReportLogo("./public/src/assets/pictures/header-routine.png"), "PNG", 3, 3, 203, 25);
     //doc.setDrawColor(0, 0, 128);
     doc.setFont(undefined, 'bold')
     doc.setTextColor(0,0,0)
@@ -209,7 +210,7 @@ const exportRoutinePdf2Legacy = async (ar, users, flipImage) => {
     //doc.text(164, 10, ar[0].code);
     //doc.text(164, 17, ar[0].version);
     //doc.text(164, 26, ar[0].date);
-    doc.addImage("./public/src/assets/pictures/report-logo.png", "PNG", 10, 14, 40, 8);
+    doc.addImage(getReportLogo("./public/src/assets/pictures/report-logo.png"), "PNG", 10, 14, 40, 8);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(12);
@@ -464,7 +465,7 @@ const exportRoutinePdf2Approx = async (ar, users, flipImage) => {
         doc.roundedRect(margin, 9, width, continuation ? 16 : 18, 2, 2, 'FD');
         if (!continuation) {
             try {
-                doc.addImage('./public/src/assets/pictures/report-logo.png', 'PNG', 14, 14, 40, 8);
+                doc.addImage(getReportLogo('./public/src/assets/pictures/report-logo.png'), 'PNG', 14, 14, 40, 8);
             } catch (_) {
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(12);
@@ -808,7 +809,7 @@ const exportRoutinePdf2PortraitLegacy = async (ar, users, flipImage, checkEmail,
         doc.setFillColor(...NAVY);
         doc.rect(10, 5, 190, 1.5, 'F');
         try {
-            doc.addImage('./public/src/assets/pictures/report-logo.png', 'PNG', 14, 11, 40, 8);
+            doc.addImage(getReportLogo('./public/src/assets/pictures/report-logo.png'), 'PNG', 14, 11, 40, 8);
         } catch (_) {
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(10);
@@ -1227,7 +1228,7 @@ export const exportRoutinePdf2 = async (ar, _users, flipImage, checkEmail, email
         doc.setFillColor(...NAVY);
         doc.rect(MARGIN, 5, CONTENT_WIDTH, 1.5, 'F');
         try {
-            doc.addImage('./public/src/assets/pictures/report-logo.png', 'PNG', MARGIN + 4, 10, 40, 8);
+            doc.addImage(getReportLogo('./public/src/assets/pictures/report-logo.png'), 'PNG', MARGIN + 4, 10, 40, 8);
         } catch (_) {
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(10);

@@ -19,6 +19,7 @@ export const Config = {
     limitExport: 1000,
     timeOutExport: 200,
     emailSenderName: "Oceansecurity",
+    nameDelete: "Deleted",
     isDepartmentEnabled: function(customerId) {
         if (!this.currentUser || !this.currentUser.business || !this.currentUser.business.urlUrb) {
             return false;

@@ -6,7 +6,7 @@
 import { Config } from "./Configs.js";
 import { _userAgent, getEntityData, updateEntity, getFilterEntityData, NetliinkBase, basicAuth } from "./endpoints.js";
 import { RenderApplicationUI } from "./layout/interface.js";
-import { registryPlataform, searchUniversalValue} from "./tools.js";
+import { registryPlataform, searchUniversalValue, setupPasswordToggle } from "./tools.js";
 const loginContainer = document.getElementById('login-container');
 const app = document.getElementById('app');
 const connectionHeader = {
@@ -130,8 +130,11 @@ export class SignIn {
               <label for="password">
                 <i class="fa-regular fa-key"></i>
               </label>
-              <input type="password" id="password"
+              <input type="password" id="password" class="input_has_toggle"
                 placeholder="••••••••••••">
+              <button type="button" class="btn_toggle_password" id="toggle-password" title="Mostrar contraseña" aria-label="Mostrar contraseña">
+                <i class="fa-regular fa-eye"></i>
+              </button>
             </div>
             <button class="btn btn_primary" id="login">Iniciar Sesión</button>
           </form>
@@ -158,6 +161,7 @@ export class SignIn {
         this.signIn();
     }
     signIn() {
+        setupPasswordToggle('password', 'toggle-password');
         const form = document.querySelector('#login-form');
         const password = form.querySelector('#password');
         const userName = form.querySelector('#username');
@@ -304,8 +308,11 @@ export class SignIn {
               <label for="password">
                 <i class="fa-regular fa-key"></i>
               </label>
-              <input type="password" id="password"
+              <input type="password" id="password" class="input_has_toggle"
                 placeholder="••••••••••••">
+              <button type="button" class="btn_toggle_password" id="toggle-password" title="Mostrar contraseña" aria-label="Mostrar contraseña">
+                <i class="fa-regular fa-eye"></i>
+              </button>
             </div>
             <button class="btn btn_close_editor" id="cancel"><i class="fa-regular fa-x"></i></button>
             <button class="btn btn_primary" id="login">Verificar</button>
@@ -333,6 +340,7 @@ export class SignIn {
         this.verified(id, hash);
     }
     verified(id, hash){
+        setupPasswordToggle('password', 'toggle-password');
         const form = document.querySelector('#login-form');
         const password = form.querySelector('#password');
         const btnCancel = form.querySelector('#cancel');

@@ -1,4 +1,4 @@
-import { visitToStimate, generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
+import { visitToStimate, generateFileSimpleXls, generateFileSimpleCsv, getReportLogo } from "../tools.js";
 import { exportNetGuardStatisticalReport } from "./statisticalReport.js";
 
 const exportVisitPdfPortraitLegacy = (ar, start, end) => {
@@ -32,7 +32,7 @@ const exportVisitPdfPortraitLegacy = (ar, start, end) => {
         doc.setFillColor(0, 32, 96);
         doc.rect(10, 10, pageWidth - 20, 2, 'F');
         // Logo on the left - Resized to match the tight text block height
-        doc.addImage("./public/src/assets/pictures/logo_os.png", "PNG", 10, 16.5, 33, 11);
+        doc.addImage(getReportLogo("./public/src/assets/pictures/logo_os.png"), "PNG", 10, 16.5, 33, 11);
         // Title and Subtitle - Restored tight vertical spacing
         doc.setFont(undefined, 'bold');
         doc.setTextColor(0, 32, 96);
@@ -392,9 +392,8 @@ export const exportVisitPdf = (ar, start, end) => {
     const drawHeader = (continuation = false) => {
         doc.setFillColor(0, 32, 96);
         doc.rect(margin, 10, tableWidth, 2, 'F');
-        // Versión optimizada del logo corporativo: mantiene el archivo liviano
-        // en reportes de varias páginas y respeta la proporción original.
-        doc.addImage('./public/src/assets/pictures/logo_os.png', 'PNG', margin, 15.75, 48, 8.5);
+        // Versión optimizada del logo corporativo
+        doc.addImage(getReportLogo('./public/src/assets/pictures/logo_os.png'), 'PNG', margin, 15.75, 48, 8.5);
         doc.setTextColor(0, 32, 96);
         doc.setFont(undefined, 'bold');
         doc.setFontSize(15);

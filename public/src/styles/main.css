@@ -2586,5 +2586,43 @@ i {
   }
 }
 
+.btn_toggle_password {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #706F8E;
+  font-size: 16px;
+  padding: 0;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.btn_toggle_password:hover {
+  color: #26233A;
+}
+
+.material_input .btn_toggle_password {
+  top: auto;
+  bottom: 6px;
+  transform: none;
+  color: #9a9ab0;
+  font-size: 14px;
+}
+
+.material_input .btn_toggle_password:hover {
+  color: #6F7ADD;
+}
+
+.input_has_toggle {
+  padding-right: 32px !important;
+}
+
+
 
 

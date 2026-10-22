@@ -1,5 +1,5 @@
 // @filename: Departments.ts
-import { deleteEntity, getFilterEntityData, registerEntity, getFilterEntityCount } from "../../endpoints.js";
+import { deleteEntity, getEntityData, updateEntity, getFilterEntityData, registerEntity, getFilterEntityCount, deleteDepartment } from "../../endpoints.js";
 import { inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination } from "../../tools.js";
 import { Config } from "../../Configs.js";
 import { tableLayout } from "./Layout.js";
@@ -24,7 +24,12 @@ const getDepartments = async () => {
                   "property": "customer.id",
                   "operator": "=",
                   "value": `${customerId}`
-              }
+              },
+              {
+                  "property": "state.name",
+                  "operator": "<>",
+                  "value": `${Config.nameDelete}`
+              },
           ],
       },
       sort: "-createdDate",
@@ -49,6 +54,11 @@ const getDepartments = async () => {
                     "property": "customer.id",
                     "operator": "=",
                     "value": `${customerId}`
+                },
+                {
+                    "property": "state.name",
+                    "operator": "<>",
+                    "value": `${Config.nameDelete}`
                 }
             ]
         },
@@ -125,14 +135,21 @@ export class Departments {
                 let department = paginatedItems[i];
                 let row = document.createElement('tr');
                 row.innerHTML += `
-          <td>${department.name}</dt>
+          <td>${department.name}</td>
           <td class="entity_options">
-          </dt>
+            <button class="btn btn_edit" id="edit-entity" data-entityid="${department.id}"><i class="fa-solid fa-pen-to-square"></i></button>
+
+            <button class="button" id="remove-entity" data-entityId="${department.id}">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
         `;
                 table.appendChild(row);
             }
         }
         this.register();
+        this.edit();
+        this.remove();
     }
     pagination(items, limitRows, currentPage) {
       const tableBody = document.getElementById('datatable-body');
@@ -264,6 +281,132 @@ export class Departments {
         const reg = async (raw) => {
         };
     }
+
+    edit() {
+        const edit = document.querySelectorAll('#edit-entity');
+          edit.forEach((edit) => {
+              const entityId = edit.dataset.entityid;
+              edit.addEventListener('click', () => {
+                  RInterface('Department', entityId);
+              });
+          });
+          const RInterface = async (entities, entityID) => {
+              const data = await getEntityData(entities, entityID);
+              this.entityDialogContainer.innerHTML = '';
+              this.entityDialogContainer.style.display = 'flex';
+              //<div class="entity_editor" id="entity-editor" style="max-width:80%"></div>
+              this.entityDialogContainer.innerHTML = `
+          <div class="entity_editor" id="entity-editor">
+            <div class="entity_editor_header">
+              <div class="user_info">
+                <div class="avatar"><i class="fa-regular fa-map-location"></i></div>
+                <h1 class="entity_editor_title">Editar <br><small>${data.name}</small></h1>
+              </div>
+              <button class="btn btn_close_editor" id="close"><i class="fa-solid fa-x"></i></button>
+            </div>
+            <!-- EDITOR BODY -->
+            <div class="entity_editor_body">
+                  <div class="material_input">
+                    <input type="text"
+                      id="entity-name"
+                      class="input_filled"
+                      value="${data?.name ?? ''}">
+                    <label for="entity-name">Nombre Departamento</label>
+                  </div>
+            </div>
+            <!-- END EDITOR BODY -->
+            <div class="entity_editor_footer">
+              <button class="btn btn_primary btn_widder" id="update-changes">Guardar</button>
+            </div>
+          </div>
+        `;
+              inputObserver();
+              this.close();
+              UUpdate(entityID, data);
+          };
+          const UUpdate = async (entityId, data) => {
+              const updateButton = document.getElementById('update-changes');
+              const $value = {
+                // @ts-ignore
+                name: document.getElementById('entity-name'),
+    
+              };
+              updateButton.addEventListener('click', async () => {
+                if($value.name.value == "" || $value.name.value == undefined){
+                    alert("Nombre de departamento vacío");
+                }else{
+                    updateButton.disabled = true;
+                    const originalText = updateButton.innerText;
+                    updateButton.innerText = "Actualizando...";
+
+                    try {
+                        let raw = JSON.stringify({
+                            // @ts-ignore
+                            "name": `${$value.name.value}`
+                        });
+                        await updateEntity('Department', entityId, raw);
+                        let container = document.getElementById('entity-editor-container');
+                        new CloseDialog().x(container);
+                        new Departments().render(infoPage.offset, infoPage.currentPage, infoPage.search);
+                    } catch (err) {
+                        console.error(err);
+                        alert("Error al actualizar departamento: " + (err.message || err));
+                        updateButton.disabled = false;
+                        updateButton.innerText = originalText;
+                    }
+                }
+              });
+          };
+      }
+
+    remove() {
+        const remove = document.querySelectorAll('#remove-entity');
+        remove.forEach((remove) => {
+            const entityId = remove.dataset.entityid;
+            remove.addEventListener('click', () => {
+                this.dialogContainer.style.display = 'flex';
+                this.dialogContainer.innerHTML = `
+          <div class="dialog_content" id="dialog-content">
+            <div class="dialog dialog_danger">
+              <div class="dialog_container">
+                <div class="dialog_header">
+                  <h2>¿Deseas eliminar este departamento?</h2>
+                </div>
+
+                <div class="dialog_message">
+                  <p>Esta acción no se puede revertir</p>
+                </div>
+
+                <div class="dialog_footer">
+                  <button class="btn btn_primary" id="cancel">Cancelar</button>
+                  <button class="btn btn_danger" id="delete">Eliminar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+                const deleteButton = document.getElementById('delete');
+                const cancelButton = document.getElementById('cancel');
+                const dialogContent = document.getElementById('dialog-content');
+                deleteButton.onclick = async () => {
+                    await deleteDepartment(entityId)
+                        .then((res) => {
+                        setTimeout(async () => {
+                            //let data = await getUsers();
+                            const tableBody = document.getElementById('datatable-body');
+                            new CloseDialog().x(dialogContent);
+                            new Departments().render(infoPage.offset, infoPage.currentPage, infoPage.search);
+                        }, 1000);
+                    });
+                };
+                cancelButton.onclick = () => {
+                    new CloseDialog().x(dialogContent);
+                    //this.render();
+                };
+            });
+        });
+    }
+
 
     close() {
         const closeButton = document.getElementById('close');

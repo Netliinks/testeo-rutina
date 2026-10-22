@@ -1,4 +1,4 @@
-import { reportToStimate, generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
+import { reportToStimate, generateFileSimpleXls, generateFileSimpleCsv, getReportLogo } from "../tools.js";
 import { exportNetGuardStatisticalReport } from "./statisticalReport.js";
 
 //import {generateFile } from "../tools";
@@ -7,7 +7,7 @@ const exportReportPdfPortraitLegacy = (ar, start, end) => {
     window.jsPDF = window.jspdf.jsPDF;
     // @ts-ignore
     var doc = new jsPDF();
-    doc.addImage("./public/src/assets/pictures/report.png", "PNG", 10, 10, 30, 10);
+    doc.addImage(getReportLogo("./public/src/assets/pictures/report.png"), "PNG", 10, 10, 30, 10);
     doc.setDrawColor(0, 0, 128);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(0, 0, 128);
@@ -134,8 +134,8 @@ export const exportReportPdf = (ar, start, end) => {
     const drawHeader = (continuation = false) => {
         doc.setFillColor(0, 32, 96);
         doc.rect(margin, 10, contentWidth, 2, 'F');
-        // Se conserva el logo original que ya usa el reporte de NetGuard.
-        doc.addImage('./public/src/assets/pictures/logo_os.png', 'PNG', margin, 15.75, 48, 8.5);
+        // Se conserva el logo original si business.id coincide, si no se usa logo_n.png.
+        doc.addImage(getReportLogo('./public/src/assets/pictures/logo_os.png'), 'PNG', margin, 15.75, 48, 8.5);
         doc.setTextColor(0, 32, 96);
         doc.setFont(undefined, 'bold');
         doc.setFontSize(15);

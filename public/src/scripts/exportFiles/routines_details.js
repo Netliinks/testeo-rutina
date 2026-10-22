@@ -1,12 +1,12 @@
 //import {generateFile } from "../tools";
-import { routineToStimate, generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
+import { routineToStimate, generateFileSimpleXls, generateFileSimpleCsv, getReportLogo } from "../tools.js";
 import { exportNetGuardStatisticalReport } from "./statisticalReport.js";
 export const exportRoutineDetailPdf = (ar, start, end) => {
     // @ts-ignore
     window.jsPDF = window.jspdf.jsPDF;
     // @ts-ignore
     var doc = new jsPDF();
-    doc.addImage("./public/src/assets/pictures/report.png", "PNG", 10, 10, 30, 10);
+    doc.addImage(getReportLogo("./public/src/assets/pictures/report.png"), "PNG", 10, 10, 30, 10);
     doc.setDrawColor(0, 0, 128);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(0, 0, 128);

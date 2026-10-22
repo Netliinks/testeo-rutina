@@ -1211,6 +1211,11 @@ export class Clients {
                             "property": "customer.id",
                             "operator": "=",
                             "value": `${customerId}`
+                        },
+                        {
+                            "property": "state.name",
+                            "operator": "<>",
+                            "value": `${Config.nameDelete}`
                         }
                     ],
                 },
@@ -1237,13 +1242,18 @@ export class Clients {
                                 "property": "customer.id",
                                 "operator": "=",
                                 "value": `${customerId}`
+                            },
+                            {
+                                "property": "state.name",
+                                "operator": "<>",
+                                "value": `${Config.nameDelete}`
                             }
                         ],
                     },
                     sort: "+createdDate",
                     limit: Config.modalRows,
                     offset: offset,
-                    fetchPlan: 'full',
+                    //fetchPlan: 'full',
                 });
             }
             let dataModal = await getFilterEntityData("Department", raw);

@@ -1,5 +1,5 @@
 // @filename: Routines.ts
-import { registerEntity, getUserInfo, getEntityData, updateEntity, getFilterEntityData, getFilterEntityCount, deleteEntity, getFile, sendMail2, generateRoutineTimes } from "../../../endpoints.js";
+import { registerEntity, getUserInfo, getEntityData, updateEntity, getFilterEntityData, getFilterEntityCount, deleteEntity, getFile, sendMail2, generateRoutineTimes, deleteRoutineSchedule } from "../../../endpoints.js";
 import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, getDetails, getDetails2, generateFileSimpleXls, generateRoutineReportXlsx, sleep, equivalentTime } from "../../../tools.js";
 import { Config } from "../../../Configs.js";
 import { tableLayout } from "./Layout.js";
@@ -285,7 +285,8 @@ export class Routines {
         "filter": {
           "conditions": [
             { "property": "customer.id", "operator": "=", "value": `${customerId}` },
-            { "property": "routine.id", "operator": "=", "value": `${routineId}` }
+            { "property": "routine.id", "operator": "=", "value": `${routineId}` },
+            { "property": "state.name", "operator": "<>", "value": `${Config.nameDelete}` }
           ]
         }
       };
@@ -394,6 +395,9 @@ export class Routines {
                       </button>
                       <button class="ng-btn-icon view-sch-btn" data-schid="${sch.id}" title="Ver Tiempos">
                         <i class="fa-solid fa-eye" style="color:var(--ng-accent);"></i>
+                      </button>
+                      <button class="ng-btn-icon delete-sch-btn" data-schid="${sch.id}" title="Eliminar Ubicación/Horario">
+                        <i class="fa-solid fa-trash" style="color:#dc2626;"></i>
                       </button>
                     </div>
                   </td>
@@ -594,6 +598,27 @@ export class Routines {
       btn.addEventListener('click', async () => {
         const schId = btn.dataset.schid;
         this.openViewScheduleModalDirect(0, schId);
+      });
+    });
+
+    // Delete Location directly on detail page
+    document.querySelectorAll('.delete-sch-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const schBtn = e.currentTarget;
+        const schId = schBtn.dataset.schid;
+        if (confirm("¿Desea eliminar esta ubicación/horario de la rutina?")) {
+          schBtn.setAttribute('disabled', 'true');
+          schBtn.classList.add('ng-btn-disabled');
+          try {
+            await deleteRoutineSchedule(schId);
+            this.renderDetail(routineId, scheduleOffset, guardOffset);
+          } catch (e) {
+            console.error("Error al eliminar la ubicación:", e);
+            alert("Error al eliminar la ubicación.");
+            schBtn.removeAttribute('disabled');
+            schBtn.classList.remove('ng-btn-disabled');
+          }
+        }
       });
     });
 

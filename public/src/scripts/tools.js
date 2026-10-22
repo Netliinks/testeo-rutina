@@ -1,4 +1,13 @@
 import { getEntitiesData, getUserInfo, getFilterEntityData, getFilterEntityCount, getEntityData, registerEntity, _userAgent } from "./endpoints.js";
+import { Config } from "./Configs.js";
+
+export const getReportLogo = (defaultLogo = "./public/src/assets/pictures/report.png") => {
+    const businessId = Config.currentUser?.business?.id;
+    if (businessId === '04a43f73-9089-9e30-0312-5c0e2cf3d443') {
+        return defaultLogo;
+    }
+    return "./public/src/assets/pictures/logo_n.png";
+};
 // Un reporte sin meta configurada no debe quedar como N/A. Sin una meta no es
 // posible medir cumplimiento, por lo que el resultado es 0 %. En todos los
 // demás casos se limita a 100 %.
@@ -25,6 +34,33 @@ export const inputObserver = () => {
                 input.classList.add('input_filled');
         });
     });
+};
+export const setupPasswordToggle = (inputTarget, buttonTarget) => {
+    const input = typeof inputTarget === 'string' ? document.getElementById(inputTarget) : inputTarget;
+    const button = typeof buttonTarget === 'string' ? document.getElementById(buttonTarget) : buttonTarget;
+    if (input && button) {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const isPassword = input.getAttribute('type') === 'password';
+            const newType = isPassword ? 'text' : 'password';
+            input.setAttribute('type', newType);
+            const icon = button.querySelector('i');
+            if (icon) {
+                if (newType === 'text') {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                    button.title = 'Ocultar contraseña';
+                    button.setAttribute('aria-label', 'Ocultar contraseña');
+                } else {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                    button.title = 'Mostrar contraseña';
+                    button.setAttribute('aria-label', 'Mostrar contraseña');
+                }
+            }
+        });
+    }
 };
 export const inputSelect = async (entity, selectId, currentStatus) => {
     const data = await getEntitiesData(entity);
@@ -738,7 +774,7 @@ export const searchUniversalSingle2 = async (param, operator, value, param2, ope
                 },
             ]
         },
-        sort: "-createdDate",
+        sort: table == 'sec_RoleAssignmentEntity' ? null : "-createdDate",
     });
     const data = await getFilterEntityData(`${table}`, raw);
     if (data == undefined) {

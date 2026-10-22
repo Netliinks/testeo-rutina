@@ -1,4 +1,4 @@
-import { generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
+import { generateFileSimpleXls, generateFileSimpleCsv, getReportLogo } from "../tools.js";
 
 export const exportClientPdf = (ar) => {
     let fecha = new Date(); //Fecha actual
@@ -13,7 +13,7 @@ export const exportClientPdf = (ar) => {
     window.jsPDF = window.jspdf.jsPDF;
     // @ts-ignore
     var doc = new jsPDF('l');
-    doc.addImage("./public/src/assets/pictures/report.png", "PNG", 10, 10, 50, 15);
+    doc.addImage(getReportLogo("./public/src/assets/pictures/report.png"), "PNG", 10, 10, 50, 15);
     doc.setDrawColor(0, 0, 128);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(0, 0, 128);

@@ -1,5 +1,4 @@
-//import {generateFile } from "../tools";
-import { vehicleToStimate, generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
+import { vehicleToStimate, generateFileSimpleXls, generateFileSimpleCsv, getReportLogo } from "../tools.js";
 import { exportNetGuardStatisticalReport } from "./statisticalReport.js";
 
 export const exportVehicularPdf = (ar, start, end) => {
@@ -7,7 +6,7 @@ export const exportVehicularPdf = (ar, start, end) => {
     window.jsPDF = window.jspdf.jsPDF;
     // @ts-ignore
     var doc = new jsPDF('l');
-    doc.addImage("./public/src/assets/pictures/report.png", "PNG", 10, 10, 50, 15);
+    doc.addImage(getReportLogo("./public/src/assets/pictures/report.png"), "PNG", 10, 10, 50, 15);
     doc.setDrawColor(0, 0, 128);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(0, 0, 128);

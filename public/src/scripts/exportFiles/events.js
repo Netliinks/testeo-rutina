@@ -1,11 +1,11 @@
-import { generateFileSimpleXls, generateFileSimpleCsv } from "../tools.js";
+import { generateFileSimpleXls, generateFileSimpleCsv, getReportLogo } from "../tools.js";
 //import {generateFile } from "../tools";
 export const exportEventPdf = (ar, start, end) => {
     // @ts-ignore
     window.jsPDF = window.jspdf.jsPDF;
     // @ts-ignore
     var doc = new jsPDF();
-    doc.addImage("./public/src/assets/pictures/report.png", "PNG", 10, 10, 30, 10);
+    doc.addImage(getReportLogo("./public/src/assets/pictures/report.png"), "PNG", 10, 10, 30, 10);
     doc.setDrawColor(0, 0, 128);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(0, 0, 128);
