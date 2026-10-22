@@ -314,6 +314,13 @@ export class Clients {
                     </div>
 
                     <div class="material_input">
+                    <input type="text"
+                        id="entity-vehicularplate"
+                        autocomplete="none">
+                    <label for="entity-vehicularplate">Placa vehicular</label>
+                    </div>
+
+                    <div class="material_input">
                     <input type="text" id="entity-username" class="input_filled" placeholder="john.doe@ejemplo.com" readonly>
                     <label for="entity-username"><i class="input_locked fa-solid fa-lock"></i> Nombre de usuario</label>
                     </div>
@@ -397,7 +404,8 @@ export class Clients {
                     temporalPass: document.getElementById('tempPass'),
                     dni: document.getElementById('entity-dni'),
                     email: document.getElementById('entity-email'),
-                    department: document.getElementById('entity-department')
+                    department: document.getElementById('entity-department'),
+                    vehicularPlate: document.getElementById('entity-vehicularplate')
                 };
                 const raw = JSON.stringify({
                     "lastName": `${inputsCollection.lastName.value}`,
@@ -429,6 +437,7 @@ export class Clients {
                       "id": `${inputsCollection.department.dataset.optionid}`
                     },
                     "phone": `${inputsCollection.phoneNumer.value}`,
+                    "vehicularPlate": `${inputsCollection.vehicularPlate.value}`,
                     "userType": "CUSTOMER",
                     "username": `${inputsCollection.username.value}@${currentCustomer.name.toLowerCase().replace(/\s+/g, '')}.com`
                 });
@@ -653,6 +662,14 @@ export class Clients {
                     </div>
 
                     <div class="material_input">
+                    <input type="text"
+                        id="entity-vehicularplate"
+                        class="input_filled"
+                        value="${data?.vehicularPlate ?? ''}">
+                    <label for="entity-vehicularplate">Placa vehicular</label>
+                    </div>
+
+                    <div class="material_input">
                     <input type="text" id="entity-username" class="input_filled" value="${data.username}" readonly>
                     <label for="entity-username">Nombre de usuario</label>
                     </div>
@@ -760,7 +777,9 @@ export class Clients {
                     // @ts-ignore
                    // client: document.getElementById('entity-customer'),
                     // @ts-ignore
-                    department: document.getElementById('entity-department')
+                    department: document.getElementById('entity-department'),
+                    // @ts-ignore
+                    vehicularPlate: document.getElementById('entity-vehicularplate')
                     // @ts-ignore
                    // customer: document.getElementById('entity-customer')
                 };
@@ -783,6 +802,7 @@ export class Clients {
                     //},
                     // @ts-ignore
                     "phone": `${$value.phone?.value}`,
+                    "vehicularPlate": `${$value.vehicularPlate?.value}`,
                     "dni": `${$value.dni.value}`,
                     //"email": `${$value.email?.value}`,
                 });
