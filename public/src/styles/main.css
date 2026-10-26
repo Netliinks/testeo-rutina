@@ -672,6 +672,72 @@ table button:hover {
   font-size: 32px;
   color: #26233A;
 }
+.datatable_title p {
+  font-size: 14px;
+  color: #706F8E;
+  margin-top: 8px;
+}
+.datatable_tabs_container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 16px;
+}
+.filter_tabs {
+  display: flex;
+  gap: 8px;
+}
+.filter_tabs .tab_button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #E9EAEF;
+  background-color: #FFFFFF;
+  color: #26233A;
+  font-weight: 700;
+}
+.filter_tabs .tab_button.active {
+  background-color: #4654d3;
+  color: #FFFFFF;
+  border-color: #4654d3;
+}
+.filter_tabs .tab_button:hover:not(.active) {
+  background-color: #E9EAEF;
+}
+.search_container {
+  display: flex;
+  align-items: center;
+}
+.search_container .search_input_wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search_container .search_input_wrapper .search_input {
+  padding: 8px 12px;
+  border: 1px solid #E9EAEF;
+  border-radius: 8px 0 0 8px;
+  width: 250px;
+  outline: none;
+  height: 38px;
+}
+.search_container .datatable_button {
+  height: 38px;
+  margin-left: -1px;
+  border-radius: 0 8px 8px 0;
+  background-color: #FFFFFF;
+  border: 1px solid #E9EAEF;
+  color: #706F8E;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.search_container .datatable_button:hover {
+  background-color: #f8f9fa;
+}
+.search_container .datatable_button i {
+  color: #706F8E;
+}
 .datatable_tools {
   display: flex;
   align-items: center;
@@ -771,6 +837,13 @@ table button:hover {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.datatable_content tbody tr td .color_circle {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 8px;
 }
 .datatable_content tbody tr td .fa-solid, .datatable_content tbody tr td .fa-regular {
   font-size: 14px;
@@ -1101,6 +1174,105 @@ table button:hover {
   bottom: 0;
   padding: 32px;
   z-index: 2;
+}
+.input_module_selection,
+.input_color_selection,
+.input_switch {
+  margin-bottom: 24px;
+}
+.input_module_selection > label,
+.input_color_selection > label,
+.input_switch > label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.input_module_selection .module_buttons {
+  display: flex;
+  gap: 8px;
+}
+.input_module_selection .module_buttons .btn_module {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #E9EAEF;
+  border-radius: 8px;
+  background-color: #FFFFFF;
+  color: #26233A;
+  font-weight: 700;
+}
+.input_module_selection .module_buttons .btn_module.active {
+  background-color: #4654d3;
+  color: #FFFFFF;
+  border-color: #4654d3;
+}
+.input_module_selection small {
+  display: block;
+  margin-top: 8px;
+  color: #706F8E;
+  font-size: 12px;
+}
+.input_color_selection .color_options {
+  display: flex;
+  gap: 12px;
+}
+.input_color_selection .color_options .color_option {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.input_color_selection .color_options .color_option.active {
+  border-color: #4654d3;
+  box-shadow: 0 0 0 2px #FFFFFF inset;
+}
+.input_switch .switch_wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.input_switch .switch_wrapper > span {
+  color: #706F8E;
+  font-size: 14px;
+}
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+.switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: #FFFFFF;
+  transition: .4s;
+  border-radius: 50%;
+}
+.switch input:checked + .slider {
+  background-color: #4654d3;
+}
+.switch input:checked + .slider:before {
+  transform: translateX(26px);
 }
 
 @keyframes FadeIn {
@@ -2622,7 +2794,6 @@ i {
 .input_has_toggle {
   padding-right: 32px !important;
 }
-
 
 
 
