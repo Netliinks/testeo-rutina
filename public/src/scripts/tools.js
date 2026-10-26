@@ -1824,7 +1824,7 @@ export const generateFileSimpleXls = async (ar, title, extension = 'xlsx') => {
         const keys = Object.keys(ar[0]);
         const header = sheet.addRow(keys);
         header.font = { bold: true };
-        header.alignment = { horizontal: "center" };
+        header.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
         // @ts-ignore
         header.eachCell(cell => {
             cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
@@ -1837,11 +1837,16 @@ export const generateFileSimpleXls = async (ar, title, extension = 'xlsx') => {
             // @ts-ignore
             row.eachCell(cell => {
                 cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
-                cell.alignment = { horizontal: "center" };
+                cell.alignment = { horizontal: "left", vertical: "top", wrapText: true };
             });
         });
 
-        sheet.columns = keys.map(() => ({ width: 25 }));
+        sheet.columns = keys.map(key => {
+            const longest = Math.max(key.length, ...ar.map(item => String(item[key] ?? '').split('\n').reduce((max, line) => Math.max(max, line.length), 0)));
+            return { width: Math.min(42, Math.max(14, longest + 2)) };
+        });
+        sheet.views = [{ state: 'frozen', ySplit: 1 }];
+        sheet.autoFilter = { from: 'A1', to: { row: header.number, column: keys.length } };
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8' });

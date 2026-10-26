@@ -145,7 +145,7 @@ export const exportRoutineDetailCsv = (ar, start, end) => {
             rows.push(obj);
         //}
     }
-    generateFileSimpleCsv(rows, "DetallesRutinas");
+    generateFileSimpleCsv(rows, "DetallesRutinas", "csv");
 };
 export const exportRoutineDetailXls = (ar, start, end) => {
     let rows = [];
@@ -174,7 +174,7 @@ export const exportRoutineDetailXls = (ar, start, end) => {
             rows.push(obj);
         //}
     }
-    generateFileSimpleXls(rows, "DetallesRutinas");
+    generateFileSimpleXls(rows, "DetallesRutinas", "xls");
 };
 const generateFile = (ar, title, extension) => {
     //comprobamos compatibilidad

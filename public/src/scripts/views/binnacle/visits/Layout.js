@@ -199,6 +199,9 @@ export const UIRightSidebar = `
         <input type="text" id="egress-guard-name" class="input_filled" readonly>
     </div>
     <br>
+    <h3>Etiquetas</h3>
+    <div id="tags-container" class="tag" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
+    <br>
     <h3>Galería</h3>
 
     <div id="galeria">

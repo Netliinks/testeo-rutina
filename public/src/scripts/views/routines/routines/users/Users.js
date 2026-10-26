@@ -175,7 +175,7 @@ const exportUsers = (routineId) => {
         });
       }
 
-      generateFileSimpleXls(rows, "Guardias_Rutina", "csv");
+      generateFileSimpleXls(rows, "Guardias_Rutina", "xls");
       new CloseDialog().x(dialog);
     } catch (error) {
       console.error('Error al exportar los guardias asignados:', error);
