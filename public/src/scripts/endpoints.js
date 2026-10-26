@@ -511,24 +511,9 @@ export const generateRoutineTimes = async (scheduleId) => {
     return res.text();
 };
 
-export const deleteRoutineSchedule = async (id) => {
+export const deleteControllerEntity = async (id, path) => {
     const req = {
-        url: `${NetliinkBase}rest/netguard/routine-schedules/${id}`,
-        method: 'DELETE'
-    };
-    const requestOptions = {
-        method: req.method,
-        headers: headers,
-        redirect: 'follow'
-    };
-    const res = await fetch(req.url, requestOptions);
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    return res;
-};
-
-export const deleteDepartment = async (id) => {
-    const req = {
-        url: `${NetliinkBase}rest/netguard/departments/${id}`,
+        url: `${NetliinkBase}rest/${path}/${id}`,
         method: 'DELETE'
     };
     const requestOptions = {

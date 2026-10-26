@@ -199,6 +199,12 @@ export class Sidebar {
               </span>
             </div>
 
+            <div class="sidebar_item" id="render-tags">
+              <span class="sidebar_item_label">
+                <i class="fa-regular fa-tag"></i> <div class="label">Etiquetas</div>
+              </span>
+            </div>
+
             <div class="sidebar_item" id="render-superusers">
               <span class="sidebar_item_label">
                 <i class="fa-regular fa-shield"></i> <div class="label">Superusuarios</div>
@@ -474,6 +480,12 @@ renders() {
         clearTimeout(Config.timeOut);
         Config.currentScreen = null;
         new Accesses().render();
+    });
+
+    document.getElementById('render-tags')?.addEventListener('click', () => {
+        clearTimeout(Config.timeOut);
+        Config.currentScreen = null;
+        new Tags().render(Config.offset, Config.currentPage, "");
     });
   }
 }

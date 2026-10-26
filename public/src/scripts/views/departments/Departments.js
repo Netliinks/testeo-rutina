@@ -1,5 +1,5 @@
 // @filename: Departments.ts
-import { deleteEntity, getEntityData, updateEntity, getFilterEntityData, registerEntity, getFilterEntityCount, deleteDepartment } from "../../endpoints.js";
+import { deleteEntity, getEntityData, updateEntity, getFilterEntityData, registerEntity, getFilterEntityCount, deleteControllerEntity } from "../../endpoints.js";
 import { inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination } from "../../tools.js";
 import { Config } from "../../Configs.js";
 import { tableLayout } from "./Layout.js";
@@ -389,7 +389,7 @@ export class Departments {
                 const cancelButton = document.getElementById('cancel');
                 const dialogContent = document.getElementById('dialog-content');
                 deleteButton.onclick = async () => {
-                    await deleteDepartment(entityId)
+                    await deleteControllerEntity(entityId, 'netguard/departments')
                         .then((res) => {
                         setTimeout(async () => {
                             //let data = await getUsers();

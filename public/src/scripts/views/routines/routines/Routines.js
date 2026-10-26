@@ -1,5 +1,5 @@
 // @filename: Routines.ts
-import { registerEntity, getUserInfo, getEntityData, updateEntity, getFilterEntityData, getFilterEntityCount, deleteEntity, getFile, sendMail2, generateRoutineTimes, deleteRoutineSchedule } from "../../../endpoints.js";
+import { registerEntity, getUserInfo, getEntityData, updateEntity, getFilterEntityData, getFilterEntityCount, deleteEntity, getFile, sendMail2, generateRoutineTimes, deleteControllerEntity } from "../../../endpoints.js";
 import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, getDetails, getDetails2, generateFileSimpleXls, generateRoutineReportXlsx, sleep, equivalentTime } from "../../../tools.js";
 import { Config } from "../../../Configs.js";
 import { tableLayout } from "./Layout.js";
@@ -610,7 +610,7 @@ export class Routines {
           schBtn.setAttribute('disabled', 'true');
           schBtn.classList.add('ng-btn-disabled');
           try {
-            await deleteRoutineSchedule(schId);
+            await deleteControllerEntity(schId, 'netguard/routine-schedules');
             this.renderDetail(routineId, scheduleOffset, guardOffset);
           } catch (e) {
             console.error("Error al eliminar la ubicación:", e);

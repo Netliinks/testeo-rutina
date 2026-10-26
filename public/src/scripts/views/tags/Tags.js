@@ -1,5 +1,5 @@
 // @filename: Departments.ts
-import { deleteEntity, getFilterEntityData, registerEntity, getFilterEntityCount, getEntityData, updateEntity } from "../../endpoints.js";
+import { deleteEntity, getFilterEntityData, registerEntity, getFilterEntityCount, getEntityData, updateEntity, deleteControllerEntity } from "../../endpoints.js";
 import { inputObserver, inputSelect, CloseDialog, filterDataByHeaderType, pageNumbers, fillBtnPagination, currentDateTime, drawTagsIntoTables } from "../../tools.js";
 import { Config } from "../../Configs.js";
 import { tableLayout } from "./Layout.js";
@@ -23,6 +23,11 @@ const getTags = async () => {
             "property": "customer.id",
             "operator": "=",
             "value": `${customerId}`
+        },
+        {
+            "property": "state.name",
+            "operator": "<>",
+            "value": `${Config.nameDelete}`
         }
     ];
 
@@ -158,6 +163,10 @@ export class Tags {
             <button class="button" id="edit-entity" data-entityId="${tag.id}">
               <i class="fa-solid fa-pencil"></i>
             </button>
+
+            <button class="button" id="remove-entity" data-entityId="${tag.id}">
+              <i class="fa-solid fa-trash"></i>
+            </button>
           </td>
         `;
                 table.appendChild(row);
@@ -166,6 +175,7 @@ export class Tags {
         }
         this.register();
         this.edit();
+        this.remove();
     }
     pagination(items, limitRows, currentPage) {
       const tableBody = document.getElementById('datatable-body');
@@ -389,4 +399,51 @@ export class Tags {
         });
     }
 
+    remove() {
+        const remove = document.querySelectorAll('#remove-entity');
+        remove.forEach((remove) => {
+            const entityId = remove.dataset.entityid;
+            remove.addEventListener('click', () => {
+                this.dialogContainer.style.display = 'flex';
+                this.dialogContainer.innerHTML = `
+            <div class="dialog_content" id="dialog-content">
+            <div class="dialog dialog_danger">
+                <div class="dialog_container">
+                <div class="dialog_header">
+                    <h2>¿Deseas eliminar esta etiqueta?</h2>
+                </div>
+
+                <div class="dialog_message">
+                    <p>Esta acción no se puede revertir</p>
+                </div>
+
+                <div class="dialog_footer">
+                    <button class="btn btn_primary" id="cancel">Cancelar</button>
+                    <button class="btn btn_danger" id="delete">Eliminar</button>
+                </div>
+                </div>
+            </div>
+            </div>
+        `;
+                const deleteButton = document.getElementById('delete');
+                const cancelButton = document.getElementById('cancel');
+                const dialogContent = document.getElementById('dialog-content');
+                deleteButton.onclick = async () => {
+                    await deleteControllerEntity(entityId, 'netguard/tags')
+                        .then((res) => {
+                        setTimeout(async () => {
+                            //let data = await getUsers();
+                            const tableBody = document.getElementById('datatable-body');
+                            new CloseDialog().x(dialogContent);
+                            new Tags().render(infoPage.offset, infoPage.currentPage, infoPage.search);
+                        }, 1000);
+                    });
+                };
+                cancelButton.onclick = () => {
+                    new CloseDialog().x(dialogContent);
+                    //this.render();
+                };
+            });
+        });
+    }
 }
