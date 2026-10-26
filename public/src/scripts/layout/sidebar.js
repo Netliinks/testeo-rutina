@@ -12,6 +12,7 @@ import { Employees } from "../views/users/employees/employees.js";
 import { Contractors } from "../views/users/contractors/Contractors.js";
 import { AssistControl } from "../views/attendance/assistcontrol/AssistControl.js";
 import { Departments } from "../views/departments/Departments.js";
+import { Tags } from "../views/tags/Tags.js";
 import { Customers } from "../views/customers/Customers.js";
 import { SuperUsers } from "../views/users/SuperUsers/SuperUsers.js";
 import { Events } from "../views/binnacle/Events/EventsView.js";
