@@ -14,6 +14,7 @@ import { AssistControl } from "../views/attendance/assistcontrol/AssistControl.j
 import { Departments } from "../views/departments/Departments.js";
 import { Tags } from "../views/tags/Tags.js";
 import { Customers } from "../views/customers/Customers.js";
+import { CustomerGroups } from "../views/customerGroups/CustomerGroups.js";
 import { SuperUsers } from "../views/users/SuperUsers/SuperUsers.js";
 import { Events } from "../views/binnacle/Events/EventsView.js";
 import { Vehiculars } from "../views/binnacle/vehiculars/Vehiculars.js";
@@ -33,6 +34,7 @@ import { Models } from "../views/facerecognition/models/Models.js";
 import { Photos } from "../views/facerecognition/photos/Photos.js";
 import { Accesses } from "../views/facerecognition/accesses/Accesses.js";
 import { isFeatureEnabled, FEATURE_FLAG_FACE_MARCATIONS } from "../services/featureFlags.js";
+
 export class Sidebar {
   constructor() {
       this.sidebarContainer = document.getElementById('app-sidebar');
@@ -95,13 +97,7 @@ export class Sidebar {
         <div class="sidebar_top">
           <div class="sidebar_header"></div>
 
-          <div class="sidebar_items" style="overflow-y:scroll; height: 100%;  <!-- max-height: 45rem;  --> ">
-            <!-- <div class="sidebar_item">
-              <span class="sidebar_item_label" id="render-dashboard">
-                <i class="fa-regular fa-chart-simple"></i> <div class="label">Dashboard</div>
-              </span>
-            </div> -->
-
+          <div class="sidebar_items" style="overflow-y:scroll; height: 100%;">
             <div class="sidebar_item">
               <span class="sidebar_item_label" id="render-alertspages">
                 <i class="fa-regular fa-brake-warning"></i> <div class="label">Alertas</div>
@@ -111,6 +107,12 @@ export class Sidebar {
             <div class="sidebar_item" id="render-customers">
               <span class="sidebar_item_label">
                 <i class="fa-regular fa-briefcase"></i> <div class="label">Empresas</div>
+              </span>
+            </div>
+
+            <div class="sidebar_item" id="render-customer-groups">
+              <span class="sidebar_item_label">
+                <i class="fa-regular fa-layer-group"></i> <div class="label">Grupos de Clientes</div>
               </span>
             </div>
 
@@ -158,7 +160,7 @@ export class Sidebar {
 
             <div class="sidebar_item">
               <span class="sidebar_item_label">
-              <i class="fa-regular fa-cabinet-filing"></i></i> <div class="label">Registros</div>
+              <i class="fa-regular fa-cabinet-filing"></i> <div class="label">Registros</div>
               </span>
 
               <div class="sidebar_subitems">
@@ -214,7 +216,7 @@ export class Sidebar {
 
             <div class="sidebar_item">
               <span class="sidebar_item_label">
-              <i class="fa-regular fa-calendar"></i></i> <div class="label">Asistencia</div>
+              <i class="fa-regular fa-calendar"></i> <div class="label">Asistencia</div>
               </span>
 
               <div class="sidebar_subitems">
@@ -235,7 +237,7 @@ export class Sidebar {
             </div>
             <div class="sidebar_item">
               <span class="sidebar_item_label">
-              <i class="fa-regular fa-walkie-talkie"></i></i> <div class="label">Asignaciones</div>
+              <i class="fa-regular fa-walkie-talkie"></i> <div class="label">Asignaciones</div>
               </span>
 
               <div class="sidebar_subitems">
@@ -245,11 +247,6 @@ export class Sidebar {
                     <i class="fa-regular fa-walkie-talkie"></i> <div class="label">Consignas</div>
                   </span>
                   <div class="sidebar_subitems">
-                    <!--div class="sidebar_subitem" id="render-taskstime">
-                      <span class="sidebar_subitem_label">
-                        <i class="fa-regular fa-timer"></i><div class="label">Tiempo</div>
-                      </span>
-                    </div-->
                     <div class="sidebar_subitem" id="render-fixed">
                       <span class="sidebar_subitem_label">
                         <i class="fa-regular fa-calendar-check"></i><div class="label">Fijas</div>
@@ -275,7 +272,7 @@ export class Sidebar {
             
             <div class="sidebar_item">
               <span class="sidebar_item_label">
-              <i class="fa-regular fa-alarm-clock"></i></i> <div class="label">Rutinas</div>
+              <i class="fa-regular fa-alarm-clock"></i> <div class="label">Rutinas</div>
               </span>
 
               <div class="sidebar_subitems">
@@ -305,7 +302,7 @@ export class Sidebar {
               <span class="sidebar_item_label">
                 <i class="fa-regular fa-abacus"></i> <div class="label">Reportes estadísticos</div>
               </span>
-            </div
+            </div>
 
           </div>
         </div>
@@ -317,10 +314,6 @@ export class Sidebar {
   this.renders();
 }
 renders() {
-    /*document.getElementById('render-dashboard')?.addEventListener('click', () => {
-      clearTimeout(Config.timeOut);
-      new Dashboard().render();
-    });*/
     document.getElementById('render-alertspages')?.addEventListener('click', () => {
       clearTimeout(Config.timeOut);
       Config.currentScreen = "AlertsRegisters";
@@ -330,6 +323,11 @@ renders() {
       clearTimeout(Config.timeOut);
       Config.currentScreen = null;
       new Customers().render(Config.offset, Config.currentPage, "");
+    });
+    document.getElementById('render-customer-groups')?.addEventListener('click', () => {
+      clearTimeout(Config.timeOut);
+      Config.currentScreen = null;
+      new CustomerGroups().render(Config.offset, Config.currentPage, "");
     });
     document.getElementById('render-guards')?.addEventListener('click', () => {
       clearTimeout(Config.timeOut);
@@ -409,11 +407,7 @@ renders() {
       Config.currentScreen = null;
         new SuperUsers().render(Config.offset, Config.currentPage, "");
     });
-    
-    // render Tasks Fixed
-    /*document.getElementById('render-taskstime')?.addEventListener('click', () => {
-      new TasksTime().render();
-    });*/
+
     document.getElementById('render-fixed')?.addEventListener('click', () => {
       clearTimeout(Config.timeOut);
       Config.currentScreen = null;

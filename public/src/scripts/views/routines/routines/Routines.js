@@ -168,7 +168,7 @@ export class Routines {
           <td>${locationBadge}</td>
           <td class="entity_options">
               <button class="ng-btn ng-btn-secondary" id="detail-entity" data-entityId="${routine.id}" title="Ver detalle unificado">
-                <i class="fa-solid fa-eye"></i> Ver detalle
+                <i class="fa-solid fa-eye"></i>
               </button>
 
               <button class="button" id="edit-entity" data-entityId="${routine.id}" title="Editar rutina">

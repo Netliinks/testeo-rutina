@@ -92,6 +92,11 @@ const GetAlerts = async () => {
                     "property": "notificationType.name",
                     "operator": "<>",
                     "value": `Rutina`
+                },
+                {
+                    "property": "notificationType.name",
+                    "operator": "<>",
+                    "value": `Marcacion`
                 }
             ]
         },

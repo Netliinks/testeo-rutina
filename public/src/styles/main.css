@@ -442,15 +442,95 @@ body, html, .app {
   transition: 0.3s all ease-in-out;
 }
 
-table button {
+table button,
+.entity_options button,
+.datatable_content tbody tr td button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  margin: 0 3px;
+  border-radius: 6px;
+  border: 1px solid transparent;
   background-color: transparent;
-  margin: 0 8px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-sizing: border-box;
 }
-table button:hover {
-  background-color: #4654d3;
+
+table button i,
+.entity_options button i,
+.datatable_content tbody tr td button i {
+  font-size: 14px;
+  transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+/* Default / Edit action buttons hover state */
+table button:hover,
+.entity_options button:hover,
+.datatable_content tbody tr td button:hover,
+.btn_edit:hover {
+  background-color: #EFF6FF !important;
+  border-color: #BFDBFE !important;
+  color: #2563EB !important;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.12);
+}
+
+table button:hover i,
+.entity_options button:hover i,
+.datatable_content tbody tr td button:hover i,
+.btn_edit:hover i {
+  color: #2563EB !important;
+  transform: scale(1.08);
+}
+
+/* Delete / Remove action buttons hover state */
+table button#remove-group:hover,
+table button#remove-member-btn:hover,
+.entity_options button#remove-group:hover,
+.entity_options button#remove-member-btn:hover,
+.entity_options button.btn_delete:hover,
+.entity_options button[id*="remove"]:hover,
+.entity_options button[id*="delete"]:hover,
+td.entity_options button.button:hover {
+  background-color: #FEE2E2 !important;
+  border-color: #FECACA !important;
+  color: #DC2626 !important;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.12);
+}
+
+table button#remove-group:hover i,
+table button#remove-member-btn:hover i,
+.entity_options button#remove-group:hover i,
+.entity_options button#remove-member-btn:hover i,
+.entity_options button.btn_delete:hover i,
+.entity_options button[id*="remove"]:hover i,
+.entity_options button[id*="delete"]:hover i,
+td.entity_options button.button:hover i {
+  color: #DC2626 !important;
+  transform: scale(1.08);
+}
+
+/* Crown / Controller action button hover state */
+table button#set-controller-btn:hover,
+.entity_options button#set-controller-btn:hover,
+.entity_options button[id*="controller"]:hover {
+  background-color: #FEF3C7 !important;
+  border-color: #FDE68A !important;
+  color: #D97706 !important;
+  box-shadow: 0 2px 4px rgba(217, 119, 6, 0.12);
+}
+
+table button#set-controller-btn:hover i,
+.entity_options button#set-controller-btn:hover i,
+.entity_options button[id*="controller"]:hover i {
+  color: #D97706 !important;
+  transform: scale(1.08);
 }
 
 .btn {
@@ -826,7 +906,25 @@ table button:hover {
 .datatable_content tbody tr:hover td small {
   color: #2563EB;
 }
-.datatable_content tbody tr:hover td .fa-solid, .datatable_content tbody tr:hover td .fa-regular {
+.datatable_content tbody tr:hover td:not(.entity_options) .fa-solid,
+.datatable_content tbody tr:hover td:not(.entity_options) .fa-regular {
+  color: #2563EB;
+}
+
+/* Maintain distinct default icon colors inside action buttons on row hover */
+.datatable_content tbody tr:hover td.entity_options button:not(:hover) .fa-trash,
+.datatable_content tbody tr:hover td.entity_options button:not(:hover)[id*="remove"] i,
+.datatable_content tbody tr:hover td.entity_options button:not(:hover)[id*="delete"] i {
+  color: #DC2626;
+}
+
+.datatable_content tbody tr:hover td.entity_options button:not(:hover)#set-controller-btn i,
+.datatable_content tbody tr:hover td.entity_options button:not(:hover)[id*="controller"] i {
+  color: #D97706;
+}
+
+.datatable_content tbody tr:hover td.entity_options button:not(:hover) .fa-users,
+.datatable_content tbody tr:hover td.entity_options button:not(:hover) .fa-pen-to-square {
   color: #2563EB;
 }
 .datatable_content tbody tr td {

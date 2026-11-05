@@ -63,17 +63,8 @@ export const getUserInfo = async () => {
         headers: headers,
         redirect: 'follow'
     };
-    /*return fetch(userInfo.url, options)
-        .then((req) => req.json())
-        .catch((err) => console.info(err));*/
     let userData = await fetch(userInfo.url, options)
     .then((req) => req.json());
-    // .then((req) => {
-    //     console.log(req)
-    //     // if (req.error === 'invalid_token') {
-    //     //     new SignIn().showLogin()
-    //     // }
-    // })
     return userData;
 };
 // ===================================================
@@ -83,7 +74,6 @@ export const getUserInfo = async () => {
  *
  * @returns a specific data from url
  */
-// export async function getData(url: RequestInfo): Endpoint
 export const getData = async (url) => {
     let ReqOptions = {
         method: 'GET',
@@ -94,28 +84,17 @@ export const getData = async (url) => {
     return await res.json()
         .catch(err => new SignIn().signOut());
 };
-/**
- *
- * @param entities name of a specific entity to get.
- *
- * @returns all content of a specific
- * entity (all bussines data for example).
- */
+
 export const getEntitiesData = async (entities) => {
     const URL = `${NetliinksUrl}${entities}?fetchPlan=full&sort=-createdDate`;
     return await getData(URL);
 };
-/**
- *
- * @param entities name of a specific entity to search.
- * @param entity name of a specific entity to get.
- *
- * @returns all data of specified entity.
- */
+
 export const getEntityData = async (entities, entity) => {
     const URL = `${NetliinksUrl}${entities}/${entity}?fetchPlan=full&sort=-createdDate`;
     return getData(URL);
 };
+
 export const getFilterEntityCount = async (entities, raw) => {
     const req = {
         url: `${NetliinksUrl}${entities}/search/count`,
@@ -131,6 +110,7 @@ export const getFilterEntityCount = async (entities, raw) => {
     return await res.json()
         .catch(err => new SignIn().signOut());
 };
+
 export const getFilterEntityData = async (entities, raw) => {
     const req = {
         url: `${NetliinksUrl}${entities}/search`,
@@ -146,6 +126,7 @@ export const getFilterEntityData = async (entities, raw) => {
     return await res.json()
         .catch(err => new SignIn().signOut());
 };
+
 export const updateEntity = async (entities, entity, raw) => {
     const URL = `${NetliinksUrl}${entities}/${entity}`;
     const ReqOptions = {
@@ -164,6 +145,7 @@ export const updateEntity = async (entities, entity, raw) => {
             throw err;
         });
 };
+
 export const deleteEntity = async (entities, entity) => {
     const URL = `${NetliinksUrl}${entities}/${entity}?fetchPlan=full`;
     const ReqOptions = {
@@ -175,6 +157,7 @@ export const deleteEntity = async (entities, entity) => {
         .then(res => res.json())
         .catch(err => console.error('Error:' + err));
 };
+
 export const registerEntity = async (raw, type) => {
     const req = {
         url: `${NetliinkBase}rest/entities/`,
@@ -196,7 +179,9 @@ export const registerEntity = async (raw, type) => {
             throw err;
         });
 };
+
 export const filterEntities = async (user) => { };
+
 export const setPassword = async (raw) => {
     const req = {
         url: `${NetliinkBase}rest/services/UserServiceBean/updatePassword`,
@@ -213,6 +198,7 @@ export const setPassword = async (raw) => {
         .then(result => console.log(result))
         .catch(error => console.log('error', error));
 };
+
 export const setUserRole = async (raw) => {
     const req = {
         url: `${NetliinkBase}rest/services/UserServiceBean/assignRol`,
@@ -229,12 +215,12 @@ export const setUserRole = async (raw) => {
         .then(result => console.log(result))
         .catch(error => console.log('error', error));
 };
+
 export const sendMail = async (raw) => {
     const req = {
         url: `${NetliinkBase}rest/services/UserServiceBean/sendByEmailInfo`,
         method: 'POST'
-    }
-
+    };
     const requestOptions = {
         method: req.method,
         headers: headers,
@@ -246,7 +232,8 @@ export const sendMail = async (raw) => {
         .then(response => response.json())
         .then(result => console.log(result))
         .catch(error => console.log('error', error));
-}
+};
+
 export const sendMail2 = async (raw) => {
     const req = {
         url: `${NetliinkBase}rest/services/UserServiceBean/sendByEmailInfoWithAtt`,
@@ -290,9 +277,10 @@ export const sendMail2 = async (raw) => {
 
     } catch (err) {
         console.error('Error enviando correo con adjunto:', err);
-        throw err; // se re-lanza para que quien llama decida cómo mostrarlo
+        throw err;
     }
 };
+
 export const getFaceFile = async (path, storageName) => {
     const params = new URLSearchParams({ path, fileName: 'temp.png', storageName });
     const requestOptions = {
@@ -304,6 +292,7 @@ export const getFaceFile = async (path, storageName) => {
         .then(res => res.blob());
     return window.URL.createObjectURL(blob);
 };
+
 export const getFile = async (fileUrl) => {
     const url = `${NetliinkBase}rest/files?fileRef=`;
     const requestOptions = {
@@ -314,13 +303,13 @@ export const getFile = async (fileUrl) => {
     const file = await fetch(url + fileUrl, requestOptions)
         .then((res) => res.blob())
         .then(blob => {
-        let file = window.URL.createObjectURL(blob);
-        return file;
-    });
+            let file = window.URL.createObjectURL(blob);
+            return file;
+        });
     return file;
 };
-export const setFile = async (file) => {
 
+export const setFile = async (file) => {
     const url = `${NetliinkBase}rest/files?name=${file.name}`;
     const requestOptions = {
         method: 'POST',
@@ -338,47 +327,11 @@ export const setFile = async (file) => {
     return res;
 };
 
-/*export const postNotificationPush = async(data,type)=>{
-    var myHeaders = new Headers();
-myHeaders.append("Authorization", "key=AAAAQ1NOq3s:APA91bEXEqZ2ozsXg7JmQrOKqWPTPTQOSYqLmExWQsWB0LvA825JDiYisngPUOLXrJKgZpxN-v0i4fQw1G_ZbUgH41FVENrLV4bompTF_q8LxlN4jBdYPxut38fOa0nSCCOS6kGXHOUb");
-myHeaders.append("Content-Type", "application/json");
-
-let bodyNoti = data['body'];
-let contBody = bodyNoti.length;
-console.log(contBody)
-if(contBody>30){
-    bodyNoti = bodyNoti.substring(0,20);
-    bodyNoti = `${bodyNoti}...`;
-}
-var raw = JSON.stringify({
-  "to": data['token'],
-  "notification": {
-    "title": `Notificación ${data['title']}`,
-    "body":bodyNoti
-  },
-  "data":{
-    "type": `${type}`
-  }
-});
-
-var requestOptions = {
-  method: 'POST',
-  headers: myHeaders,
-  body: raw,
-  redirect: 'follow'
-};
-
-fetch("https://fcm.googleapis.com/fcm/send", requestOptions)
-  .then(response => response.text())
-  .then(result => console.log(result))
-  .catch(error => console.log('error', error));
-}*/
-
-export const postNotificationPush = async(data)=>{
+export const postNotificationPush = async (data) => {
     const req = {
         url: `${NetliinkBase}rest/services/UserServiceBean/sendNotificationPush`,
         method: 'POST'
-    }
+    };
     const requestOptions = {
         method: req.method,
         headers: headers,
@@ -388,12 +341,11 @@ export const postNotificationPush = async(data)=>{
 
     fetch(req.url, requestOptions)
         .then(response => {
-        if (!response.ok) console.error('Network response was not ok');
-        // Check if response has content before parsing
-        return response.text().then(text => text ? JSON.parse(text) : {});
-    })
-    .catch(error => console.error('Fetch error:', error));
-}
+            if (!response.ok) console.error('Network response was not ok');
+            return response.text().then(text => text ? JSON.parse(text) : {});
+        })
+        .catch(error => console.error('Fetch error:', error));
+};
 
 export const getGuardPhotos = async (guardId, page, size) => {
     const requestOptions = {
@@ -525,4 +477,107 @@ export const deleteControllerEntity = async (id, path) => {
     if (!res.ok)
         throw new Error(`HTTP error! status: ${res.status}`);
     return res;
+};
+
+// ===================================================
+// CUSTOMER GROUPS API
+// ===================================================
+export const listCustomerGroups = async (active, search, offset, limit) => {
+    const params = new URLSearchParams();
+    if (active !== null && active !== undefined && active !== '') params.append('active', active);
+    if (search) params.append('search', search);
+    params.append('offset', (offset || 0).toString());
+    params.append('limit', (limit || 50).toString());
+
+    const url = `${NetliinkBase}rest/customer-groups?${params.toString()}`;
+    return await getData(url);
+};
+
+export const getGroupMembersForManagement = async (groupId, search, offset, limit) => {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    params.append('offset', (offset || 0).toString());
+    params.append('limit', (limit || 50).toString());
+
+    const url = `${NetliinkBase}rest/customer-groups/${groupId}/members?${params.toString()}`;
+    return await getData(url);
+};
+
+export const getAvailableCustomersForGroup = async (search, offset, limit) => {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    params.append('offset', (offset || 0).toString());
+    params.append('limit', (limit || 50).toString());
+
+    const url = `${NetliinkBase}rest/customer-groups/available-customers?${params.toString()}`;
+    return await getData(url);
+};
+
+export const createCustomerGroupApi = async (name, controllerCustomerId, applicant) => {
+    const params = new URLSearchParams();
+    params.append('name', name);
+    if (controllerCustomerId) params.append('controllerCustomerId', controllerCustomerId);
+    if (applicant) params.append('applicant', applicant);
+
+    const url = `${NetliinkBase}rest/customer-groups?${params.toString()}`;
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        redirect: 'follow'
+    };
+    const res = await fetch(url, requestOptions);
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error HTTP ${res.status}`);
+    }
+    return await res.json();
+};
+
+export const updateCustomerGroupApi = async (groupId, raw) => {
+    const url = `${NetliinkBase}rest/customer-groups/${groupId}`;
+    const requestOptions = {
+        method: 'PUT',
+        headers: headers,
+        body: JSON.stringify(raw),
+        redirect: 'follow'
+    };
+    const res = await fetch(url, requestOptions);
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error HTTP ${res.status}`);
+    }
+    return await res.json();
+};
+
+export const updateGroupControllerApi = async (groupId, controllerCustomerId) => {
+    const params = new URLSearchParams();
+    if (controllerCustomerId) params.append('controllerCustomerId', controllerCustomerId);
+
+    const url = `${NetliinkBase}rest/customer-groups/${groupId}/controller?${params.toString()}`;
+    const requestOptions = {
+        method: 'PUT',
+        headers: headers,
+        redirect: 'follow'
+    };
+    const res = await fetch(url, requestOptions);
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error HTTP ${res.status}`);
+    }
+    return await res.json();
+};
+
+export const addMemberToGroupApi = async (groupId, customerId) => {
+    const url = `${NetliinkBase}rest/customer-groups/${groupId}/members/${customerId}`;
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        redirect: 'follow'
+    };
+    const res = await fetch(url, requestOptions);
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error HTTP ${res.status}`);
+    }
+    return await res.json();
 };
