@@ -79,7 +79,7 @@ export class CustomerGroups {
             let row = document.createElement('tr');
             row.innerHTML = `
                 <td style="white-space: nowrap;"><strong>${g.groupName || 'Sin Nombre'}</strong></td>
-                <td>${g.applicant || 'N/A'}</td>
+                <td>${g.applicant || ''}</td>
                 <td>${g.controllerCustomerName ? `<i class="fa-solid fa-crown" style="color:#ffc107;"></i> ${g.controllerCustomerName}` : '<em style="color:#6c757d;">Sin asignar</em>'}</td>
                 <td style="text-align: center;"><strong>${g.activeMembersCount || 0}</strong></td>
                 <td>${activeBadge}</td>
@@ -275,7 +275,7 @@ export class CustomerGroups {
                         <input type="radio" name="wz-ctrl-radio" value="${c.id}" ${wizardData.controllerCustomerId === c.id ? 'checked' : ''}>
                         <div style="flex:1;">
                             <strong style="color:var(--ng-primary);"><i class="fa-solid fa-building"></i> ${c.name}</strong>
-                            <div style="font-size:12px; color:var(--ng-text-muted);">RUC: ${c.ruc || 'N/A'}</div>
+                            <div style="font-size:12px; color:var(--ng-text-muted);">RUC: ${c.ruc || ''}</div>
                         </div>
                         ${wizardData.controllerCustomerId === c.id ? '<span class="ng-badge ng-badge-ok"><i class="fa-solid fa-crown" style="color:#ffc107;"></i> Controladora</span>' : ''}
                     </label>
@@ -291,6 +291,18 @@ export class CustomerGroups {
                             Seleccione cuál de las empresas integrantes asumirá el rol de controladora del grupo:
                         </p>
 
+                        <!-- CUADRO INFORMATIVO: SIN CONTROLADORA -->
+                        <div style="display:flex; gap:12px; padding:12px 14px; margin-bottom:16px; border:1px solid #bfdbfe; border-left:4px solid #3b82f6; border-radius:8px; background:#eff6ff;">
+                            <i class="fa-solid fa-circle-info" style="color:#3b82f6; font-size:16px; margin-top:2px;"></i>
+                            <div style="font-size:13px; color:#1e3a8a; line-height:1.5;">
+                                <strong>¿Qué pasa si no elijo una empresa controladora?</strong>
+                                <ul style="margin:6px 0 0 0; padding-left:18px;">
+                                    <li>El grupo se creará igualmente, con todas sus empresas integrantes, solo que  no tendrá una empresa que la controle.</li>
+                                    <li>En el listado de grupos, la columna <em>Controlador</em> aparecerá como <strong>"Sin asignar"</strong>.</li>
+                                </ul>
+                            </div>
+                        </div>
+
                         <div style="max-height:340px; overflow-y:auto;">
                             ${radioOptionsHtml}
                         </div>
@@ -300,12 +312,12 @@ export class CustomerGroups {
                 const controllerObj = wizardData.selectedCustomers.find(c => c.id === wizardData.controllerCustomerId);
                 const controllerText = controllerObj
                     ? `<span class="ng-badge ng-badge-ok"><i class="fa-solid fa-crown" style="color:#ffc107;"></i> ${controllerObj.name}</span>`
-                    : `<span class="ng-badge ng-badge-neu">Sin asignar</span>`;
+                    : `<span class="ng-badge ng-badge-neu">Sin asignar</span> <small style="color:var(--ng-text-muted);">El grupo se creará sin empresa controladora.</small>`;
 
                 let membersListHtml = wizardData.selectedCustomers.map(c => `
                     <div style="padding:6px 10px; border-bottom:1px solid var(--ng-border); display:flex; justify-content:space-between; align-items:center; font-size:13px;">
                         <span><i class="fa-solid fa-building" style="color:var(--ng-primary); margin-right:6px;"></i> <strong>${c.name}</strong></span>
-                        <span style="color:var(--ng-text-muted); font-size:12px;">RUC: ${c.ruc || 'N/A'}</span>
+                        <span style="color:var(--ng-text-muted); font-size:12px;">RUC: ${c.ruc || ''}</span>
                     </div>
                 `).join('');
 
@@ -473,7 +485,7 @@ export class CustomerGroups {
                                         <input type="checkbox" class="wz-cust-chk" data-id="${c.id}" data-name="${c.name}" data-ruc="${c.ruc || ''}" ${isChecked ? 'checked' : ''}>
                                         <strong style="color:var(--ng-primary);">${c.name}</strong>
                                     </div>
-                                    <small style="color:var(--ng-text-muted); font-size:12px;">RUC: ${c.ruc || 'N/A'}</small>
+                                    <small style="color:var(--ng-text-muted); font-size:12px;">RUC: ${c.ruc || ''}</small>
                                 </label>
                             `;
                         }).join('');
