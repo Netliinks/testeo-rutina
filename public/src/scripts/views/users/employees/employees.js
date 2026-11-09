@@ -209,8 +209,6 @@ export class Employees {
         this.pagination(data, tableRows, infoPage.currentPage);
     }
     load(table, currentPage, data) {
-        setUserPassword();
-        //setRole();
         table.innerHTML = '';
         currentPage--;
         let start = tableRows * currentPage;
@@ -306,6 +304,9 @@ export class Employees {
                     if (_password.value === '') {
                         alert('El campo "Contraseña" no puede estar vacío.');
                     }
+                    else if (_password.value.length < Config.minLengthPassword) {
+                        alert(`¡La clave debe tener al menos ${Config.minLengthPassword} caracteres!`);
+                    }
                     else if (_repassword.value === ' ') {
                         alert('Debe repetir la contraseña para continuar');
                     }
@@ -316,11 +317,14 @@ export class Employees {
                         });
                         setPassword(raw)
                             .then(() => {
-                            setTimeout(() => {
-                                alert('Se ha cambiado la contraseña');
-                                new CloseDialog().x(_dialog);
-                            }, 1000);
-                        });
+                                setTimeout(() => {
+                                    alert('Se ha cambiado la contraseña');
+                                    new CloseDialog().x(_dialog);
+                                }, 1000);
+                            })
+                            .catch((err) => {
+                                alert('No se pudo cambiar la contraseña: ' + (err.message || err));
+                            });
                     }
                     else {
                         console.log('Las contraseñas no coinciden');
@@ -574,7 +578,10 @@ export class Employees {
                     alert("DNI vacío!");
                 }
                 else if (_values.temporalPass.value === '' || _values.temporalPass.value === undefined) {
-                    alert("Clave vacío!");
+                    alert("¡Clave vacía!");
+                }
+                else if (_values.temporalPass.value.length < Config.minLengthPassword) {
+                    alert(`¡La clave debe tener al menos ${Config.minLengthPassword} caracteres!`);
                 }else{
                     reg(raw);
                 }        
@@ -590,6 +597,8 @@ export class Employees {
                     new CloseDialog().x(container);
                     new Employees().render(Config.offset, Config.currentPage, infoPage.search);
                 }, 1000);
+            }).catch((err) => {
+                alert('No se pudo crear el usuario: ' + (err.message || err));
             });
         };
     }
@@ -1359,105 +1368,5 @@ export class Employees {
         }
     }
 }
-export async function setUserPassword() {
-    //const users = await getEntitiesData('User');
-   /* const filterBySuperUsers = users.filter((data) => data.isSuper === false);
-    const filterByUserType = filterBySuperUsers.filter((data) => `${data.userType}`.includes('EMPLOYEE'));
-    const data = filterByUserType;*/
-    let raw = JSON.stringify({
-        "filter": {
-            "conditions": [
-                {
-                    "property": "isSuper",
-                    "operator": "=",
-                    "value": `${false}`
-                },
-                {
-                    "property": "customer.id",
-                    "operator": "=",
-                    "value": `${customerId}`
-                },
-                {
-                    "property": "userType",
-                    "operator": "=",
-                    "value": `EMPLOYEE`
-                },
-                {
-                    "property": "newUser",
-                    "operator": "=",
-                    "value": `${true}`
-                },
-                {
-                    "property": "temp",
-                    "operator": "<>",
-                    "value": ``
-                }
-            ]
-        }
-    });
-    let data = await getFilterEntityData("User", raw);
-    data.forEach((newUser) => {
-        let raw = JSON.stringify({
-            "id": `${newUser.id}`,
-            "newPassword": `${newUser.temp}`
-        });
-        if (newUser.newUser === true && (newUser.temp !== undefined || newUser.temp !== ''))
-            setPassword(raw);
-    });
-    setRole(data);
-}
-export async function setRole(data) {
-    /*const users = await getEntitiesData('User');
-    const filterByNewUsers = users.filter((data) => data.newUser == true);
-    const filterByUserType = filterByNewUsers.filter((data) => `${data.userType}`.includes('EMPLOYEE'));
-    const data = filterByUserType;*/
-    /*let raw = JSON.stringify({
-        "filter": {
-            "conditions": [
-                {
-                    "property": "isSuper",
-                    "operator": "=",
-                    "value": `${false}`
-                },
-                {
-                    "property": "newUser",
-                    "operator": "=",
-                    "value": `${true}`
-                },
-                {
-                    "property": "customer.id",
-                    "operator": "=",
-                    "value": `${customerId}`
-                },
-                {
-                    "property": "userType",
-                    "operator": "=",
-                    "value": `EMPLOYEE`
-                },
-                {
-                    "property": "temp",
-                    "operator": "<>",
-                    "value": ``
-                }
-            ]
-        }
-    });
-    let data = await getFilterEntityData("User", raw);*/
-    data.forEach((newUser) => {
-        let raw = JSON.stringify({
-            "id": `${newUser.id}`,
-            "roleCode": 'app_clientes'
-        });
-        let updateNewUser = JSON.stringify({
-            "newUser": false,
-            "temp": ''
-        });
-        if (newUser.newUser == true) {
-            setUserRole(raw).then((res) => {
-                setTimeout(() => {
-                    updateEntity('User', newUser.id, updateNewUser);
-                }, 1000);
-            });
-        }
-    });
-}
+export async function setUserPassword() {}
+export async function setRole(data) {}

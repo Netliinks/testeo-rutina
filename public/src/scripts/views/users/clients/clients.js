@@ -203,8 +203,6 @@ export class Clients {
         this.pagination(data, tableRows, infoPage.currentPage);
     }
     load(table, currentPage, data) {
-        setUserPassword();
-        //setRole();
         table.innerHTML = '';
         currentPage--;
         let start = tableRows * currentPage;
@@ -463,7 +461,10 @@ export class Clients {
                     alert("DNI vacío!");
                 }
                 else if (inputsCollection.temporalPass.value === '' || inputsCollection.temporalPass.value === undefined) {
-                    alert("Clave vacío!");
+                    alert("¡Clave vacía!");
+                }
+                else if (inputsCollection.temporalPass.value.length < Config.minLengthPassword) {
+                    alert(`¡La clave debe tener al menos ${Config.minLengthPassword} caracteres!`);
                 }else{
                     reg(raw);
                 }
@@ -479,6 +480,8 @@ export class Clients {
                     new CloseDialog().x(container);
                     new Clients().render(Config.offset, Config.currentPage, infoPage.search);
                 }, 1000);
+            }).catch((err) => {
+                alert('No se pudo crear el usuario: ' + (err.message || err));
             });
         };
     }
@@ -880,6 +883,9 @@ export class Clients {
                     if (_password.value === '') {
                         alert('El campo "Contraseña" no puede estar vacío.');
                     }
+                    else if (_password.value.length < Config.minLengthPassword) {
+                        alert(`¡La clave debe tener al menos ${Config.minLengthPassword} caracteres!`);
+                    }
                     else if (_repassword.value === ' ') {
                         alert('Debe repetir la contraseña para continuar');
                     }
@@ -890,11 +896,14 @@ export class Clients {
                         });
                         setPassword(raw)
                             .then(() => {
-                            setTimeout(() => {
-                                alert('Se ha cambiado la contraseña');
-                                new CloseDialog().x(_dialog);
-                            }, 1000);
-                        });
+                                setTimeout(() => {
+                                    alert('Se ha cambiado la contraseña');
+                                    new CloseDialog().x(_dialog);
+                                }, 1000);
+                            })
+                            .catch((err) => {
+                                alert('No se pudo cambiar la contraseña: ' + (err.message || err));
+                            });
                     }
                     else {
                         console.log('Las contraseñas no coinciden');
@@ -1383,108 +1392,6 @@ export class Clients {
         }
     }
 }
-export const setUserPassword = async () => {
-    /*const users = await getEntitiesData('User');
-    const filterBySuperUsers = users.filter((data) => data.isSuper === false);
-    const FCustomer = filterBySuperUsers.filter((data) => `${data.customer.id}` === `${customerId}`);
-    const filterByUserType = FCustomer.filter((data) => `${data.userType}`.includes('CUSTOMER'));
-    const data = filterByUserType;*/
-    let raw = JSON.stringify({
-        "filter": {
-            "conditions": [
-                {
-                    "property": "isSuper",
-                    "operator": "=",
-                    "value": `${false}`
-                },
-                {
-                    "property": "customer.id",
-                    "operator": "=",
-                    "value": `${customerId}`
-                },
-                {
-                    "property": "userType",
-                    "operator": "=",
-                    "value": `CUSTOMER`
-                },
-                {
-                    "property": "newUser",
-                    "operator": "=",
-                    "value": `${true}`
-                },
-                {
-                    "property": "temp",
-                    "operator": "<>",
-                    "value": ``
-                }
-            ]
-        }
-    });
-    let data = await getFilterEntityData("User", raw);
-    data.forEach((newUser) => {
-        let raw = JSON.stringify({
-            "id": `${newUser.id}`,
-            "newPassword": `${newUser.temp}`
-        });
-        if (newUser.newUser === true && (newUser.temp !== undefined || newUser.temp !== ''))
-            setPassword(raw);
-    });
-    setRole(data);
-};
-export async function setRole(data) {
-    /*const users = await getEntitiesData('User');
-    const filterByNewUsers = users.filter((data) => data.newUser === true);
-    const FCustomer = filterByNewUsers.filter((data) => `${data.customer.id}` === `${customerId}`);
-    const filterByUserType = FCustomer.filter((data) => `${data.userType}`.includes('CUSTOMER'));
-    const data = filterByUserType;*/
-    /*let raw = JSON.stringify({
-        "filter": {
-            "conditions": [
-                {
-                    "property": "isSuper",
-                    "operator": "=",
-                    "value": `${false}`
-                },
-                {
-                    "property": "newUser",
-                    "operator": "=",
-                    "value": `${true}`
-                },
-                {
-                    "property": "customer.id",
-                    "operator": "=",
-                    "value": `${customerId}`
-                },
-                {
-                    "property": "userType",
-                    "operator": "=",
-                    "value": `CUSTOMER`
-                },
-                {
-                    "property": "temp",
-                    "operator": "<>",
-                    "value": ``
-                }
-            ]
-        }
-    });
-    let data = await getFilterEntityData("User", raw);*/
-    data.forEach((newUser) => {
-        let raw = JSON.stringify({
-            "id": `${newUser.id}`,
-            "roleCode": 'app_clientes'
-        });
-        let updateNewUser = JSON.stringify({
-            "newUser": false,
-            "temp": ''
-        });
-        if (newUser.newUser === true) {
-            setUserRole(raw).then((res) => {
-                setTimeout(() => {
-                    updateEntity('User', newUser.id, updateNewUser);
-                }, 1000);
-            });
-        }
-    });
-}
+export const setUserPassword = async () => {};
+export async function setRole(data) {}
 //minimal change

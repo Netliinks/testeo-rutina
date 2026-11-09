@@ -189,8 +189,6 @@ export class SuperUsers {
         this.pagination(data, tableRows, infoPage.currentPage);
     }
     load(table, currentPage, data) {
-        setUserPassword(SUser);
-        //setRole(SUser);
         table.innerHTML = '';
         currentPage--;
         let start = tableRows * currentPage;
@@ -462,7 +460,10 @@ export class SuperUsers {
                     alert("DNI vacío!");
                 }
                 else if (inputsCollection.temporalPass.value === '' || inputsCollection.temporalPass.value === undefined) {
-                    alert("Clave vacío!");
+                    alert("¡Clave vacía!");
+                }
+                else if (inputsCollection.temporalPass.value.length < Config.minLengthPassword) {
+                    alert(`¡La clave debe tener al menos ${Config.minLengthPassword} caracteres!`);
                 }else{
                     reg(raw, mailRaw);
                 }       
@@ -472,22 +473,16 @@ export class SuperUsers {
         const reg = async (raw, mailRaw) => {
             registerEntity(raw, 'User')
                 .then(res => {
-                sendMail(mailRaw);
-                setTimeout(async () => {
-                  //let data = await getUsers(SUser);
-                    const tableBody = document.getElementById('datatable-body');
-                    const container = document.getElementById('entity-editor-container');
-                    new CloseDialog().x(container);
-                    new SuperUsers().render(Config.offset, Config.currentPage, infoPage.search);
-                }, 1000);
-                //setNewPassword();
-            });
-            /*const setNewPassword = async () => {
-                const users = await getEntitiesData('User');
-                const FNewUsers = users.filter((data) => data.isSuper === true);
-                FNewUsers.forEach((newUser) => {
+                    sendMail(mailRaw);
+                    setTimeout(async () => {
+                        const tableBody = document.getElementById('datatable-body');
+                        const container = document.getElementById('entity-editor-container');
+                        new CloseDialog().x(container);
+                        new SuperUsers().render(Config.offset, Config.currentPage, infoPage.search);
+                    }, 1000);
+                }).catch(err => {
+                    alert('No se pudo crear el superusuario: ' + (err.message || err));
                 });
-            };*/
         };
     }
     import() {
@@ -775,6 +770,9 @@ export class SuperUsers {
                   if (_password.value === '') {
                       alert('El campo "Contraseña" no puede estar vacío.');
                   }
+                  else if (_password.value.length < Config.minLengthPassword) {
+                      alert(`¡La clave debe tener al menos ${Config.minLengthPassword} caracteres!`);
+                  }
                   else if (_repassword.value === ' ') {
                       alert('Debe repetir la contraseña para continuar');
                   }
@@ -785,11 +783,14 @@ export class SuperUsers {
                       });
                       setPassword(raw)
                           .then(() => {
-                          setTimeout(() => {
-                              alert('Se ha cambiado la contraseña');
-                              new CloseDialog().x(_dialog);
-                          }, 1000);
-                      });
+                              setTimeout(() => {
+                                  alert('Se ha cambiado la contraseña');
+                                  new CloseDialog().x(_dialog);
+                              }, 1000);
+                          })
+                          .catch((err) => {
+                              alert('No se pudo cambiar la contraseña: ' + (err.message || err));
+                          });
                   }
                   else {
                       console.log('Las contraseñas no coinciden');
@@ -1277,101 +1278,5 @@ export const setNewPassword = async () => {
     });
 };
 
-export const setUserPassword = async (SUser) => {
-  /*const users = await getEntitiesData('User');
-  const filterBySuperUsers = users.filter((data) => data.isSuper === SUser);
-  const FCustomer = filterBySuperUsers.filter((data) => `${data.customer.id}` === `${customerId}`);
-  const data = FCustomer;*/
-  let raw = JSON.stringify({
-    "filter": {
-        "conditions": [
-            {
-                "property": "isSuper",
-                "operator": "=",
-                "value": `${true}`
-            },
-            {
-                "property": "customer.id",
-                "operator": "=",
-                "value": `${customerId}`
-            },
-            {
-                "property": "newUser",
-                "operator": "=",
-                "value": `${true}`
-            },
-            {
-                "property": "temp",
-                "operator": "<>",
-                "value": ``
-            }
-        ]
-    }
-  });
-  let data = await getFilterEntityData("User", raw);
-  data.forEach((newUser) => {
-      let raw = JSON.stringify({
-          "id": `${newUser.id}`,
-          "newPassword": `${newUser.temp}`
-      });
-      if (newUser.newUser === true && (newUser.temp !== undefined || newUser.temp !== ''))
-          setPassword(raw);
-  });
-  setRole(data);
-};
-export async function setRole(data) {
-  /*const users = await getEntitiesData('User');
-  const filterByNewUsers = users.filter((data) => data.newUser === SUser);
-  const FCustomer = filterByNewUsers.filter((data) => `${data.customer.id}` === `${customerId}`);
-  const data = FCustomer;*/
-  /*let raw = JSON.stringify({
-    "filter": {
-        "conditions": [
-            {
-                "property": "isSuper",
-                "operator": "=",
-                "value": `${SUser}`
-            },
-            {
-                "property": "newUser",
-                "operator": "=",
-                "value": `${SUser}`
-            },
-            {
-                "property": "customer.id",
-                "operator": "=",
-                "value": `${customerId}`
-            },
-            {
-                "property": "temp",
-                "operator": "<>",
-                "value": ``
-            }
-        ]
-    }
-  });
-  let data = await getFilterEntityData("User", raw);*/
-  data.forEach((newUser) => {
-      let roleCode;
-      if(newUser.userType === 'GUARD'){
-        roleCode = 'app_web_guardias'
-      }else if(newUser.userType === 'CUSTOMER'){
-        roleCode = 'app_web_clientes'
-      }
-      let raw = JSON.stringify({
-          "id": `${newUser.id}`,
-          "roleCode": `${roleCode}`
-      });
-      let updateNewUser = JSON.stringify({
-          "newUser": false,
-          "temp": ''
-      });
-      if (newUser.newUser === true) {
-          setUserRole(raw).then((res) => {
-            setTimeout(() => {
-                updateEntity('User', newUser.id, updateNewUser);
-            }, 1000);
-          });
-      }
-  });
-}
+export const setUserPassword = async (SUser) => {};
+export async function setRole(data) {}

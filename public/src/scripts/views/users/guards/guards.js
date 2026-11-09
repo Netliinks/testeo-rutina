@@ -192,8 +192,6 @@ export class Guards {
         this.pagination(data, tableRows, infoPage.currentPage);
     }
     load(table, currentPage, data) {
-        setUserPassword();
-        //setRole();
         table.innerHTML = '';
         currentPage--;
         let start = tableRows * currentPage;
@@ -477,7 +475,9 @@ export class Guards {
                 }*/else if(inputsCollection.dni.value === '' || inputsCollection.dni.value === undefined){
                     alert("DNI vacío!")
                 }else if(inputsCollection.temporalPass.value === '' || inputsCollection.temporalPass.value === undefined){
-                    alert("Clave vacío!")
+                    alert("¡Clave vacía!")
+                }else if(inputsCollection.temporalPass.value.length < Config.minLengthPassword){
+                    alert(`¡La clave debe tener al menos ${Config.minLengthPassword} caracteres!`)
                 }else if(inputsCollection.customer.dataset.optionid === '' || inputsCollection.customer.dataset.optionid === undefined){
                     alert("Empresa vacía!")
                 }else{
@@ -495,6 +495,8 @@ export class Guards {
                     new CloseDialog().x(container);
                     new Guards().render(Config.offset, Config.currentPage, infoPage.search, infoPage.showGuards);
                 }, 1000);
+            }).catch((err) => {
+                alert('No se pudo crear el usuario: ' + (err.message || err));
             });
         };
     }
@@ -1312,6 +1314,9 @@ export class Guards {
                     if (_password.value === '') {
                         alert('El campo "Contraseña" no puede estar vacío.');
                     }
+                    else if (_password.value.length < Config.minLengthPassword) {
+                        alert(`¡La clave debe tener al menos ${Config.minLengthPassword} caracteres!`);
+                    }
                     else if (_repassword.value === ' ') {
                         alert('Debe repetir la contraseña para continuar');
                     }
@@ -1322,11 +1327,14 @@ export class Guards {
                         });
                         setPassword(raw)
                             .then(() => {
-                            setTimeout(() => {
-                                alert('Se ha cambiado la contraseña');
-                                new CloseDialog().x(_dialog);
-                            }, 1000);
-                        });
+                                setTimeout(() => {
+                                    alert('Se ha cambiado la contraseña');
+                                    new CloseDialog().x(_dialog);
+                                }, 1000);
+                            })
+                            .catch((err) => {
+                                alert('No se pudo cambiar la contraseña: ' + (err.message || err));
+                            });
                     }
                     else {
                         console.log('Las contraseñas no coinciden');
@@ -3064,72 +3072,5 @@ export class Guards {
             new Guards().render(infoPage.offset, infoPage.currentPage, infoPage.search, infoPage.showGuards);
         }
     }
-export const setUserPassword = async () => {
-    let raw = JSON.stringify({
-        "filter": {
-            "conditions": [
-              {
-                "property": "isSuper",
-                "operator": "=",
-                "value": `${false}`
-              },
-              {
-                "property": "customer.id",
-                "operator": "=",
-                "value": `${customerId}`
-              },
-              {
-                "property": "userType",
-                "operator": "=",
-                "value": `GUARD`
-              },
-              {
-                  "property": "newUser",
-                  "operator": "=",
-                  "value": `${true}`
-              },
-              {
-                  "property": "temp",
-                  "operator": "<>",
-                  "value": ``
-              }
-            ]
-        }
-    })
-    let data = await getFilterEntityData("User", raw);
-    for (const newUser of data) {
-        if (newUser.newUser === true && newUser.temp && newUser.temp.trim() !== '') {
-            let rawPass = JSON.stringify({
-                "id": `${newUser.id}`,
-                "newPassword": `${newUser.temp}`
-            });
-            try {
-                await setPassword(rawPass);
-            } catch (e) {
-                console.error("Error al establecer contraseña inicial:", e);
-            }
-        }
-    }
-    await setRole(data);
-};
-
-export async function setRole(data) {
-    for (const newUser of data) {
-        if (newUser.newUser === true) {
-            let raw = JSON.stringify({
-                "id": `${newUser.id}`,
-                "roleCode": 'app_guardias'
-            });
-            let updateNewUser = JSON.stringify({
-                "newUser": false,
-                "temp": ''
-            });
-            try {
-                await setUserRole(raw);
-                await updateEntity('User', newUser.id, updateNewUser);
-            } catch (e) {
-                console.error("Error al asignar rol app_guardias:", e);
-            }
-        }
-    }
-}
+export const setUserPassword = async () => {};
+export async function setRole(data) {}

@@ -29,4 +29,5 @@ export const Config = {
     },
     currentScreen: null,
     backgroundTasks: [],
+    minLengthPassword: 4,
 };
