@@ -59,6 +59,10 @@ export class SignIn {
                     this.signOut();
                     alert('Usuario no es superusuario.');
                 }
+                if (currentUser.isWebUser !== false) {
+                    this.signOut();
+                    alert('Usuario no es usuario web.');
+                }
                 if (currentUser.userType !== 'GUARD') {
                     this.signOut();
                     alert('Usuario no es tipo guardia.');
@@ -230,6 +234,11 @@ export class SignIn {
                             property: 'userType',
                             operator: '=',
                             value: 'GUARD'
+                        },
+                        {
+                            property: 'isWebUser', // Cambio por NETACCESS para que los usuarios no puedan ingresar acá
+                            operator: '=',
+                            value: false
                         }
                     ]
                 },

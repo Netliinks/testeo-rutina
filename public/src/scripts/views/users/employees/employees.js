@@ -518,15 +518,15 @@ export class Employees {
                     vehicularPlate: document.getElementById('entity-vehicularplate')
                 };
                 const raw = JSON.stringify({
-                    "lastName": `${_values.lastName.value}`,
-                    "secondLastName": `${_values.secondLastName.value}`,
+                    "lastName": `${_values.lastName.value.trim()}`,
+                    "secondLastName": `${_values.secondLastName.value.trim()}`,
                     "isSuper": false,
                     "newUser": true,
-                    "email": `${_values.email.value}`,
-                    "temp": `${_values.temporalPass.value}`,
+                    "email": `${_values.email.value.trim()}`,
+                    "temp": `${_values.temporalPass.value.trim()}`,
                     "isWebUser": false,
                     "active": true,
-                    "firstName": `${_values.firstName.value}`,
+                    "firstName": `${_values.firstName.value.trim()}`,
                     "ingressHour": `${_values.ingressHour.value}`,
                     "turnChange": `${_values.turnChange.value}`,
                     "state": {
@@ -547,40 +547,40 @@ export class Employees {
                     "department": {
                         "id": `${_values.department.dataset.optionid}`
                     },
-                    "phone": `${_values.phoneNumer.value}`,
-                    "dni": `${_values.dni.value}`,
-                    "vehicularPlate": `${_values.vehicularPlate.value}`,
+                    "phone": `${_values.phoneNumer.value.trim()}`,
+                    "dni": `${_values.dni.value.trim()}`,
+                    "vehicularPlate": `${_values.vehicularPlate.value.trim()}`,
                     "userType": "EMPLOYEE",
-                    "username": `${_values.username.value}@${currentCustomer.name.toLowerCase().replace(/\s+/g, '')}.com`,
+                    "username": `${_values.username.value.trim()}@${currentCustomer.name.toLowerCase().replace(/\s+/g, '')}.com`,
                     "createVisit": `${_values.allowVisits.checked ? true : false}`
                 });
                 /*const existEmail = await getVerifyEmail(_values.email.value);
                 if(existEmail == true){
                     alert("¡Correo electrónico ya existe!");
                 }else */
-                const existUsername = await getVerifyUsername(`${_values.username.value}@${currentCustomer.name.toLowerCase().replace(/\s+/g, '')}.com`);
+                const existUsername = await getVerifyUsername(`${_values.username.value.trim()}@${currentCustomer.name.toLowerCase().replace(/\s+/g, '')}.com`);
                 if (existUsername != "none") {
                     alert("¡Usuario ya existe, es tipo " + existUsername);
                 }
-                else if (_values.firstName.value === '' || _values.firstName.value === undefined) {
+                else if (_values.firstName.value.trim() === '' || _values.firstName.value === undefined) {
                     alert("¡Nombre vacío!");
                 }
-                else if (_values.lastName.value === '' || _values.lastName.value === undefined) {
+                else if (_values.lastName.value.trim() === '' || _values.lastName.value === undefined) {
                     alert("¡Primer apellido vacío!");
                 }
-                else if (_values.secondLastName.value === '' || _values.secondLastName.value === undefined) {
+                else if (_values.secondLastName.value.trim() === '' || _values.secondLastName.value === undefined) {
                     alert("¡Segundo apellido vacío!");
                 }
                 /*else if (_values.email.value === '' || _values.email.value === undefined) {
                     alert("¡Correo vacío!");
                 }*/
-                else if (_values.dni.value === '' || _values.dni.value === undefined) {
+                else if (_values.dni.value.trim() === '' || _values.dni.value === undefined) {
                     alert("DNI vacío!");
                 }
-                else if (_values.temporalPass.value === '' || _values.temporalPass.value === undefined) {
+                else if (_values.temporalPass.value.trim() === '' || _values.temporalPass.value === undefined) {
                     alert("¡Clave vacía!");
                 }
-                else if (_values.temporalPass.value.length < Config.minLengthPassword) {
+                else if (_values.temporalPass.value.trim().length < Config.minLengthPassword) {
                     alert(`¡La clave debe tener al menos ${Config.minLengthPassword} caracteres!`);
                 }else{
                     reg(raw);
@@ -743,7 +743,11 @@ export class Employees {
         });
         const RInterface = async (entities, entityID) => {
             const isSame = Config.isDepartmentEnabled(customerId);
+            if (!currentCustomer && customerId) {
+                currentCustomer = await currentCustomerData();
+            }
             const data = await getEntityData(entities, entityID);
+            const permitPersonalStatic = currentCustomer?.permitPersonalStatic ?? data?.customer?.permitPersonalStatic ?? false;
             this.entityDialogContainer.innerHTML = '';
             this.entityDialogContainer.style.display = 'flex';
             this.entityDialogContainer.innerHTML = `
@@ -880,6 +884,11 @@ export class Employees {
                     <label for="tempPass">Contraseña:</label>
                     </div>
                     -->
+                    <div style="display: ${permitPersonalStatic ? 'flex' : 'none'};justify-content:center">
+                        <img alt="Código QR ${data?.dni ?? ''}" id="qrcode">
+                        <br>
+                        <button id="btnDescargar">Descargar</button>
+                    </div>
                 </div>
                 <!-- END EDITOR BODY -->
 
@@ -899,8 +908,34 @@ export class Employees {
             this.selectDepartment();
             //inputSelect('Department', 'entity-department');
             //inputSelect('Business', 'entity-business');
+            if (permitPersonalStatic) {
+                const qr = document.getElementById("qrcode");
+                if (qr) {
+                    // @ts-ignore
+                    new QRious({
+                        element: qr,
+                        value: data.id,
+                        size: 250,
+                        backgroundAlpha: 1,
+                        foreground: "#1D4C82FF",
+                        level: "H", // Puede ser L,M,Q y H (L es el de menor nivel, H el mayor)
+                    });
+                    download(qr, data);
+                }
+            }
             this.close();
             updateEmployee(entityID);
+        };
+        const download = (qr, data) => {
+            const btnDescargar = document.getElementById('btnDescargar');
+            if (btnDescargar) {
+                btnDescargar.addEventListener('click', () => {
+                    const enlace = document.createElement("a");
+                    enlace.href = qr.src;
+                    enlace.download = `Código QR ${data?.dni ?? ''}.png`;
+                    enlace.click();
+                });
+            }
         };
         const updateEmployee = async (employeeId) => {
             let updateButton;
@@ -921,9 +956,9 @@ export class Employees {
                     vehicularPlate: document.getElementById('entity-vehicularplate')
                 };
                 let employeeRaw = JSON.stringify({
-                    "firstName": `${_values.firstName.value}`,
-                    "lastName": `${_values.lastName.value}`,
-                    "secondLastName": `${_values.secondLastName.value}`,
+                    "firstName": `${_values.firstName.value.trim()}`,
+                    "lastName": `${_values.lastName.value.trim()}`,
+                    "secondLastName": `${_values.secondLastName.value.trim()}`,
                     "active": true,
                     "state": {
                         "id": `${_values.status.dataset.optionid}`
@@ -935,9 +970,9 @@ export class Employees {
                     "turnChange": `${_values.turnChange.value}`,
                     "createVisit": `${_values.allowVisits.checked ? true : false}`,
                     //"email": `${_values.email.value}`,
-                    "phone": `${_values.phone.value}`,
-                    "dni": `${_values.dni.value}`,
-                    "vehicularPlate": `${_values.vehicularPlate?.value}`,
+                    "phone": `${_values.phone.value.trim()}`,
+                    "dni": `${_values.dni.value.trim()}`,
+                    "vehicularPlate": `${_values.vehicularPlate?.value.trim()}`,
                 });
                 /*const existEmail = await getVerifyEmail(_values.email.value);
                 if(existEmail == true){
@@ -945,9 +980,15 @@ export class Employees {
                 }else{
                     update(employeeRaw);;
                 } */
-                if (_values.dni.value === '' || _values.dni.value === undefined) {
+                if (!_values.firstName?.value || _values.firstName.value.trim() === '') {
+                    alert("¡Nombre vacío!");
+                } else if (!_values.lastName?.value || _values.lastName.value.trim() === '') {
+                    alert("¡Primer apellido vacío!");
+                } else if (!_values.secondLastName?.value || _values.secondLastName.value.trim() === '') {
+                    alert("¡Segundo apellido vacío!");
+                } else if (!_values.dni?.value || _values.dni.value.trim() === '') {
                     alert("DNI vacío!");
-                }else{
+                } else {
                     update(employeeRaw);
                 }
             });

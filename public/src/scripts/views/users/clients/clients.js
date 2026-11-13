@@ -406,16 +406,16 @@ export class Clients {
                     vehicularPlate: document.getElementById('entity-vehicularplate')
                 };
                 const raw = JSON.stringify({
-                    "lastName": `${inputsCollection.lastName.value}`,
-                    "secondLastName": `${inputsCollection.secondLastName.value}`,
+                    "lastName": `${inputsCollection.lastName.value.trim()}`,
+                    "secondLastName": `${inputsCollection.secondLastName.value.trim()}`,
                     "isSuper": false,
                     "newUser": true,
-                    "dni": `${inputsCollection.dni.value}`,
-                    "email": `${inputsCollection.email.value}`,
-                    "temp": `${inputsCollection.temporalPass.value}`,
+                    "dni": `${inputsCollection.dni.value.trim()}`,
+                    "email": `${inputsCollection.email.value.trim()}`,
+                    "temp": `${inputsCollection.temporalPass.value.trim()}`,
                     "isWebUser": false,
                     "active": true,
-                    "firstName": `${inputsCollection.firstName.value}`,
+                    "firstName": `${inputsCollection.firstName.value.trim()}`,
                     "state": {
                         "id": `${inputsCollection.state.dataset.optionid}`
                     },
@@ -434,36 +434,36 @@ export class Clients {
                     "department":{
                       "id": `${inputsCollection.department.dataset.optionid}`
                     },
-                    "phone": `${inputsCollection.phoneNumer.value}`,
-                    "vehicularPlate": `${inputsCollection.vehicularPlate.value}`,
+                    "phone": `${inputsCollection.phoneNumer.value.trim()}`,
+                    "vehicularPlate": `${inputsCollection.vehicularPlate.value.trim()}`,
                     "userType": "CUSTOMER",
-                    "username": `${inputsCollection.username.value}@${currentCustomer.name.toLowerCase().replace(/\s+/g, '')}.com`
+                    "username": `${inputsCollection.username.value.trim()}@${currentCustomer.name.toLowerCase().replace(/\s+/g, '')}.com`
                 });
-                const existEmail = await getVerifyEmail(inputsCollection.email.value);
-                const existUsername = await getVerifyUsername(`${inputsCollection.username.value}@${currentCustomer.name.toLowerCase().replace(/\s+/g, '')}.com`);
+                const existEmail = await getVerifyEmail(inputsCollection.email.value.trim());
+                const existUsername = await getVerifyUsername(`${inputsCollection.username.value.trim()}@${currentCustomer.name.toLowerCase().replace(/\s+/g, '')}.com`);
                 if (existUsername != "none") {
                     alert("¡Usuario ya existe, es tipo " + existUsername);
                 }else if (existEmail == true) {
                     alert("¡Correo electrónico ya existe!");
-                }else if (inputsCollection.firstName.value === '' || inputsCollection.firstName.value === undefined) {
+                }else if (inputsCollection.firstName.value.trim() === '' || inputsCollection.firstName.value === undefined) {
                     alert("¡Nombre vacío!");
                 }
-                else if (inputsCollection.lastName.value === '' || inputsCollection.lastName.value === undefined) {
+                else if (inputsCollection.lastName.value.trim() === '' || inputsCollection.lastName.value === undefined) {
                     alert("¡Primer apellido vacío!");
                 }
-                else if (inputsCollection.secondLastName.value === '' || inputsCollection.secondLastName.value === undefined) {
+                else if (inputsCollection.secondLastName.value.trim() === '' || inputsCollection.secondLastName.value === undefined) {
                     alert("¡Segundo apellido vacío!");
                 }
                 /*else if (inputsCollection.email.value === '' || inputsCollection.email.value === undefined) {
                     alert("¡Correo vacío!");
                 }*/
-                else if (inputsCollection.dni.value === '' || inputsCollection.dni.value === undefined) {
+                else if (inputsCollection.dni.value.trim() === '' || inputsCollection.dni.value === undefined) {
                     alert("DNI vacío!");
                 }
-                else if (inputsCollection.temporalPass.value === '' || inputsCollection.temporalPass.value === undefined) {
+                else if (inputsCollection.temporalPass.value.trim() === '' || inputsCollection.temporalPass.value === undefined) {
                     alert("¡Clave vacía!");
                 }
-                else if (inputsCollection.temporalPass.value.length < Config.minLengthPassword) {
+                else if (inputsCollection.temporalPass.value.trim().length < Config.minLengthPassword) {
                     alert(`¡La clave debe tener al menos ${Config.minLengthPassword} caracteres!`);
                 }else{
                     reg(raw);
@@ -624,7 +624,11 @@ export class Clients {
         });
         const RInterface = async (entities, entityID) => {
             const isSame = Config.isDepartmentEnabled(customerId);
+            if (!currentCustomer && customerId) {
+                currentCustomer = await currentCustomerData();
+            }
             const data = await getEntityData(entities, entityID);
+            const permitPersonalStatic = currentCustomer?.permitPersonalStatic ?? data?.customer?.permitPersonalStatic ?? false;
             this.entityDialogContainer.innerHTML = '';
             this.entityDialogContainer.style.display = 'flex';
             this.entityDialogContainer.innerHTML = `
@@ -641,17 +645,17 @@ export class Clients {
                 <!-- EDITOR BODY -->
                 <div class="entity_editor_body">
                     <div class="material_input">
-                    <input type="text" id="entity-firstname" class="input_filled" value="${data.firstName}" readonly>
+                    <input type="text" id="entity-firstname" class="input_filled" value="${data.firstName}">
                     <label for="entity-firstname">Nombre</label>
                     </div>
 
                     <div class="material_input">
-                    <input type="text" id="entity-lastname" class="input_filled" value="${data.lastName}" readonly>
+                    <input type="text" id="entity-lastname" class="input_filled" value="${data.lastName}">
                     <label for="entity-lastname">Apellido</label>
                     </div>
 
                     <div class="material_input">
-                    <input type="text" id="entity-secondlastname" class="input_filled" value="${data.secondLastName}" readonly>
+                    <input type="text" id="entity-secondlastname" class="input_filled" value="${data.secondLastName}">
                     <label for="entity-secondlastname">2do Apellido</label>
                     </div>
 
@@ -738,6 +742,11 @@ export class Clients {
                     <input type="password" id="tempPass" >
                     <label for="tempPass">Contraseña</label>
                     </div> -->
+                    <div style="display: ${permitPersonalStatic ? 'flex' : 'none'};justify-content:center">
+                        <img alt="Código QR ${data?.dni ?? ''}" id="qrcode">
+                        <br>
+                        <button id="btnDescargar">Descargar</button>
+                    </div>
 
                 </div>
                 <!-- END EDITOR BODY -->
@@ -754,19 +763,45 @@ export class Clients {
             this.selectDepartment();
             //inputSelect('Department', 'entity-department');
             //inputSelect('Business', 'entity-business');
+            if (permitPersonalStatic) {
+                const qr = document.getElementById("qrcode");
+                if (qr) {
+                    // @ts-ignore
+                    new QRious({
+                        element: qr,
+                        value: data.id,
+                        size: 250,
+                        backgroundAlpha: 1,
+                        foreground: "#1D4C82FF",
+                        level: "H", // Puede ser L,M,Q y H (L es el de menor nivel, H el mayor)
+                    });
+                    download(qr, data);
+                }
+            }
             this.close();
             UUpdate(entityID);
+        };
+        const download = (qr, data) => {
+            const btnDescargar = document.getElementById('btnDescargar');
+            if (btnDescargar) {
+                btnDescargar.addEventListener('click', () => {
+                    const enlace = document.createElement("a");
+                    enlace.href = qr.src;
+                    enlace.download = `Código QR ${data?.dni ?? ''}.png`;
+                    enlace.click();
+                });
+            }
         };
         const UUpdate = async (entityId) => {
             const updateButton = document.getElementById('update-changes');
             updateButton.addEventListener('click', async() => {
                 const $value = {
                     // @ts-ignore
-                    //firstName: document.getElementById('entity-firstname'),
+                    firstName: document.getElementById('entity-firstname'),
                     // @ts-ignore
-                    //lastName: document.getElementById('entity-lastname'),
+                    lastName: document.getElementById('entity-lastname'),
                     // @ts-ignore
-                    //secondLastName: document.getElementById('entity-secondlastname'),
+                    secondLastName: document.getElementById('entity-secondlastname'),
                     // @ts-ignore
                     phone: document.getElementById('entity-phone'),
                     // @ts-ignore
@@ -788,12 +823,12 @@ export class Clients {
                 };
                 let raw = JSON.stringify({
                     // @ts-ignore
-                    //"lastName": `${$value.lastName?.value}`,
+                    "lastName": `${$value.lastName?.value.trim()}`,
                     // @ts-ignore
-                    //"secondLastName": `${$value.secondLastName?.value}`,
+                    "secondLastName": `${$value.secondLastName?.value.trim()}`,
                     "active": true,
                     // @ts-ignore
-                    //"firstName": `${$value.firstName?.value}`,
+                    "firstName": `${$value.firstName?.value.trim()}`,
                     "state": {
                         "id": `${$value.status?.dataset.optionid}`
                     },
@@ -804,9 +839,9 @@ export class Clients {
                     //    "id": `${$value.customer?.dataset.optionid}`
                     //},
                     // @ts-ignore
-                    "phone": `${$value.phone?.value}`,
-                    "vehicularPlate": `${$value.vehicularPlate?.value}`,
-                    "dni": `${$value.dni.value}`,
+                    "phone": `${$value.phone?.value.trim()}`,
+                    "vehicularPlate": `${$value.vehicularPlate?.value.trim()}`,
+                    "dni": `${$value.dni.value.trim()}`,
                     //"email": `${$value.email?.value}`,
                 });
                 //const existEmail = await getVerifyEmail($value.email?.value);
@@ -815,9 +850,15 @@ export class Clients {
                 //}else{
                     
                 //}
-                if ($value.dni.value === '' || $value.dni.value === undefined) {
+                if (!$value.firstName?.value || $value.firstName.value.trim() === '') {
+                    alert("¡Nombre vacío!");
+                } else if (!$value.lastName?.value || $value.lastName.value.trim() === '') {
+                    alert("¡Primer apellido vacío!");
+                } else if (!$value.secondLastName?.value || $value.secondLastName.value.trim() === '') {
+                    alert("¡Segundo apellido vacío!");
+                } else if (!$value.dni?.value || $value.dni.value.trim() === '') {
                     alert("DNI vacío!");
-                }else{
+                } else {
                     update(raw);
                 }
                 

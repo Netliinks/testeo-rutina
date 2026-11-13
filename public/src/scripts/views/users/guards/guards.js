@@ -423,16 +423,16 @@ export class Guards {
                 };
                 const dni = inputsCollection.dni.value.trim();
                 const raw = JSON.stringify({
-                    "lastName": `${inputsCollection.lastName.value}`,
-                    "secondLastName": `${inputsCollection.secondLastName.value}`,
+                    "lastName": `${inputsCollection.lastName.value.trim()}`,
+                    "secondLastName": `${inputsCollection.secondLastName.value.trim()}`,
                     "isSuper": false,
                     "newUser": true,
                     "dni": `${dni}`,
-                    "email": `${inputsCollection.email.value}`,
-                    "temp": `${inputsCollection.temporalPass.value}`,
+                    "email": `${inputsCollection.email.value.trim()}`,
+                    "temp": `${inputsCollection.temporalPass.value.trim()}`,
                     "isWebUser": false,
                     "active": true,
-                    "firstName": `${inputsCollection.firstName.value}`,
+                    "firstName": `${inputsCollection.firstName.value.trim()}`,
                     "state": {
                         "id": `${inputsCollection.state.dataset.optionid}`
                     },
@@ -451,32 +451,32 @@ export class Guards {
                     "department":{
                       "id": `${naDepartment[0]?.id ?? ''}`
                     },
-                    "phone": `${inputsCollection.phoneNumer.value}`,
+                    "phone": `${inputsCollection.phoneNumer.value.trim()}`,
                     "userType": "GUARD",
                     "username":`${dni}`,
-                    "userPresent":`${inputsCollection.position.value}`
+                    "userPresent":`${inputsCollection.position.value.trim()}`
                     //"username": `${inputsCollection.username.value}@${currentCustomer.name.toLowerCase().replace(/\s+/g, '')}.com`
                 });    
-                const existEmail = await getVerifyEmail(inputsCollection.email.value);
+                const existEmail = await getVerifyEmail(inputsCollection.email.value.trim());
                 //const existUsername = await getVerifyUsername(`${inputsCollection.username.value}@${currentCustomer.name.toLowerCase().replace(/\s+/g, '')}.com`);
                 const existUsername = await getVerifyUsername(`${dni}`);
                 if (existUsername != "none") {
                     alert("¡Usuario ya existe, es tipo " + existUsername);
                 }else if(existEmail == true){
                     alert("¡Correo electrónico ya existe!");
-                }else if(inputsCollection.firstName.value === '' || inputsCollection.firstName.value === undefined){
+                }else if(inputsCollection.firstName.value.trim() === '' || inputsCollection.firstName.value === undefined){
                     alert("¡Nombre vacío!")
-                }else if(inputsCollection.lastName.value === '' || inputsCollection.lastName.value === undefined){
+                }else if(inputsCollection.lastName.value.trim() === '' || inputsCollection.lastName.value === undefined){
                     alert("¡Primer apellido vacío!")
-                }else if(inputsCollection.secondLastName.value === '' || inputsCollection.secondLastName.value === undefined){
+                }else if(inputsCollection.secondLastName.value.trim() === '' || inputsCollection.secondLastName.value === undefined){
                     alert("¡Segundo apellido vacío!")
                 }/*else if(inputsCollection.email.value === '' || inputsCollection.email.value === undefined){
                     alert("¡Correo vacío!")
-                }*/else if(inputsCollection.dni.value === '' || inputsCollection.dni.value === undefined){
+                }*/else if(inputsCollection.dni.value.trim() === '' || inputsCollection.dni.value === undefined){
                     alert("DNI vacío!")
-                }else if(inputsCollection.temporalPass.value === '' || inputsCollection.temporalPass.value === undefined){
+                }else if(inputsCollection.temporalPass.value.trim() === '' || inputsCollection.temporalPass.value === undefined){
                     alert("¡Clave vacía!")
-                }else if(inputsCollection.temporalPass.value.length < Config.minLengthPassword){
+                }else if(inputsCollection.temporalPass.value.trim().length < Config.minLengthPassword){
                     alert(`¡La clave debe tener al menos ${Config.minLengthPassword} caracteres!`)
                 }else if(inputsCollection.customer.dataset.optionid === '' || inputsCollection.customer.dataset.optionid === undefined){
                     alert("Empresa vacía!")
@@ -684,17 +684,17 @@ export class Guards {
                 <!-- EDITOR BODY -->
                 <div class="entity_editor_body">
                     <div class="material_input">
-                    <input type="text" id="entity-firstname" class="input_filled" value="${data.firstName}" readonly>
+                    <input type="text" id="entity-firstname" class="input_filled" value="${data.firstName}">
                     <label for="entity-firstname">Nombre</label>
                     </div>
 
                     <div class="material_input">
-                    <input type="text" id="entity-lastname" class="input_filled" value="${data.lastName}" readonly>
+                    <input type="text" id="entity-lastname" class="input_filled" value="${data.lastName}">
                     <label for="entity-lastname">Apellido</label>
                     </div>
 
                     <div class="material_input">
-                    <input type="text" id="entity-secondlastname" class="input_filled" value="${data.secondLastName}" readonly>
+                    <input type="text" id="entity-secondlastname" class="input_filled" value="${data.secondLastName}">
                     <label for="entity-secondlastname">2do Apellido</label>
                     </div>
 
@@ -705,6 +705,11 @@ export class Guards {
                         maxlength="10"
                         value="${data?.phone ?? ''}">
                     <label for="entity-phone">Teléfono</label>
+                    </div>
+
+                    <div class="material_input">
+                    <input type="text" maxlength="10" id="entity-dni" class="input_filled" value="${data?.dni ?? ''}">
+                    <label for="entity-dni">Cédula</label>
                     </div>
 
                     <div class="material_input">
@@ -735,10 +740,6 @@ export class Guards {
                     </div>
 
                     <!--
-                    <div class="material_input">
-                    <input type="text" maxlength="10" id="entity-dni" class="input_filled" value="${data?.dni ?? ''}" disabled>
-                    <label for="entity-dni">Cédula</label>
-                    </div>
 
                     <div class="material_input_select" style="display: none">
                     <label for="entity-business">Empresa</label>
@@ -798,11 +799,11 @@ export class Guards {
             updateButton.addEventListener('click', async() => {
                 const $value = {
                     // @ts-ignore
-                    //firstName: document.getElementById('entity-firstname'),
+                    firstName: document.getElementById('entity-firstname'),
                     // @ts-ignore
-                    //lastName: document.getElementById('entity-lastname'),
+                    lastName: document.getElementById('entity-lastname'),
                     // @ts-ignore
-                    //secondLastName: document.getElementById('entity-secondlastname'),
+                    secondLastName: document.getElementById('entity-secondlastname'),
                     // @ts-ignore
                     phone: document.getElementById('entity-phone'),
                     // @ts-ignore
@@ -812,7 +813,7 @@ export class Guards {
                     position: document.getElementById('entity-position'),
                     customer: document.getElementById('entity-customer'),
                     // @ts-ignore
-                    //dni: document.getElementById('entity-dni'),
+                    dni: document.getElementById('entity-dni'),
                     // @ts-ignore
                     //business: document.getElementById('entity-business'),
                     // @ts-ignore
@@ -820,12 +821,12 @@ export class Guards {
                 };
                 const rawObj = {
                     // @ts-ignore
-                   // "lastName": `${$value.lastName?.value}`,
+                    "lastName": `${$value.lastName?.value.trim()}`,
                     // @ts-ignore
-                    //"secondLastName": `${$value.secondLastName?.value}`,
+                    "secondLastName": `${$value.secondLastName?.value.trim()}`,
                     "active": true,
                     // @ts-ignore
-                    //"firstName": `${$value.firstName?.value}`,
+                    "firstName": `${$value.firstName?.value.trim()}`,
                     "state": {
                         "id": `${$value.status?.dataset.optionid}`
                     },
@@ -833,9 +834,9 @@ export class Guards {
                         "id": `${$value.customer.dataset.optionid}`
                     },
                     // @ts-ignore
-                    "phone": `${$value.phone?.value}`,
-                    "userPresent":`${$value.position.value}`
-                    //"dni": `${$value.dni.value}`,
+                    "phone": `${$value.phone?.value.trim()}`,
+                    "userPresent":`${$value.position.value.trim()}`,
+                    "dni": `${$value.dni.value.trim()}`,
                     //"email": `${$value.email?.value}`,
                 };
                 let raw = JSON.stringify(rawObj);
@@ -847,7 +848,15 @@ export class Guards {
                 //} 
                 //if ($value.dni.value === '' || $value.dni.value === undefined) {
                 //    alert("DNI vacío!");
-                if ($value.customer.dataset.optionid === '' || $value.customer.dataset.optionid === undefined) {
+                if (!$value.firstName?.value || $value.firstName.value.trim() === '') {
+                    alert("¡Nombre vacío!");
+                } else if (!$value.lastName?.value || $value.lastName.value.trim() === '') {
+                    alert("¡Primer apellido vacío!");
+                } else if (!$value.secondLastName?.value || $value.secondLastName.value.trim() === '') {
+                    alert("¡Segundo apellido vacío!");
+                } else if (!$value.dni?.value || $value.dni.value.trim() === '') {
+                   alert("¡DNI vacío!");
+                } else if ($value.customer.dataset.optionid === '' || $value.customer.dataset.optionid === undefined) {
                     alert("Empresa vacía!");
                 }else {
                     if($value.customer.dataset.optionid != data?.customer?.id){
