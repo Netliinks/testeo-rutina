@@ -181,7 +181,7 @@ const generateFile = (ar, title, extension) => {
     if (window.Blob && (window.URL || window.webkitURL)) {
         var contenido = "", d = new Date(), blob, reader, save, clicEvent;
         //creamos contenido del archivo
-        for (var i = 0; i < ar.length; i++) {
+        for (var i = 0; i < ar.length; i++) {d
             //construimos cabecera del csv
             if (i == 0)
                 contenido += Object.keys(ar[i]).join(";") + "\n";

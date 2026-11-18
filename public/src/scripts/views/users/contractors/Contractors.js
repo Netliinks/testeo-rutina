@@ -1,5 +1,4 @@
-// @filename: Contractors.ts
-import { deleteEntity, getEntityData, registerEntity, setPassword, setUserRole, updateEntity, getUserInfo, getFilterEntityData, getFilterEntityCount } from "../../../endpoints.js";
+import { deleteEntity, deleteControllerEntity, getEntityData, registerEntity, setPassword, setUserRole, updateEntity, getUserInfo, getFilterEntityData, getFilterEntityCount } from "../../../endpoints.js";
 import { drawTagsIntoTables, inputObserver, inputSelect, CloseDialog, getVerifyEmail, filterDataByHeaderType, getVerifyUsername, pageNumbers, fillBtnPagination, searchUniversalValue, generateFileSimpleXls, sleep } from "../../../tools.js";
 import { Config } from "../../../Configs.js";
 import { tableLayout } from "./Layout.js";
@@ -51,6 +50,11 @@ const getUsers = async () => {
                     "property": "userType",
                     "operator": "=",
                     "value": `CONTRACTOR`
+                },
+                {
+                    "property": "state.name",
+                    "operator": "<>",
+                    "value": `${Config.nameDelete}`
                 }
             ],
         },
@@ -112,6 +116,11 @@ const getUsers = async () => {
                         "property": "userType",
                         "operator": "=",
                         "value": `CONTRACTOR`
+                    },
+                    {
+                        "property": "state.name",
+                        "operator": "<>",
+                        "value": `${Config.nameDelete}`
                     }
                 ]
             },
@@ -234,6 +243,10 @@ export class Contractors {
             <button class="button" id="edit-entity" data-entityId="${contractor.id}">
               <i class="fa-solid fa-pen"></i>
             </button>
+
+            <button class="button" id="remove-entity" data-entityId="${contractor.id}" data-entityName="${contractor.firstName} ${contractor.lastName}">
+                <i class="fa-solid fa-trash"></i>
+            </button>
           </dt>
         `;
                 table.appendChild(row);
@@ -245,6 +258,7 @@ export class Contractors {
         this.export();
         this.edit(this.entityDialogContainer, data);
         this.changeUserPassword();
+        this.remove();
     }
     changeUserPassword() {
         const changeUserPasswordKeys = document.querySelectorAll('#change-user-password');
@@ -1179,6 +1193,54 @@ export class Contractors {
         closeButton.addEventListener('click', () => {
             //console.log('close');
             new CloseDialog().x(editor);
+        });
+    }
+    remove() {
+        const removeButtons = document.querySelectorAll('#remove-entity');
+        removeButtons.forEach((button) => {
+            const entityId = button.dataset.entityid;
+            const entityName = button.dataset.entityname || '';
+            button.addEventListener('click', () => {
+                this.dialogContainer.style.display = 'flex';
+                this.dialogContainer.innerHTML = `
+                    <div class="dialog_content" id="dialog-content">
+                        <div class="dialog dialog_danger">
+                            <div class="dialog_container">
+                                <div class="dialog_header">
+                                    <h2>¿Deseas eliminar este usuario?</h2>
+                                </div>
+                                <div class="dialog_message">
+                                    <p>${entityName ? 'Se eliminará al usuario: <b>' + entityName + '</b>.<br>' : ''}Esta acción no se puede revertir.</p>
+                                </div>
+                                <div class="dialog_footer">
+                                    <button class="btn btn_primary" id="cancel">Cancelar</button>
+                                    <button class="btn btn_danger" id="delete">Eliminar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                const deleteButton = document.getElementById('delete');
+                const cancelButton = document.getElementById('cancel');
+                const dialogContent = document.getElementById('dialog-content');
+                deleteButton.onclick = async () => {
+                    deleteButton.disabled = true;
+                    deleteButton.innerText = 'Eliminando...';
+                    try {
+                        await deleteControllerEntity(entityId, 'netguard/users');
+                        new CloseDialog().x(dialogContent);
+                        new Contractors().render(infoPage.offset, infoPage.currentPage, infoPage.search, infoPage.showGuards);
+                    } catch (err) {
+                        console.error(err);
+                        alert("Error al eliminar usuario: " + (err.message || err));
+                        deleteButton.disabled = false;
+                        deleteButton.innerText = 'Eliminar';
+                    }
+                };
+                cancelButton.onclick = () => {
+                    new CloseDialog().x(dialogContent);
+                };
+            });
         });
     }
 }

@@ -97,7 +97,7 @@ export class CredentialsView {
                                 {
                                     "property": "state.name",
                                     "operator": `${status ? "<>" : "="}`,
-                                    "value": `${status ? "" : "Enabled"}`
+                                    "value": `${status ? Config.nameDelete : "Enabled"}`
                                 }
                             ],
                         },
